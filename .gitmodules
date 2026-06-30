@@ -1,0 +1,3 @@
+[submodule "DecisionVault"]
+	path = DecisionVault
+	url = https://github.com/divyanshAg04/DecisionVault.git

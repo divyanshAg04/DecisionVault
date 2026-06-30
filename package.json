@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "npm --prefix DecisionVault run dev",
     "seed": "npm --prefix DecisionVault/server run seed",
+    "seed:cutoffs": "npm --prefix DecisionVault/server run seed:cutoffs",
+    "seed:all": "npm --prefix DecisionVault run seed:all",
+    "datasets": "npm --prefix DecisionVault/server run datasets",
+    "train:ml": "npm --prefix DecisionVault run train:ml",
+    "build": "npm --prefix DecisionVault run build",
+    "start": "npm --prefix DecisionVault run start",
     "install:all": "npm --prefix DecisionVault run install:all"
   }
 }
