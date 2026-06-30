@@ -30,6 +30,13 @@
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=6,11,20&height=4" width="100%" />
 
+## Live Deployment
+
+- Frontend: https://decision-vault-inky.vercel.app/
+- Backend API: https://collegevault-backend.onrender.com/api
+
+<br/>
+
 A full-stack MERN application built around **CollegeVault**, its flagship module for Indian college admissions. It turns scattered research — cutoff trends, placement data, pros and cons, gut feelings — into a structured, evidence-backed decision, complemented by an AI research summarizer and counselor, and a built-in reflection loop for after the decision is made.
 
 <br/>
