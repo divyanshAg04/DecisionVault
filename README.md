@@ -19,6 +19,15 @@
 
 <br/><br/>
 
+<a href="https://decision-vault-inky.vercel.app/">
+  <img src="https://img.shields.io/badge/Frontend-Live-red?style=for-the-badge" />
+</a>
+<a href="https://collegevault-backend.onrender.com/api">
+  <img src="https://img.shields.io/badge/Backend-Live-red?style=for-the-badge" />
+</a>
+
+<br/><br/>
+
 <!-- live repo badges -->
 <img src="https://img.shields.io/github/license/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
 <img src="https://img.shields.io/github/last-commit/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
