@@ -29,7 +29,6 @@
 <br/><br/>
 
 <!-- live repo badges -->
-<img src="https://img.shields.io/github/license/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
 <img src="https://img.shields.io/github/last-commit/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
 <img src="https://img.shields.io/github/repo-size/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
 <img src="https://img.shields.io/github/issues/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
@@ -64,7 +63,6 @@ A full-stack MERN application built around **CollegeVault**, its flagship module
 - [Available Scripts](#-available-scripts)
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
-- [License](#-license)
 
 <br/>
 
@@ -375,12 +373,6 @@ Contributions are welcome.
 2. Create a branch: `git checkout -b feat/your-feature`
 3. Commit your changes with a clear message
 4. Open a pull request describing what changed and why
-
-<br/>
-
-## 📄 License
-
-Distributed under the [MIT License](LICENSE). © 2026 Divyansh Agrawal.
 
 <br/>
 
