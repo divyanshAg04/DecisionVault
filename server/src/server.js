@@ -22,6 +22,8 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
+app.set('trust proxy', 1);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -35,7 +37,11 @@ app.use(cookieParser());
 
 const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 if (process.env.CLIENT_ORIGIN) {
-  allowedOrigins.push(process.env.CLIENT_ORIGIN);
+  allowedOrigins.push(
+    ...process.env.CLIENT_ORIGIN.split(',')
+      .map(origin => origin.trim())
+      .filter(Boolean),
+  );
 }
 
 app.use(
