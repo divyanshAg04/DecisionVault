@@ -1,52 +1,89 @@
 # DecisionVault / CollegeVault
 
-DecisionVault is a MERN decision-intelligence app for college selection. CollegeVault is the flagship workspace: students can compare colleges, save evidence, tune priorities, ask an AI counselor, predict admission likelihood from cutoff data, and record the final decision with a later reflection loop.
+DecisionVault (CollegeVault workspace) is a web-based decision-intelligence app that helps students and decision-makers collect evidence, compare options, and record rationale so good decisions can be revisited later.
 
-## Stack
+This repository contains a full-stack MERN-style application (React + Vite frontend, Express/Node API, MongoDB) with optional Python tooling for dataset processing and ML model training.
 
-- React 19 + Vite client
-- Express + Node.js API
-- MongoDB + Mongoose
-- JWT auth with HttpOnly cookies
-- Gemini-backed research summarizer and counselor, with fallback parsing
-- Dataset-backed JEE cutoff matching and placement/package prediction
-- Docker Compose for local container runs
+---
 
-## Features
+## Table of contents
 
-- Login/register flow with a seeded demo account
-- Admissions profile onboarding for Class 12 planning or entrance-result workflows
-- College discovery with fit scoring and explainable contribution breakdowns
-- Shortlist comparison, evidence links, notes, pros/cons, and audit timeline
-- Priority matrix with what-if presets
-- Gemini research summarizer and Q&A counselor
-- JEE cutoff dataset discovery from seeded cutoff rows after a user saves rank/category input
-- Placement probability and package forecaster from the student placement dataset
-- Final decision lock and post-admission reflection
-- Light/dark theme
+- [Quick demo](#quick-demo)
+- [Highlights](#highlights)
+- [Tech stack](#tech-stack)
+- [Repository layout](#repository-layout)
+- [Requirements](#requirements)
+- [Environment](#environment)
+- [Quick start](#quick-start)
+  - [Install](#install)
+  - [Seed demo data](#seed-demo-data)
+  - [Run (dev)](#run-dev)
+  - [Build & production](#build--production)
+- [API overview](#api-overview)
+- [Development notes](#development-notes)
+- [ML tooling](#ml-tooling)
+- [Docker](#docker)
+- [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [Security](#security)
+- [License](#license)
+- [Maintainer / Contact](#maintainer--contact)
 
-## Project Layout
+---
+
+## Quick demo
+
+- Client: http://localhost:5173
+- API: http://localhost:5000/api
+- Demo user (seeded):
+  - Email: `demo@decisionvault.dev`
+  - Password: `Password123`
+
+See the Docker section to run everything with a single command.
+
+## Highlights
+
+- College discovery & comparisons with explainable fit scoring
+- Evidence, notes, pros/cons, and an audit timeline for each decision
+- AI-powered research summarizer and conversational counselor (Gemini integration with fallback parsing)
+- JEE cutoff discovery and placement/package prediction via dataset-backed ML
+- Light/dark theme, JWT auth with HttpOnly cookies, and seeded demo account for quick evaluation
+
+## Tech stack
+
+- Frontend: React 19 + Vite
+- API: Node.js + Express
+- Database: MongoDB (Mongoose models)
+- Auth: JWT via HttpOnly cookies
+- AI: Gemini integration (optional)
+- ML tooling: Python + scikit-learn (training scripts live in server/)
+- Containerization: Docker Compose for local multi-container development
+
+## Repository layout
 
 ```text
 .
-├── client/                  # React/Vite frontend
-├── server/                  # Express API, models, routes, datasets
-├── docker-compose.yml       # Mongo + API + client containers
-├── package.json             # Workspace-level scripts
+├── client/                  # React + Vite frontend
+├── server/                  # Express API, Mongoose models, dataset scripts, ML tooling
+├── docker-compose.yml       # Compose for Mongo + API + client
+├── package.json             # Workspace scripts (dev, build, seed, train)
 └── README.md
 ```
 
 ## Requirements
 
 - Node.js 18+
-- MongoDB running locally, or a MongoDB Atlas URI
+- npm
+- MongoDB (local or Atlas)
+- Python 3.8+ (only required for ML training or dataset processing)
 - Optional: Gemini API key for live AI answers
 
 ## Environment
 
-Copy `server/.env.example` to `server/.env` and update values as needed:
+Copy and configure the server env example:
 
 ```env
+# server/.env
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/decisionvault
 JWT_SECRET=replace-with-a-long-random-secret
@@ -56,134 +93,179 @@ NODE_ENV=development
 PYTHON_BIN=
 ```
 
-For the client, copy `client/.env.example` to `client/.env` when the API is not at `http://localhost:5000/api`, then set `VITE_API_URL`.
+For the client, copy `client/.env.example` to `client/.env` and set `VITE_API_URL` if the API URL differs from `http://localhost:5000/api`.
 
-For Docker Compose, copy the root `.env.example` to `.env` and update at least `JWT_SECRET`. Compose uses the root `.env`, not `server/.env`.
+Docker Compose uses the root `.env` file when present — copy `.env.example` to `.env` and update secrets before bringing up containers.
 
-## Install
+## Quick start
+
+### Install
+
+From the repository root:
 
 ```bash
 npm run install:all
 ```
 
-## Seed Data
+This script installs workspace dependencies for both client and server. If your repo layout differs, install inside each folder:
 
-Seed demo colleges, a demo user, and starter shortlists:
+```bash
+cd client && npm install
+cd ../server && npm install
+```
+
+### Seed demo data
+
+Seed demo colleges, users, and starter shortlists:
 
 ```bash
 npm run seed
 ```
 
-Demo login:
-
-```text
-demo@decisionvault.dev
-Password123
-```
-
-Seed JEE cutoff rows for the predictive matcher:
+Seed JEE cutoff rows (used by the predictive matcher):
 
 ```bash
 npm run seed:cutoffs
 ```
 
-If datasets are missing, download them first:
+If datasets are missing, fetch them first with:
 
 ```bash
 npm run datasets
 ```
 
-Run both seeders:
+Run all seeders:
 
 ```bash
 npm run seed:all
 ```
 
-## Train ML Models
+### Run (dev)
 
-Install Python dependencies from `server/requirements.txt`, then train and save the best classifier/regressor:
-
-```bash
-cd server
-npm run train:ml
-```
-
-Or from the project root:
-
-```bash
-npm run train:ml
-```
-
-Training writes artifacts to `server/models/`. The Express API keeps the same `/api/ml/predict-placement` contract: it uses the trained Python/sklearn bundle when available and falls back to the lightweight JavaScript model otherwise.
-
-Latest trained metrics:
-
-```text
-Classification: Accuracy 1.0000, Precision 1.0000, Recall 1.0000, F1 1.0000, ROC-AUC 1.0000
-Regression: R2 0.8483, MAE 0.6753, RMSE 1.4948, MSE 2.2344
-```
-
-## Development
-
-Run API and client together:
+Run API and client together in development mode:
 
 ```bash
 npm run dev
 ```
 
-Client: `http://localhost:5173`
+- Client: `http://localhost:5173`
+- API: `http://localhost:5000/api`
 
-API: `http://localhost:5000/api`
-
-Health check:
+Health check example:
 
 ```bash
 curl http://localhost:5000/api/health
 ```
 
-## Build
+### Build & production
+
+Build the frontend and start the production server:
 
 ```bash
 npm run build
-```
-
-## Production Start
-
-```bash
 npm start
 ```
 
+## API overview
+
+Common endpoints (most require an authenticated cookie):
+
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/logout
+- GET /api/auth/me
+- PATCH /api/auth/profile
+- GET /api/colleges
+- POST /api/shortlists
+- GET /api/activities
+- POST /api/ai/summarize
+- POST /api/ai/ask
+- POST /api/ml/predict-admission
+- POST /api/ml/predict-placement
+- POST /api/decisions
+- POST /api/decisions/reflections
+
+Check server/routes and server/controllers for detailed request/response shapes.
+
+## Development notes
+
+- Use ESLint / Prettier for consistent formatting (add configs if missing).
+- Create feature branches: `git checkout -b feat/short-description`.
+- Write unit/integration tests for both client and server; example test commands:
+
+```bash
+npm test        # workspace test script (if configured)
+cd client && npm test
+cd server && pytest   # server tests if pytest is used for Python parts
+```
+
+## ML tooling
+
+Training and dataset processing live in `server/`.
+
+Install Python dependencies (server/requirements.txt) and run the training helper:
+
+```bash
+cd server
+python -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+.\.venv\Scripts\activate      # Windows PowerShell
+pip install -r requirements.txt
+npm run train:ml
+```
+
+Training writes artifacts to `server/models/`. The Express API will use trained artifacts when available and fall back to bundled heuristics otherwise.
+
 ## Docker
+
+Copy the root env example and run compose:
 
 ```powershell
 Copy-Item .env.example .env
 docker compose up --build
 ```
 
-The client container serves the React SPA with an Nginx fallback so refreshed deep routes resolve to `index.html`.
+The client container serves the React SPA via Nginx with index.html fallback for deep routes.
 
-## API Overview
+## Roadmap
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-- `PATCH /api/auth/profile`
-- `GET /api/colleges`
-- `POST /api/shortlists`
-- `GET /api/activities`
-- `POST /api/ai/summarize`
-- `POST /api/ai/ask`
-- `POST /api/ml/predict-admission`
-- `POST /api/ml/predict-placement`
-- `POST /api/decisions`
-- `POST /api/decisions/reflections`
+Planned improvements:
 
-Most application routes require an authenticated cookie.
+- Improved search & fuzzy filtering
+- Multi-user accounts and role-based access
+- Import/export (CSV / JSON)
+- Reminders and notification hooks
+- CI badges, test coverage, and a formal CONTRIBUTING.md
 
-## Notes
+## Contributing
 
-- `server/datasets/2024_Round_1.csv` powers the cutoff seeder and rank-based Discovery results.
-- `server/datasets/Indian_Student_Placement_Dataset_2025.csv` trains the in-process placement/package predictor on API startup.
-- Large generated model files from `server/train_models.py` are ignored by Docker by default.
-- The app is designed for decision support. Cutoff and placement predictions should be treated as estimates, not admission or placement guarantees.
+Thank you for contributing! Suggested workflow:
+
+1. Fork the repository.
+2. Create a descriptive branch: `git checkout -b feat/your-feature`.
+3. Commit changes with clear messages.
+4. Open a pull request describing what and why.
+
+Consider adding a CONTRIBUTING.md and CODE_OF_CONDUCT.md to formalize the process.
+
+## Security
+
+- Never commit API keys or secrets to the repo.
+- Use environment variables for credentials and configuration.
+- Keep dependencies up to date and run automated security scans.
+
+## License
+
+This repository does not declare a license file. Add a LICENSE (for example MIT) if you want to permit reuse.
+
+## Maintainer / Contact
+
+Owner: `divyanshAg04` — https://github.com/divyanshAg04/DecisionVault
+
+---
+
+If you want, I can next:
+
+- Add GitHub badges (build, coverage, license) and screenshots to the README.
+- Create CONTRIBUTING.md and LICENSE files.
+- Adjust commands to exactly match your package.json scripts (I can inspect the repo and fill any missing commands).
