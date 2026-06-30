@@ -1,17 +1,22 @@
 {
-  "name": "collegevault-project-root",
+  "name": "decisionvault",
   "version": "1.0.0",
   "private": true,
-  "description": "Root runner for CollegeVault Project",
+  "description": "DecisionVault is a MERN decision intelligence platform with CollegeVault as the flagship college selection module.",
   "scripts": {
-    "dev": "npm --prefix DecisionVault run dev",
-    "seed": "npm --prefix DecisionVault/server run seed",
-    "seed:cutoffs": "npm --prefix DecisionVault/server run seed:cutoffs",
-    "seed:all": "npm --prefix DecisionVault run seed:all",
-    "datasets": "npm --prefix DecisionVault/server run datasets",
-    "train:ml": "npm --prefix DecisionVault run train:ml",
-    "build": "npm --prefix DecisionVault run build",
-    "start": "npm --prefix DecisionVault run start",
-    "install:all": "npm --prefix DecisionVault run install:all"
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "install:all": "npm install && npm --prefix client install && npm --prefix server install",
+    "datasets": "npm --prefix server run datasets",
+    "seed": "npm --prefix server run seed",
+    "seed:cutoffs": "npm --prefix server run seed:cutoffs",
+    "seed:all": "npm --prefix server run seed && npm --prefix server run seed:cutoffs",
+    "train:ml": "npm --prefix server run train:ml",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }
