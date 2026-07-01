@@ -1027,6 +1027,7 @@ function App() {
   const topMlPrediction = admissionPredictions[0] || null;
   const bestMlCollege = scoredSavedColleges.find((college) => college.mlAdmission) || (datasetCatalog[0] ? predictionToCollege(admissionPredictions[0], 0) : null);
   const mlMatchedShortlistCount = shortlisted.filter((college) => college.mlAdmission).length;
+  const isClass12Planner = admissionProfile.journey === 'Class 12 planning' || admissionProfile.scoreType === 'Board %';
 
   useEffect(() => {
     if (selectedId && scoredSavedColleges.some((college) => college.id === selectedId)) return;
@@ -1163,6 +1164,13 @@ function App() {
 
   async function runAdmissionMl(profile = admissionProfile) {
     const rank = getRankFromProfile(profile);
+
+    if (profile.journey === 'Class 12 planning' || profile.scoreType === 'Board %') {
+      setAdmissionPredictions([]);
+      setMlLastRunAt('');
+      setMlError('');
+      return;
+    }
 
     if (!currentUser || !rank) {
       setAdmissionPredictions([]);
@@ -1428,17 +1436,25 @@ function App() {
       <div className="notesBlock" style={{ margin: '18px', padding: '14px', display: 'grid', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
-            <strong>{isDatasetDiscovery ? 'Using uploaded cutoff dataset' : 'Showing fallback seed colleges'}</strong>
+            <strong>
+              {isDatasetDiscovery
+                ? 'Using uploaded cutoff dataset'
+                : isClass12Planner
+                  ? 'Early planning college discovery'
+                  : 'Showing fallback seed colleges'}
+            </strong>
             <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
               {isDatasetDiscovery
                 ? `${admissionPredictions.length} dataset programs loaded for rank ${admissionProfile.score || jeeRank}.`
-                : 'Save a valid rank in Onboarding to load dataset-backed college/program results automatically.'}
+                : isClass12Planner
+                  ? 'Explore colleges by branch, state, fees, placements, and fit. Add a JEE rank later to unlock cutoff predictions.'
+                  : 'Save a valid rank in Onboarding to load dataset-backed college/program results automatically.'}
             </p>
           </div>
           {mlLastRunAt && <span className="quietBadge">Updated {mlLastRunAt}</span>}
         </div>
 
-        {mlError && <small style={{ color: '#c0392b', fontWeight: 700 }}>{mlError}</small>}
+        {mlError && !isClass12Planner && <small style={{ color: '#c0392b', fontWeight: 700 }}>{mlError}</small>}
       </div>
 
       <div className="filterBar">
@@ -1722,8 +1738,10 @@ function App() {
       </div>
 
       <div className="notesBlock" style={{ margin: '18px', padding: '12px', fontSize: '0.82rem' }}>
-        <strong>Rank model context:</strong>{' '}
-        {bestMlCollege
+        <strong>{isClass12Planner ? 'Planning context:' : 'Rank model context:'}</strong>{' '}
+        {isClass12Planner
+          ? 'You are in Class 12 planning mode. Use the sliders to explore trade-offs before entrance results arrive.'
+          : bestMlCollege
           ? `${bestMlCollege.shortName} currently has the strongest seeded cutoff signal at ${bestMlCollege.mlAdmission.probability}%.`
           : 'Save a valid rank profile to add automatic cutoff guidance to this matrix.'}
       </div>
@@ -2487,10 +2505,10 @@ function App() {
           {activeSection === 'dashboard' && (
             <>
               <section className="analyticsStrip" id="analytics" style={{ animation: 'fadeIn 0.3s ease' }}>
-                <Metric icon={<Timer size={18} />} label="ML Status" value={predictingAdmission ? 'Running' : (mlLastRunAt ? 'Ready' : 'Needs Rank')} />
+                <Metric icon={<Timer size={18} />} label={isClass12Planner ? 'Planning Mode' : 'ML Status'} value={isClass12Planner ? 'Early' : (predictingAdmission ? 'Running' : (mlLastRunAt ? 'Ready' : 'Needs Rank'))} />
                 <Metric icon={<Building2 size={18} />} label="Compared" value={String(shortlisted.length)} />
                 <Metric icon={<Target size={18} />} label="ML Matches" value={String(mlMatchedShortlistCount)} />
-                <Metric icon={<Star size={18} />} label="Best ML Signal" value={bestMlCollege ? `${bestMlCollege.shortName} ${bestMlCollege.mlAdmission.probability}%` : 'Pending'} />
+                <Metric icon={<Star size={18} />} label={isClass12Planner ? 'Best Fit' : 'Best ML Signal'} value={isClass12Planner ? `${finalCollege.shortName || 'College'} ${finalCollege.score}%` : (bestMlCollege ? `${bestMlCollege.shortName} ${bestMlCollege.mlAdmission.probability}%` : 'Pending')} />
               </section>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', animation: 'fadeIn 0.3s ease', marginBottom: '20px' }}>
@@ -2533,15 +2551,30 @@ function App() {
               <article className="panel" style={{ width: '100%', animation: 'fadeIn 0.3s ease', marginBottom: '20px' }}>
                 <div className="panelHeader">
                   <div>
-                    <p className="eyebrow">Automatic ML guidance</p>
-                    <h3>Admission signal from your saved rank</h3>
+                    <p className="eyebrow">{isClass12Planner ? 'Early planner guidance' : 'Automatic ML guidance'}</p>
+                    <h3>{isClass12Planner ? 'Explore before entrance results' : 'Admission signal from your saved rank'}</h3>
                   </div>
                   <span className="quietBadge">
-                    {mlLastRunAt ? `Updated ${mlLastRunAt}` : 'Waiting for rank'}
+                    {isClass12Planner ? 'Rank can be added later' : (mlLastRunAt ? `Updated ${mlLastRunAt}` : 'Waiting for rank')}
                   </span>
                 </div>
 
-                {predictingAdmission ? (
+                {isClass12Planner ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '18px' }}>
+                    <div className="notesBlock" style={{ padding: '14px' }}>
+                      <strong>Current planning profile</strong>
+                      <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>
+                        {admissionProfile.stream || 'Class 12'} / Board score {admissionProfile.score || 'not added'} / {admissionProfile.category}
+                      </p>
+                    </div>
+                    <div className="notesBlock" style={{ padding: '14px' }}>
+                      <strong>Next unlock</strong>
+                      <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>
+                        Add entrance rank later in Onboarding to switch on dataset cutoff predictions.
+                      </p>
+                    </div>
+                  </div>
+                ) : predictingAdmission ? (
                   <div style={{ padding: '18px', color: 'var(--text-secondary)' }}>Processing cutoff data from your profile...</div>
                 ) : mlError ? (
                   <div style={{ padding: '18px', color: 'var(--text-secondary)' }}>{mlError}</div>
