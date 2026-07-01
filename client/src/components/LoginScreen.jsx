@@ -51,13 +51,6 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
     await authenticate({ email: trimmedEmail, password });
   };
 
-  const handleDemoLogin = async () => {
-    setIsRegister(false);
-    setEmail('demo@decisionvault.dev');
-    setPassword('Password123');
-    await authenticate({ email: 'demo@decisionvault.dev', password: 'Password123' });
-  };
-
   return (
     <main className="loginShell">
       <section className="loginPanel">
@@ -119,12 +112,6 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
             {loading ? 'Please wait...' : (isRegister ? 'Register & Continue' : 'Login')}
           </button>
         </form>
-
-        {!isRegister && (
-          <button className="textButton demoLoginButton" type="button" onClick={handleDemoLogin} disabled={loading}>
-            Try demo account
-          </button>
-        )}
 
         <button className="textButton" type="button" onClick={() => { setIsRegister(!isRegister); setError(''); }} style={{ marginTop: '15px', textDecoration: 'underline' }}>
           {isRegister ? 'Already have an account? Log in' : "Don't have an account? Register"}
