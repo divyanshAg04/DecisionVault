@@ -39,17 +39,25 @@ describe('LoginScreen', () => {
     expect(login).not.toHaveBeenCalled();
   });
 
-  it('logs in with the demo account button', async () => {
+  it('does not show the demo login shortcut', () => {
+    renderLogin();
+
+    expect(screen.queryByRole('button', { name: 'Try demo account' })).not.toBeInTheDocument();
+  });
+
+  it('logs in with typed credentials', async () => {
     const user = userEvent.setup();
     const onLoginSuccess = vi.fn();
-    login.mockResolvedValue({ user: { name: 'Demo Student' } });
+    login.mockResolvedValue({ user: { name: 'Student' } });
     renderLogin({ onLoginSuccess });
 
-    await user.click(screen.getByRole('button', { name: 'Try demo account' }));
+    await user.type(screen.getByLabelText('Email'), 'student@example.com');
+    await user.type(screen.getByLabelText('Password'), 'Password123');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
 
     await waitFor(() => {
-      expect(login).toHaveBeenCalledWith('demo@decisionvault.dev', 'Password123');
-      expect(onLoginSuccess).toHaveBeenCalledWith({ name: 'Demo Student' });
+      expect(login).toHaveBeenCalledWith('student@example.com', 'Password123');
+      expect(onLoginSuccess).toHaveBeenCalledWith({ name: 'Student' });
     });
   });
 
