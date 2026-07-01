@@ -150,15 +150,26 @@ const colleges = [
 async function seed() {
   await connectDb(process.env.MONGO_URI);
 
-  await Promise.all([
-    College.deleteMany({}),
-    User.deleteMany({ email: 'demo@decisionvault.dev' }),
-    Shortlist.deleteMany({}),
-    Decision.deleteMany({}),
-    Reflection.deleteMany({}),
-  ]);
+  const existingDemoUser = await User.findOne({ email: 'demo@decisionvault.dev' });
+  if (existingDemoUser) {
+    await Promise.all([
+      Shortlist.deleteMany({ user: existingDemoUser._id }),
+      Decision.deleteMany({ user: existingDemoUser._id }),
+      Reflection.deleteMany({ user: existingDemoUser._id }),
+      User.deleteOne({ _id: existingDemoUser._id }),
+    ]);
+  }
 
-  const createdColleges = await College.insertMany(colleges);
+  const createdColleges = await Promise.all(
+    colleges.map((college) =>
+      College.findOneAndUpdate(
+        { shortName: college.shortName },
+        { $set: college },
+        { upsert: true, new: true, setDefaultsOnInsert: true },
+      ),
+    ),
+  );
+
   const passwordHash = await bcrypt.hash('Password123', 12);
   const user = await User.create({
     name: 'Demo Student',

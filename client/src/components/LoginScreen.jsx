@@ -5,23 +5,25 @@ import { login, register } from '../lib/api';
 export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('demo@decisionvault.dev');
-  const [password, setPassword] = useState('Password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [examTrack, setExamTrack] = useState('JEE');
   const [targetYear, setTargetYear] = useState(2027);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const authenticate = async (credentials) => {
     setError('');
     setLoading(true);
     try {
       if (isRegister) {
-        const data = await register(name, email, password, examTrack, Number(targetYear));
+        if (name.trim().length < 2) {
+          throw new Error('Enter your full name.');
+        }
+        const data = await register(name.trim(), credentials.email, credentials.password, examTrack, Number(targetYear));
         onLoginSuccess(data.user);
       } else {
-        const data = await login(email, password);
+        const data = await login(credentials.email, credentials.password);
         onLoginSuccess(data.user);
       }
     } catch (err) {
@@ -29,6 +31,31 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Enter your email address.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setError('Enter your password.');
+      return;
+    }
+    await authenticate({ email: trimmedEmail, password });
+  };
+
+  const handleDemoLogin = async () => {
+    setIsRegister(false);
+    setEmail('demo@decisionvault.dev');
+    setPassword('Password123');
+    await authenticate({ email: 'demo@decisionvault.dev', password: 'Password123' });
   };
 
   return (
@@ -54,7 +81,7 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
         
         {error && <div className="errorMessage" style={{ color: '#ff4d4d', margin: '10px 0', fontSize: '0.9em', fontWeight: 'bold' }}>{error}</div>}
 
-        <form onSubmit={handleSubmit} className="loginForm" style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+        <form onSubmit={handleSubmit} className="loginForm" noValidate style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           {isRegister && (
             <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
               Full name
@@ -92,6 +119,12 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
             {loading ? 'Please wait...' : (isRegister ? 'Register & Continue' : 'Login')}
           </button>
         </form>
+
+        {!isRegister && (
+          <button className="textButton demoLoginButton" type="button" onClick={handleDemoLogin} disabled={loading}>
+            Try demo account
+          </button>
+        )}
 
         <button className="textButton" type="button" onClick={() => { setIsRegister(!isRegister); setError(''); }} style={{ marginTop: '15px', textDecoration: 'underline' }}>
           {isRegister ? 'Already have an account? Log in' : "Don't have an account? Register"}

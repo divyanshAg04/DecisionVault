@@ -240,7 +240,7 @@ NODE_ENV=development
 PYTHON_BIN=
 ```
 
-For the client, copy `client/.env.example` to `client/.env` if the API isn't at `http://localhost:5000/api`, and set `VITE_API_URL` accordingly.
+For the client, copy `client/.env.example` to `client/.env` if the API isn't at `http://localhost:5000/api`, and set `VITE_API_URL` accordingly. Production builds require `VITE_API_URL`; if it is missing, the app shows a configuration error instead of falling back to localhost.
 
 For Docker Compose, copy the root `.env.example` to `.env` and set at least `JWT_SECRET` — Compose reads the root `.env`, not `server/.env`.
 
@@ -253,6 +253,8 @@ npm run seed          # demo colleges, demo user, starter shortlists
 npm run seed:cutoffs  # JEE cutoff rows for the predictive matcher
 npm run seed:all      # both of the above
 ```
+
+`npm run seed` upserts the demo colleges and resets only the demo account (`demo@decisionvault.dev`), so existing non-demo users and their decision records are left alone.
 
 If the datasets aren't present yet:
 
