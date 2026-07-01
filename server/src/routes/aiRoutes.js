@@ -62,7 +62,7 @@ router.post('/summarize', async (req, res, next) => {
             .replace(/```$/, '')
             .trim();
           const parsed = JSON.parse(cleanJson);
-          return res.json(parsed);
+          return res.json({ ...parsed, source: 'gemini' });
         } catch (e) {
           // JSON parse fail hua — fallback pe jayenge
         }
@@ -116,7 +116,7 @@ router.post('/summarize', async (req, res, next) => {
     if (textLower.includes('official') || textLower.includes('pdf')) confidence = 85;
     else if (textLower.includes('senior') || textLower.includes('review')) confidence = 75;
 
-    return res.json({ pros: finalPros, cons: finalCons, confidence });
+    return res.json({ pros: finalPros, cons: finalCons, confidence, source: 'fallback' });
   } catch (error) {
     return next(error);
   }
@@ -165,7 +165,7 @@ Onboarding Status: ${user.journey || 'N/A'}
         const data = await response.json();
         const rawText =
           data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
-        return res.json({ answer: rawText.trim() });
+        return res.json({ answer: rawText.trim(), source: 'gemini' });
       } else {
         const errData = await response.json().catch(() => ({}));
         console.error('Gemini API call failed in /ask:', errData);
@@ -179,7 +179,7 @@ Onboarding Status: ${user.journey || 'N/A'}
       `Since you are in the "${user.journey}" stage, start comparing the ROI of your shortlisted choices. Your preferred branches (${user.preferredBranches || 'CS'}) are highly competitive, so having backup options is key.`,
     ];
     const randomIndex = Math.abs(question.length) % mockAnswers.length;
-    return res.json({ answer: mockAnswers[randomIndex] });
+    return res.json({ answer: mockAnswers[randomIndex], source: 'fallback' });
   } catch (error) {
     return next(error);
   }

@@ -37,6 +37,16 @@ const collegeSchema = new mongoose.Schema(
     pros: [{ type: String, trim: true }],
     cons: [{ type: String, trim: true }],
     researchLinks: [researchLinkSchema],
+    cutoffSnapshot: {
+      program: { type: String, trim: true },
+      quota: { type: String, trim: true },
+      seatType: { type: String, trim: true },
+      gender: { type: String, trim: true },
+      openingRank: Number,
+      closingRank: Number,
+      probability: Number,
+      source: { type: String, trim: true },
+    },
   },
   { timestamps: true },
 );

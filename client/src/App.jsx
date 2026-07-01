@@ -42,6 +42,7 @@ import {
   updateProfile,
   getShortlists,
   upsertShortlist,
+  savePredictionShortlist,
   deleteShortlist,
   addShortlistNote,
   updateShortlistStatus,
@@ -62,6 +63,14 @@ const formatFee = (value) => Number.isFinite(value) && value > 0
   ? `INR ${(value / 100000).toFixed(value >= 100000 ? 2 : 1)}L`
   : 'Dataset only';
 const formatPackage = (value) => Number.isFinite(value) && value > 0 ? `${value.toFixed(1)} LPA` : 'Dataset only';
+
+function getFriendlyError(error, fallback = 'Something went wrong. Please try again.') {
+  const message = error?.message || '';
+  if (message === 'Failed to fetch' || message.includes('NetworkError')) {
+    return 'Server is unavailable. Please check that the API is running, then try again.';
+  }
+  return message || fallback;
+}
 
 function normalizeMetric(college, metric, catalog) {
   const values = catalog.map((item) => Number(item[metric])).filter(Number.isFinite);
@@ -332,7 +341,7 @@ function App() {
 
   // Gemini QA state
   const [geminiQuestion, setGeminiQuestion] = useState('');
-  const [geminiAnswer, setGeminiAnswer] = useState('');
+  const [geminiAnswer, setGeminiAnswer] = useState(null);
   const [geminiQaLoading, setGeminiQaLoading] = useState(false);
 
   // Toast notification state
@@ -401,7 +410,7 @@ function App() {
       setIsEditingProfile(false);
       showToast('Profile updated successfully!', 'success');
     } catch (err) {
-      showToast('Failed to update profile: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to update profile.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -426,12 +435,15 @@ function App() {
       return;
     }
     setGeminiQaLoading(true);
-    setGeminiAnswer('');
+    setGeminiAnswer(null);
     try {
       const data = await askGemini(query);
-      setGeminiAnswer(data.answer);
+      setGeminiAnswer({
+        answer: data.answer,
+        source: data.source || (data.fallback ? 'fallback' : 'gemini'),
+      });
     } catch (err) {
-      showToast('Failed to get answer from Gemini: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Could not get an admissions answer right now.'), 'error');
     } finally {
       setGeminiQaLoading(false);
     }
@@ -450,9 +462,9 @@ function App() {
     try {
       const data = await summarizeResearch(trimmedText);
       setAiResult(data);
-      showToast('Gemini summarized the research successfully!', 'success');
+      showToast(data.source === 'fallback' ? 'Research summarized with local fallback.' : 'Gemini summarized the research successfully!', 'success');
     } catch (err) {
-      showToast('AI Summarization failed: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Could not summarize this research note right now.'), 'error');
     } finally {
       setAiLoading(false);
     }
@@ -479,7 +491,7 @@ function App() {
       await refreshActivities();
       showToast('AI Insights imported into ' + selectedCollege.shortName + ' vault!', 'success');
     } catch (err) {
-      showToast('Failed to import AI insights: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to import AI insights.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -531,6 +543,8 @@ function App() {
           customLinks: sl?.researchLinks || [],
           researchLinks: [...(sl?.researchLinks || []), ...(fallback?.researchLinks || c.researchLinks || [])],
           status: sl ? sl.status : 'search',
+          mlAdmission: c.cutoffSnapshot || null,
+          mlAdmissionStatus: c.cutoffSnapshot ? getMlAdmissionStatus(c.cutoffSnapshot.probability) : null,
         };
       });
 
@@ -668,7 +682,7 @@ function App() {
       await handleLogout();
       showToast('Account deleted. You have been logged out.', 'success');
     } catch (err) {
-      showToast('Failed to delete account: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to delete account.'), 'error');
     }
   };
 
@@ -704,7 +718,7 @@ function App() {
       await loadUserData();
       setAppStage('dashboard');
     } catch (err) {
-      showToast('Failed to complete onboarding: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to complete onboarding.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -743,7 +757,7 @@ function App() {
       setNewPro('');
       await refreshActivities();
     } catch (err) {
-      showToast('Failed to add pro: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to add pro.'), 'error');
     }
   };
 
@@ -761,7 +775,7 @@ function App() {
       setCatalog(c => c.map(col => col.id === selectedCollege.id ? { ...col, pros: shortlist.pros } : col));
       showToast('Pro removed.', 'success');
     } catch (err) {
-      showToast('Failed to delete pro: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to delete pro.'), 'error');
     }
   };
 
@@ -783,7 +797,7 @@ function App() {
       setNewCon('');
       await refreshActivities();
     } catch (err) {
-      showToast('Failed to add con: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to add con.'), 'error');
     }
   };
 
@@ -801,7 +815,7 @@ function App() {
       setCatalog(c => c.map(col => col.id === selectedCollege.id ? { ...col, cons: shortlist.cons } : col));
       showToast('Con removed.', 'success');
     } catch (err) {
-      showToast('Failed to delete con: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to delete con.'), 'error');
     }
   };
 
@@ -820,7 +834,7 @@ function App() {
       setNewNote('');
       await refreshActivities();
     } catch (err) {
-      showToast('Failed to add note: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to add note.'), 'error');
     }
   };
 
@@ -844,7 +858,7 @@ function App() {
         await refreshActivities();
       }
     } catch (err) {
-      showToast('Failed to delete note: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to delete note.'), 'error');
     }
   };
 
@@ -880,7 +894,7 @@ function App() {
       setLinkUrl('');
       await refreshActivities();
     } catch (err) {
-      showToast('Failed to add link: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to add link.'), 'error');
     }
   };
 
@@ -919,7 +933,7 @@ function App() {
       await refreshActivities();
       showToast('Decision for ' + finalCollege.name + ' confirmed & saved!', 'success');
     } catch (err) {
-      showToast('Failed to save decision: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to save decision.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -946,7 +960,7 @@ function App() {
       await refreshActivities();
       showToast('6-month reflection logged successfully!', 'success');
     } catch (err) {
-      showToast('Failed to save reflection: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to save reflection.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -956,30 +970,47 @@ function App() {
     () => admissionPredictions.map((prediction, index) => predictionToCollege(prediction, index)),
     [admissionPredictions],
   );
-  const activeCatalog = datasetCatalog.length ? datasetCatalog : catalog;
   const isDatasetDiscovery = datasetCatalog.length > 0;
+  const discoveryCatalog = isDatasetDiscovery ? datasetCatalog : catalog;
 
-  const states = ['All', ...new Set(activeCatalog.map((college) => college.state))];
-  const branches = ['All', ...new Set(activeCatalog.map((college) => college.branch))];
+  const states = ['All', ...new Set(discoveryCatalog.map((college) => college.state))];
+  const branches = ['All', ...new Set(discoveryCatalog.map((college) => college.branch))];
 
-  const scoredColleges = useMemo(() => {
-    return activeCatalog
+  const scoredSavedColleges = useMemo(() => {
+    return catalog
       .map((college) => {
         const eligibilityInfo = checkEligibility(college, admissionProfile);
         const mlAdmission = college.mlAdmission || getAdmissionPredictionForCollege(college, admissionPredictions);
         const mlAdmissionStatus = getMlAdmissionStatus(mlAdmission?.probability);
         return {
           ...college,
-          score: scoreCollege({ ...college, mlAdmission }, priorities, activeCatalog),
+          score: scoreCollege({ ...college, mlAdmission }, priorities, catalog),
           eligibility: eligibilityInfo,
           mlAdmission,
           mlAdmissionStatus,
         };
       })
       .sort((a, b) => b.score - a.score);
-  }, [activeCatalog, priorities, admissionProfile, admissionPredictions]);
+  }, [catalog, priorities, admissionProfile, admissionPredictions]);
 
-  const filteredColleges = scoredColleges.filter((college) => {
+  const scoredDiscoveryColleges = useMemo(() => {
+    return discoveryCatalog
+      .map((college) => {
+        const eligibilityInfo = checkEligibility(college, admissionProfile);
+        const mlAdmission = college.mlAdmission || getAdmissionPredictionForCollege(college, admissionPredictions);
+        const mlAdmissionStatus = getMlAdmissionStatus(mlAdmission?.probability);
+        return {
+          ...college,
+          score: scoreCollege({ ...college, mlAdmission }, priorities, discoveryCatalog),
+          eligibility: eligibilityInfo,
+          mlAdmission,
+          mlAdmissionStatus,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [discoveryCatalog, priorities, admissionProfile, admissionPredictions]);
+
+  const filteredColleges = scoredDiscoveryColleges.filter((college) => {
     const searchTarget = `${college.name} ${college.shortName} ${college.branch} ${college.state} ${college.tags.join(' ')}`.toLowerCase();
     const matchesQuery = searchTarget.includes(query.toLowerCase());
     const matchesState = stateFilter === 'All' || college.state === stateFilter;
@@ -987,32 +1018,23 @@ function App() {
     return matchesQuery && matchesState && matchesBranch;
   });
 
-  const shortlisted = scoredColleges.filter((college) => shortlistedIds.includes(college.id));
-  const selectedCollege = scoredColleges.find((college) => college.id === selectedId) || scoredColleges[0] || { name: '', shortName: '', score: 0, pros: [], cons: [], tags: [], researchLinks: [] };
-  const finalCollege = scoredColleges.find((college) => college.id === decisionId) || selectedCollege || { name: '', shortName: '', score: 0, confidence: 0 };
+  const shortlisted = scoredSavedColleges.filter((college) => shortlistedIds.includes(college.id));
+  const vaultColleges = shortlisted.length ? shortlisted : scoredSavedColleges.filter((college) => college.shortlistId);
+  const selectedCollege = vaultColleges.length
+    ? (vaultColleges.find((college) => college.id === selectedId) || vaultColleges[0])
+    : (scoredSavedColleges.find((college) => college.id === selectedId) || scoredSavedColleges[0] || { name: '', shortName: '', score: 0, pros: [], cons: [], tags: [], researchLinks: [] });
+  const finalCollege = shortlisted.find((college) => college.id === decisionId) || shortlisted[0] || selectedCollege || { name: '', shortName: '', score: 0, confidence: 0 };
   const topMlPrediction = admissionPredictions[0] || null;
-  const bestMlCollege = scoredColleges.find((college) => college.mlAdmission) || null;
+  const bestMlCollege = scoredSavedColleges.find((college) => college.mlAdmission) || (datasetCatalog[0] ? predictionToCollege(admissionPredictions[0], 0) : null);
   const mlMatchedShortlistCount = shortlisted.filter((college) => college.mlAdmission).length;
 
   useEffect(() => {
-    if (!datasetCatalog.length) return;
-
-    const datasetIds = datasetCatalog.map((college) => college.id);
-    const currentDatasetShortlist = shortlistedIds.filter((id) => datasetIds.includes(id));
-    const defaultShortlist = datasetIds.slice(0, Math.min(5, datasetIds.length));
-
-    if (!datasetIds.includes(selectedId)) {
-      setSelectedId(datasetIds[0]);
+    if (selectedId && scoredSavedColleges.some((college) => college.id === selectedId)) return;
+    const nextSelected = shortlisted[0]?.id || scoredSavedColleges[0]?.id || '';
+    if (nextSelected) {
+      setSelectedId(nextSelected);
     }
-
-    if (!datasetIds.includes(decisionId)) {
-      setDecisionId(datasetIds[0]);
-    }
-
-    if (!currentDatasetShortlist.length) {
-      setShortlistedIds(defaultShortlist);
-    }
-  }, [datasetCatalog, shortlistedIds, selectedId, decisionId]);
+  }, [selectedId, shortlisted, scoredSavedColleges]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
@@ -1026,6 +1048,7 @@ function App() {
   ];
 
   function goToSection(sectionId) {
+    setToasts([]);
     setActiveSection(sectionId);
     if (sectionId === 'onboarding') {
       setEditProfile({ ...admissionProfile });
@@ -1033,7 +1056,7 @@ function App() {
   }
 
   async function toggleShortlist(id) {
-    const college = activeCatalog.find((c) => c.id === id);
+    const college = catalog.find((c) => c.id === id);
     if (!college) return;
 
     const isShortlisted = shortlistedIds.includes(id);
@@ -1064,7 +1087,7 @@ function App() {
       }
       await refreshActivities();
     } catch (err) {
-      showToast('Failed to update shortlist: ' + err.message, 'error');
+      showToast(getFriendlyError(err, 'Failed to update shortlist.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -1115,6 +1138,29 @@ function App() {
     setAdmissionProfile((current) => ({ ...current, [key]: value }));
   }
 
+  async function handleSavePrediction(college) {
+    if (!college?.mlAdmission) return;
+    try {
+      setIsLoading(true);
+      await savePredictionShortlist({
+        institute: college.name,
+        program: college.mlAdmission.program || college.branch,
+        quota: college.mlAdmission.quota || 'AI',
+        seatType: college.mlAdmission.seatType || 'OPEN',
+        gender: college.mlAdmission.gender || 'Gender-Neutral',
+        openingRank: college.mlAdmission.openingRank || 0,
+        closingRank: college.mlAdmission.closingRank || 0,
+        probability: college.mlAdmission.probability || 0,
+      });
+      await loadUserData();
+      showToast(`Saved ${college.shortName || college.name} prediction to shortlist.`, 'success');
+    } catch (err) {
+      showToast(getFriendlyError(err, 'Failed to save prediction.'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function runAdmissionMl(profile = admissionProfile) {
     const rank = getRankFromProfile(profile);
 
@@ -1142,7 +1188,7 @@ function App() {
       if (res.message) setMlError(res.message);
     } catch (err) {
       setAdmissionPredictions([]);
-      setMlError(err.message || 'ML admission guidance is unavailable right now.');
+      setMlError(getFriendlyError(err, 'ML admission guidance is unavailable right now.'));
     } finally {
       setPredictingAdmission(false);
     }
@@ -1265,7 +1311,7 @@ function App() {
       setMlError(res.message || '');
       showToast(res.message || `Found ${predictions.length} matching programs!`, predictions.length ? 'success' : 'error');
     } catch (err) {
-      showToast(err.message || 'Admission prediction failed.', 'error');
+      showToast(getFriendlyError(err, 'Admission prediction failed.'), 'error');
     } finally {
       setPredictingAdmission(false);
     }
@@ -1292,7 +1338,7 @@ function App() {
       setPlacementPrediction(res);
       showToast('Placement predictions loaded!', 'success');
     } catch (err) {
-      showToast(err.message || 'Placement prediction failed.', 'error');
+      showToast(getFriendlyError(err, 'Placement prediction failed.'), 'error');
     } finally {
       setPredictingPlacement(false);
     }
@@ -1419,6 +1465,26 @@ function App() {
       </div>
 
       <div className="collegeList">
+        {filteredColleges.length === 0 && (
+          <div className="emptyState">
+            <strong>No colleges found</strong>
+            <p>
+              Try a different search term, clear one filter, or switch the branch/state selection.
+            </p>
+            <button
+              type="button"
+              className="textButton"
+              onClick={() => {
+                setQuery('');
+                setStateFilter('All');
+                setBranchFilter('All');
+              }}
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
         {filteredColleges.map((college) => (
           <article
             className={`collegeRow ${selectedCollege.id === college.id ? 'selected' : ''}`}
@@ -1456,21 +1522,33 @@ function App() {
               )}
             </div>
 
-            <button
-              className={`iconAction ${shortlistedIds.includes(college.id) ? 'on' : ''}`}
-              onClick={() => toggleShortlist(college.id)}
-              aria-label={`${shortlistedIds.includes(college.id) ? 'Remove' : 'Add'} ${college.name}`}
-              style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
-            >
-              <Check size={17} />
-            </button>
+            {college.isDatasetResult ? (
+              <button
+                type="button"
+                className="textButton savePredictionButton"
+                onClick={() => handleSavePrediction(college)}
+                style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
+                title="This is a cutoff prediction, not a saved shortlist item."
+              >
+                Save prediction
+              </button>
+            ) : (
+              <button
+                className={`iconAction ${shortlistedIds.includes(college.id) ? 'on' : ''}`}
+                onClick={() => toggleShortlist(college.id)}
+                aria-label={`${shortlistedIds.includes(college.id) ? 'Remove' : 'Add'} ${college.name}`}
+                style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
+              >
+                <Check size={17} />
+              </button>
+            )}
 
             {selectedCollege.id === college.id && (
               <div className="scoreExplainability" style={{ gridColumn: '1 / -1', marginTop: '10px', background: 'var(--bg-app)', padding: '12px', borderRadius: '6px', fontSize: '0.78rem', borderLeft: '4px solid #526b35', textAlign: 'left' }}>
                 <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Fit Score Contribution Breakdown</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
                   {priorities.map((priority) => {
-                    const normalized = normalizeMetric(college, priority.key, activeCatalog);
+                    const normalized = normalizeMetric(college, priority.key, discoveryCatalog);
                     const totalWeight = priorities.reduce((sum, p) => sum + p.weight, 0);
                     const contribution = Math.round((normalized * priority.weight / totalWeight) * 100);
                     return (
@@ -1502,108 +1580,62 @@ function App() {
       <div className="panelHeader">
         <div>
           <p className="eyebrow">Shortlist</p>
-          <h3>Comparison table</h3>
+          <h3>Saved college comparison</h3>
         </div>
-        <span className="quietBadge">Live scoring</span>
+        <span className="quietBadge">{shortlisted.length} saved</span>
       </div>
 
       {shortlisted.length === 0 ? (
-        <div style={{ padding: '24px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center' }}>
-          No colleges shortlisted for comparison. Add colleges to your shortlist from the Discovery tab.
+        <div className="emptyState">
+          <strong>No saved colleges yet</strong>
+          <p>Add colleges from Discovery to compare fees, placements, hostel, distance, and research quality.</p>
+          <button type="button" className="textButton" onClick={() => goToSection('search')}>
+            Open Discovery
+          </button>
         </div>
       ) : (
         <>
-          {isDatasetDiscovery ? (
-            <div className="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Institute</th>
-                    <th>Program</th>
-                    <th>Quota</th>
-                    <th>Seat Type</th>
-                    <th>Opening Rank</th>
-                    <th>Closing Rank</th>
-                    <th>Admission Signal</th>
-                  </tr>
-                </thead>
-                <tbody>
+          <div className="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Metric</th>
                   {shortlisted.map((college) => (
-                    <tr key={college.id}>
-                      <td>
-                        <strong>{college.name}</strong>
-                        <small style={{ display: 'block', color: 'var(--text-secondary)' }}>{college.mlAdmission?.gender}</small>
-                      </td>
-                      <td>{college.branch}</td>
-                      <td>{college.mlAdmission?.quota}</td>
-                      <td>{college.mlAdmission?.seatType}</td>
-                      <td>{college.mlAdmission?.openingRank}</td>
-                      <td>{college.mlAdmission?.closingRank}</td>
-                      <td>
-                        <span className={`eligibilityBadge ${college.mlAdmissionStatus.className}`}>
-                          {college.mlAdmission?.probability}%
-                        </span>
-                      </td>
-                    </tr>
+                    <th key={college.id}>{college.shortName}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    {shortlisted.map((college) => (
-                      <th key={college.id}>{college.shortName}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <CompareRow label="Fit Score" values={shortlisted.map((college) => `${college.score}%`)} />
-                  <CompareRow
-                    label="Eligibility"
-                    values={shortlisted.map((college) => (
-                      <span className={`eligibilityBadge ${college.eligibility?.status.toLowerCase().replace(' ', '-')}`}>
-                        {college.eligibility?.status}
-                      </span>
-                    ))}
-                  />
-                  <CompareRow label="Fees" values={shortlisted.map((college) => formatFee(college.fees))} />
-                  <CompareRow label="Avg Package" values={shortlisted.map((college) => formatPackage(college.avgPackage))} />
-                  <CompareRow label="Placement" values={shortlisted.map((college) => `${college.placementRate}%`)} />
-                  <CompareRow label="Hostel" values={shortlisted.map((college) => (college.hostel ? 'Yes' : 'No'))} />
-                  <CompareRow label="Distance" values={shortlisted.map((college) => `${college.distanceKm} km`)} />
-                  <CompareRow label="Campus Life" values={shortlisted.map((college) => college.campusLife.toFixed(1))} />
-                  <CompareRow label="Research" values={shortlisted.map((college) => college.research.toFixed(1))} />
-                </tbody>
-              </table>
+                </tr>
+              </thead>
+              <tbody>
+                <CompareRow label="Fit Score" values={shortlisted.map((college) => `${college.score}%`)} />
+                <CompareRow
+                  label="Eligibility"
+                  values={shortlisted.map((college) => (
+                    <span className={`eligibilityBadge ${college.eligibility?.status.toLowerCase().replace(' ', '-')}`}>
+                      {college.eligibility?.status}
+                    </span>
+                  ))}
+                />
+                <CompareRow label="Fees" values={shortlisted.map((college) => formatFee(college.fees))} />
+                <CompareRow label="Avg Package" values={shortlisted.map((college) => formatPackage(college.avgPackage))} />
+                <CompareRow label="Placement" values={shortlisted.map((college) => `${college.placementRate}%`)} />
+                <CompareRow label="Hostel" values={shortlisted.map((college) => (college.hostel ? 'Yes' : 'No'))} />
+                <CompareRow label="Distance" values={shortlisted.map((college) => `${college.distanceKm} km`)} />
+                <CompareRow label="Campus Life" values={shortlisted.map((college) => college.campusLife.toFixed(1))} />
+                <CompareRow label="Research" values={shortlisted.map((college) => college.research.toFixed(1))} />
+              </tbody>
+            </table>
+          </div>
+
+          {shortlisted.length === 1 && (
+            <div className="emptyState compact">
+              <strong>Add one more saved college</strong>
+              <p>Trade-off analysis appears once at least two saved colleges are available.</p>
             </div>
           )}
 
           {shortlisted.length >= 2 && (() => {
             const c1 = shortlisted[0];
             const c2 = shortlisted[1];
-            if (isDatasetDiscovery) {
-              return (
-                <div className="tradeOffCard" style={{ margin: '15px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', padding: '15px', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text-primary)', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                    <SlidersHorizontal size={16} />
-                    Dataset Cutoff Comparison
-                  </div>
-                  <p style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)' }}>
-                    Comparing the top dataset matches returned for rank {admissionProfile.score}:
-                  </p>
-                  <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <li><strong>{c1.shortName}</strong>: {c1.branch}, closing rank {c1.mlAdmission?.closingRank}, probability {c1.mlAdmission?.probability}%.</li>
-                    <li><strong>{c2.shortName}</strong>: {c2.branch}, closing rank {c2.mlAdmission?.closingRank}, probability {c2.mlAdmission?.probability}%.</li>
-                    <li>Fees, placements, hostel, and campus quality are not in the cutoff dataset and should be verified with official sources before final decision.</li>
-                  </ul>
-                </div>
-              );
-            }
-
             const diffPackage = c1.avgPackage - c2.avgPackage;
             const diffFees = c1.fees - c2.fees;
             const diffDistance = c1.distanceKm - c2.distanceKm;
@@ -1612,32 +1644,69 @@ function App() {
               <div className="tradeOffCard" style={{ margin: '15px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', padding: '15px', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text-primary)', textAlign: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   <SlidersHorizontal size={16} />
-                  Smart Trade-Off Analysis (Top 2 Choices)
+                  Smart Trade-Off Analysis (Top 2 Saved Choices)
                 </div>
                 <p style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)' }}>
                   Comparing your top match <strong>{c1.name}</strong> against your second option <strong>{c2.name}</strong>:
                 </p>
                 <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <li>
-                    <strong>Fit Margin</strong>: <strong>{c1.shortName}</strong> is rated <strong>+{c1.score - c2.score}%</strong> higher in total priority alignment.
-                  </li>
-                  <li>
-                    <strong>Placement & Earnings</strong>: {diffPackage > 0 ? <span>Gains an estimated average salary increase of <strong style={{ color: '#27ae60' }}>+{diffPackage.toFixed(1)} LPA</strong>.</span> : <span>Sacrifices an estimated <strong style={{ color: '#c0392b' }}>{Math.abs(diffPackage).toFixed(1)} LPA</strong> in average salary.</span>}
-                  </li>
-                  <li>
-                    <strong>Academic Cost</strong>: {diffFees > 0 ? <span>Increases total expense by <strong style={{ color: '#c0392b' }}>{formatFee(diffFees)}</strong>.</span> : <span>Saves you <strong style={{ color: '#27ae60' }}>{formatFee(Math.abs(diffFees))}</strong> in total fees.</span>}
-                  </li>
-                  <li>
-                    <strong>Location Fit</strong>: {diffDistance > 0 ? <span>Places you <strong style={{ color: '#c0392b' }}>{diffDistance} km</strong> further from home.</span> : <span>Places you <strong style={{ color: '#27ae60' }}>{Math.abs(diffDistance)} km</strong> closer to home.</span>}
-                  </li>
-                  <li>
-                    <strong>Campus Experience</strong>: {diffCampus > 0 ? <span>Features a higher campus satisfaction rating (<strong style={{ color: '#27ae60' }}>+{diffCampus.toFixed(1)}/10</strong>).</span> : <span>Features a slightly lower campus satisfaction rating (<strong style={{ color: '#c0392b' }}>-{Math.abs(diffCampus).toFixed(1)}/10</strong>).</span>}
-                  </li>
+                  <li><strong>Fit Margin</strong>: <strong>{c1.shortName}</strong> is rated <strong>+{c1.score - c2.score}%</strong> higher in total priority alignment.</li>
+                  <li><strong>Placement & Earnings</strong>: {diffPackage > 0 ? <span>Gains an estimated average salary increase of <strong style={{ color: '#1f8a4c' }}>+{diffPackage.toFixed(1)} LPA</strong>.</span> : <span>Sacrifices an estimated <strong style={{ color: '#b42318' }}>{Math.abs(diffPackage).toFixed(1)} LPA</strong> in average salary.</span>}</li>
+                  <li><strong>Academic Cost</strong>: {diffFees > 0 ? <span>Increases total expense by <strong style={{ color: '#b42318' }}>{formatFee(diffFees)}</strong>.</span> : <span>Saves you <strong style={{ color: '#1f8a4c' }}>{formatFee(Math.abs(diffFees))}</strong> in total fees.</span>}</li>
+                  <li><strong>Location Fit</strong>: {diffDistance > 0 ? <span>Places you <strong style={{ color: '#b42318' }}>{diffDistance} km</strong> further from home.</span> : <span>Places you <strong style={{ color: '#1f8a4c' }}>{Math.abs(diffDistance)} km</strong> closer to home.</span>}</li>
+                  <li><strong>Campus Experience</strong>: {diffCampus > 0 ? <span>Features a higher campus satisfaction rating (<strong style={{ color: '#1f8a4c' }}>+{diffCampus.toFixed(1)}/10</strong>).</span> : <span>Features a slightly lower campus satisfaction rating (<strong style={{ color: '#b42318' }}>-{Math.abs(diffCampus).toFixed(1)}/10</strong>).</span>}</li>
                 </ul>
               </div>
             );
           })()}
         </>
+      )}
+
+      {datasetCatalog.length > 0 && (
+        <div className="comparisonSection">
+          <div className="panelHeader subtle">
+            <div>
+              <p className="eyebrow">ML predictions</p>
+              <h3>Cutoff matches for rank {admissionProfile.score || jeeRank}</h3>
+            </div>
+            <span className="quietBadge">{datasetCatalog.length} matches</span>
+          </div>
+          <div className="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Institute</th>
+                  <th>Program</th>
+                  <th>Quota</th>
+                  <th>Seat Type</th>
+                  <th>Opening Rank</th>
+                  <th>Closing Rank</th>
+                  <th>Admission Signal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datasetCatalog.slice(0, 12).map((college) => (
+                  <tr key={college.id}>
+                    <td><strong>{college.name}</strong></td>
+                    <td>{college.branch}</td>
+                    <td>{college.mlAdmission?.quota}</td>
+                    <td>{college.mlAdmission?.seatType}</td>
+                    <td>{college.mlAdmission?.openingRank}</td>
+                    <td>{college.mlAdmission?.closingRank}</td>
+                    <td>
+                      <span className={`eligibilityBadge ${college.mlAdmissionStatus.className}`}>
+                        {college.mlAdmission?.probability}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="helperText">
+            These are cutoff predictions only. Save real colleges from Discovery before using Vault notes, links, and final decision reflection.
+          </p>
+        </div>
       )}
     </section>
   );
@@ -1705,13 +1774,23 @@ function App() {
           <p className="eyebrow">Research vault</p>
           <h3>College Vault & AI Insights</h3>
         </div>
-        <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '6px' }}>
-          {activeCatalog.map((c) => (
+        <select value={vaultColleges.some((c) => c.id === selectedId) ? selectedId : (vaultColleges[0]?.id || '')} onChange={(e) => setSelectedId(e.target.value)} disabled={!vaultColleges.length} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '6px' }}>
+          {vaultColleges.map((c) => (
             <option value={c.id} key={c.id}>{c.name}</option>
           ))}
         </select>
       </div>
 
+      {vaultColleges.length === 0 ? (
+        <div className="emptyState">
+          <strong>No saved colleges in the Vault</strong>
+          <p>Save a real college from Discovery before adding pros, cons, research notes, and evidence links.</p>
+          <button type="button" className="textButton" onClick={() => goToSection('search')}>
+            Open Discovery
+          </button>
+        </div>
+      ) : (
+        <>
       <div className="notesBlock" style={{ padding: '14px', margin: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
         <div>
           <strong>ML admission signal</strong>
@@ -1819,6 +1898,11 @@ function App() {
 
               {aiResult && (
                 <div style={{ marginTop: '12px', background: 'rgba(39, 174, 96, 0.1)', border: '1px solid #27ae60', padding: '12px', borderRadius: '6px' }}>
+                  {aiResult.source === 'fallback' && (
+                    <span className="quietBadge" style={{ marginBottom: '8px', display: 'inline-flex' }}>
+                      Local fallback summary
+                    </span>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                     <div>
                       <strong style={{ color: '#27ae60' }}>Pros:</strong>
@@ -1866,7 +1950,12 @@ function App() {
             </form>
             {geminiAnswer && (
               <div className="notesBlock" style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-card)', borderLeft: '3px solid #1a56db', fontSize: '0.82rem', whiteSpace: 'pre-line' }}>
-                {geminiAnswer}
+                {geminiAnswer.source === 'fallback' && (
+                  <span className="quietBadge" style={{ marginBottom: '8px', display: 'inline-flex' }}>
+                    Local fallback answer
+                  </span>
+                )}
+                <div>{geminiAnswer.answer}</div>
               </div>
             )}
           </div>
@@ -1901,6 +1990,8 @@ function App() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </section>
   );
 

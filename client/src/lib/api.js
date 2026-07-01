@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000/api');
+const API_CONFIG_ERROR = import.meta.env.PROD && !import.meta.env.VITE_API_URL
+  ? 'API URL is not configured. Set VITE_API_URL to your deployed API endpoint.'
+  : '';
 
 function getHeaders() {
   return {
@@ -7,6 +10,10 @@ function getHeaders() {
 }
 
 async function request(url, options = {}) {
+  if (API_CONFIG_ERROR) {
+    throw new Error(API_CONFIG_ERROR);
+  }
+
   const headers = getHeaders();
   const config = {
     ...options,
@@ -17,7 +24,14 @@ async function request(url, options = {}) {
     },
   };
 
-  const response = await fetch(`${API_BASE_URL}${url}`, config);
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${url}`, config);
+  } catch (error) {
+    throw new Error(error?.message === 'Failed to fetch'
+      ? 'Server is unavailable. Please check the API connection and try again.'
+      : error?.message || 'Network request failed');
+  }
 
   if (response.status === 204) {
     return null;
@@ -167,6 +181,13 @@ export async function predictAdmission({ rank, seatType, gender, quota, limit })
   return request('/ml/predict-admission', {
     method: 'POST',
     body: JSON.stringify({ rank, seatType, gender, quota, limit }),
+  });
+}
+
+export async function savePredictionShortlist(prediction) {
+  return request('/shortlists/prediction', {
+    method: 'POST',
+    body: JSON.stringify(prediction),
   });
 }
 
