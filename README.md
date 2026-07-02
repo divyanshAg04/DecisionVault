@@ -83,11 +83,14 @@ College admission decisions are usually made across a dozen browser tabs, a few 
 ## ✨ Features
 
 <details open>
-<summary><b>Core Workflow</b></summary>
+<summary><b>Core Workflow & Premium UI</b></summary>
 <br/>
 
-- Login/register flow with a seeded demo account
-- Admissions profile onboarding for both Class 12 planning and entrance-result workflows
+- **Interactive Case File Preview**: Hero section with a tabbed college selection and an **animated SVG radar chart** (features rotating sweep, pulsing vertices, and expanding sonar ripples)
+- **Visual Stepper Timeline**: Sequenced onboarding workflow (`01`–`04`) with card number watermarks and responsive visual connectors
+- **Dual-Theme Login Portal**: Fully redesigned login panel adapting natively between light dashboard card theme and cosmic radial-gradient dark theme
+- **Adaptive Journey Selection**: Option cards for onboarding tracks with custom hover lift and purple glow highlights
+- Onboarding for both Class 12 planning and entrance-result admissions workflows
 - College discovery with explainable fit scoring and contribution breakdowns
 - Shortlist comparison with evidence links, notes, pros/cons, and an audit timeline
 - Priority matrix with what-if presets
@@ -112,7 +115,7 @@ College admission decisions are usually made across a dozen browser tabs, a few 
 
 - JWT auth via HttpOnly cookies
 - Rate limiting, Helmet, and Zod-validated input on every route
-- Light/dark theme
+- **Dynamic Light/Dark Theme**: Cohesive dark-theme cosmic gradients and clean white dashboard styling throughout the application
 - Docker Compose setup for one-command local environments
 
 </details>
