@@ -630,6 +630,12 @@ function App() {
   };
 
   useEffect(() => {
+    const isSessionActive = sessionStorage.getItem('dv-session-active') === 'true';
+    if (!isSessionActive) {
+      setAppStage('landing');
+      return;
+    }
+
     getMe()
       .then(({ user }) => {
         setCurrentUser(user);
@@ -649,13 +655,14 @@ function App() {
             scorecardBase64: user.scorecardBase64 || '',
           });
           loadUserData();
-          setAppStage('journey');
+          setAppStage('dashboard');
         } else {
           setAppStage('journey');
         }
       })
       .catch(() => {
         setAppStage('landing');
+        sessionStorage.removeItem('dv-session-active');
       });
   }, []);
 
@@ -686,6 +693,7 @@ function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
+    sessionStorage.setItem('dv-session-active', 'true');
     if (user.journey) {
       setAdmissionProfile({
         journey: user.journey,
@@ -702,7 +710,7 @@ function App() {
         scorecardBase64: user.scorecardBase64 || '',
       });
       loadUserData();
-      setAppStage('journey');
+      setAppStage('dashboard');
     } else {
       setAppStage('journey');
     }
@@ -711,6 +719,7 @@ function App() {
   const handleLogout = async () => {
     await logout();
     setCurrentUser(null);
+    sessionStorage.removeItem('dv-session-active');
     setAppStage('landing');
     setCatalog(fallbackColleges);
     setShortlistedIds([]);

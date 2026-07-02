@@ -35,7 +35,7 @@ describe('LoginScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Login' }));
 
-    expect(await screen.findByText('Enter your email address.')).toBeInTheDocument();
+    expect(await screen.findByText('Enter your email.')).toBeInTheDocument();
     expect(login).not.toHaveBeenCalled();
   });
 
