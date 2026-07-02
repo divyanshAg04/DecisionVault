@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FileText,
   GraduationCap,
+  Info,
   Link2,
   Lock,
   MapPin,
@@ -91,17 +92,21 @@ function normalizeMetric(college, metric, catalog) {
   return (metricValue - min) / (max - min);
 }
 
-function scoreCollege(college, priorities, catalog) {
-  if (college.isDatasetResult && college.mlAdmission?.probability != null) {
-    return Math.round(college.mlAdmission.probability);
-  }
-
+function scoreCollege(college, priorities, catalog, isClass12 = false) {
   const totalWeight = priorities.reduce((sum, priority) => sum + priority.weight, 0);
   const weightedScore = priorities.reduce((sum, priority) => {
     return sum + normalizeMetric(college, priority.key, catalog) * priority.weight;
   }, 0);
 
-  return Math.round((weightedScore / totalWeight) * 100);
+  const fitScore = Math.round((weightedScore / totalWeight) * 100);
+
+  // If we are not in Class 12 planner mode, blend Priority Fit Score (60%) with ML Admission Probability (40%)
+  if (!isClass12 && college.mlAdmission?.probability != null) {
+    const prob = Number(college.mlAdmission.probability) || 0;
+    return Math.round((fitScore * 0.6) + (prob * 0.4));
+  }
+
+  return fitScore;
 }
 
 function checkEligibility(college, profile) {
@@ -207,8 +212,8 @@ function getAdmissionPredictionForCollege(college, predictions) {
 
 function getMlAdmissionStatus(probability) {
   if (probability == null) return { label: 'No cutoff match', className: 'ambiguous' };
-  if (probability >= 75) return { label: 'Strong ML match', className: 'eligible' };
-  if (probability >= 40) return { label: 'Possible ML match', className: 'ambiguous' };
+  if (probability >= 75) return { label: 'Strong College Vault match', className: 'eligible' };
+  if (probability >= 40) return { label: 'Possible College Vault match', className: 'ambiguous' };
   return { label: 'Reach option', className: 'ineligible' };
 }
 
@@ -228,46 +233,56 @@ function quotaLabel(quota) {
   return quota || 'Cutoff Dataset';
 }
 
-function predictionToCollege(row, index) {
+function predictionToCollege(row, index, catalog = []) {
   const probability = Number(row.probability) || 0;
   const closingRank = Number(row.closingRank) || 0;
   const openingRank = Number(row.openingRank) || closingRank;
 
+  // Enrich prediction stats with full data from matching detailed college if found in catalog
+  const matched = catalog.find((c) => {
+    const textA = normalizeSearchText(c.name);
+    const textB = normalizeSearchText(row.institute);
+    return textA.includes(textB) || textB.includes(textA) || c.shortName.toLowerCase() === makeShortName(row.institute).toLowerCase();
+  });
+
   return {
     id: `cutoff-${normalizeSearchText(`${row.institute}-${row.program}-${row.quota}-${row.seatType}-${row.gender}-${index}`).replace(/\s+/g, '-')}`,
     name: row.institute,
-    shortName: makeShortName(row.institute),
-    type: 'Cutoff Dataset Result',
+    shortName: matched?.shortName || makeShortName(row.institute),
+    type: matched?.type || 'Cutoff Dataset Result',
     branch: row.program,
-    state: quotaLabel(row.quota),
-    city: quotaLabel(row.quota),
-    fees: null,
-    avgPackage: null,
-    medianPackage: null,
-    placementRate: null,
-    nirfRank: closingRank || 999999,
-    hostel: null,
+    state: matched?.state || quotaLabel(row.quota),
+    city: matched?.city || quotaLabel(row.quota),
+    fees: matched?.fees || null,
+    avgPackage: matched?.avgPackage || null,
+    medianPackage: matched?.medianPackage || null,
+    placementRate: matched?.placementRate || null,
+    nirfRank: matched?.nirfRank || closingRank || 999999,
+    hostel: matched?.hostel || null,
     cutoff: closingRank,
-    distanceKm: null,
-    campusLife: null,
-    faculty: null,
-    research: null,
+    distanceKm: matched?.distanceKm || null,
+    campusLife: matched?.campusLife || null,
+    faculty: matched?.faculty || null,
+    research: matched?.research || null,
     roi: probability,
     confidence: probability,
-    tags: [row.quota, row.seatType, row.gender, 'cutoff dataset'].filter(Boolean),
-    pros: [
+    tags: [row.quota, row.seatType, row.gender, 'cutoff dataset', ...(matched?.tags || [])].filter(Boolean),
+    pros: matched?.pros?.length ? matched.pros : [
       `${probability}% admission likelihood for the entered rank`,
       `Closing rank ${closingRank} in the selected seat filter`,
     ],
-    cons: [
+    cons: matched?.cons?.length ? matched.cons : [
       'Fees, hostel, placement, and campus details need manual verification',
     ],
     notes: [],
     rawNotes: [],
     customLinks: [],
-    researchLinks: [],
+    researchLinks: matched?.researchLinks || [],
     status: 'dataset-result',
     isDatasetResult: true,
+    admissionChannel: matched?.admissionChannel || ((row.institute.toLowerCase().includes('indian institute of technology') || row.institute.startsWith('IIT '))
+      ? 'JEE Advanced'
+      : 'JEE Main'),
     mlAdmission: {
       ...row,
       openingRank,
@@ -276,6 +291,31 @@ function predictionToCollege(row, index) {
     },
     mlAdmissionStatus: getMlAdmissionStatus(probability),
   };
+}
+
+function getStandardizedType(collegeType, collegeName) {
+  const t = (collegeType || '').toLowerCase();
+  const n = (collegeName || '').toLowerCase();
+  if (t.includes('iit') || n.includes('indian institute of technology') || n.startsWith('iit ')) return 'IIT';
+  if (t.includes('nit') || n.includes('national institute of technology') || n.startsWith('nit ')) return 'NIT';
+  if (t.includes('iiit') || n.includes('indian institute of information technology') || n.startsWith('iiit ')) return 'IIIT';
+  if (t.includes('state') || t.includes('government') || t.includes('autonomous')) return 'State University';
+  if (t.includes('private') || t.includes('deemed')) return 'Private / Deemed';
+  return 'GFTI / Other';
+}
+
+function getShortBranch(branchName) {
+  if (!branchName) return '';
+  const b = branchName.toLowerCase();
+  if (b.includes('computer science')) return 'CSE';
+  if (b.includes('electrical')) return 'EE';
+  if (b.includes('mechanical')) return 'ME';
+  if (b.includes('civil')) return 'CE';
+  if (b.includes('chemical')) return 'CH';
+  if (b.includes('textile')) return 'Textile';
+  if (b.includes('mining')) return 'Mining';
+  if (b.includes('metallurgical')) return 'Meta';
+  return branchName.split(',')[0].slice(0, 8); // First word or part
 }
 
 function App() {
@@ -307,6 +347,7 @@ function App() {
     localStorage.setItem('dv-theme', theme);
   }, [theme]);
   const [query, setQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('All');
   const [stateFilter, setStateFilter] = useState('All');
   const [branchFilter, setBranchFilter] = useState('All');
   const [shortlistedIds, setShortlistedIds] = useState([]);
@@ -315,6 +356,8 @@ function App() {
   const [decisionId, setDecisionId] = useState('');
 
   // Vault inputs state
+  const [hoveredRoiCollege, setHoveredRoiCollege] = useState(null);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const [newPro, setNewPro] = useState('');
   const [newCon, setNewCon] = useState('');
   const [newNote, setNewNote] = useState('');
@@ -325,6 +368,7 @@ function App() {
   // Final decision confirm / reflection state
   const [hasConfirmedDecision, setHasConfirmedDecision] = useState(false);
   const [confirmedDecisionId, setConfirmedDecisionId] = useState('');
+  const [confirmedDecisionSnapshot, setConfirmedDecisionSnapshot] = useState(null);
   const [satisfaction, setSatisfaction] = useState(8);
   const [placementAccurate, setPlacementAccurate] = useState(true);
   const [chooseAgain, setChooseAgain] = useState(true);
@@ -560,16 +604,23 @@ function App() {
             setDecisionId(matchedCol.id);
             setConfirmedDecisionId(latestDecision._id);
             setHasConfirmedDecision(true);
+            setConfirmedDecisionSnapshot(null);
           } else {
-            setDecisionId(sIds[0]);
+            setDecisionId('');
+            setConfirmedDecisionSnapshot(null);
           }
         } else if (latestDecision?.selectedCollegeSnapshot?.name) {
           setConfirmedDecisionId(latestDecision._id);
           setHasConfirmedDecision(true);
-          if (sIds.length) setDecisionId(sIds[0]);
+          setConfirmedDecisionSnapshot(latestDecision.selectedCollegeSnapshot);
+          setDecisionId('');
         } else {
-          setDecisionId(sIds[0]);
+          setDecisionId('');
+          setConfirmedDecisionSnapshot(null);
         }
+      } else {
+        setDecisionId('');
+        setConfirmedDecisionSnapshot(null);
       }
     } catch (err) {
       console.error('Failed to load user data:', err);
@@ -598,7 +649,7 @@ function App() {
             scorecardBase64: user.scorecardBase64 || '',
           });
           loadUserData();
-          setAppStage('dashboard');
+          setAppStage('journey');
         } else {
           setAppStage('journey');
         }
@@ -651,7 +702,7 @@ function App() {
         scorecardBase64: user.scorecardBase64 || '',
       });
       loadUserData();
-      setAppStage('dashboard');
+      setAppStage('journey');
     } else {
       setAppStage('journey');
     }
@@ -687,6 +738,44 @@ function App() {
   };
 
   const handleOnboardingComplete = async () => {
+    // Validate compulsory fields
+    const isClass12 = admissionProfile.journey === 'Class 12 planning' || admissionProfile.scoreType === 'Board %';
+    if (isClass12) {
+      if (!admissionProfile.score || !String(admissionProfile.score).trim()) {
+        showToast('Please enter your Board percentage.', 'error');
+        return;
+      }
+      if (!admissionProfile.homeState || !admissionProfile.homeState.trim()) {
+        showToast('Please enter your Home State.', 'error');
+        return;
+      }
+      if (!admissionProfile.budget || !admissionProfile.budget.trim()) {
+        showToast('Please enter your Budget range.', 'error');
+        return;
+      }
+      if (!admissionProfile.preferredBranches || !admissionProfile.preferredBranches.trim()) {
+        showToast('Please enter your Preferred branches.', 'error');
+        return;
+      }
+    } else {
+      if (!admissionProfile.score || !String(admissionProfile.score).trim()) {
+        showToast(`Please enter your ${admissionProfile.scoreType || 'Rank'}.`, 'error');
+        return;
+      }
+      if (isNaN(Number(admissionProfile.score))) {
+        showToast('Please enter a valid numeric rank/score.', 'error');
+        return;
+      }
+      if (!admissionProfile.homeState || !admissionProfile.homeState.trim()) {
+        showToast('Please enter your Home State.', 'error');
+        return;
+      }
+      if (!admissionProfile.preferredBranches || !admissionProfile.preferredBranches.trim()) {
+        showToast('Please enter your Preferred branches.', 'error');
+        return;
+      }
+    }
+
     try {
       setIsLoading(true);
       const { user, ocrExtracted } = await updateProfile({
@@ -899,31 +988,32 @@ function App() {
   };
 
   const handleConfirmDecision = async () => {
-    if (!finalCollege?.name) return;
+    const selectedCol = shortlisted.find((college) => college.id === decisionId);
+    if (!selectedCol?.name) return;
     try {
       setIsLoading(true);
       const reviewDate = new Date();
       reviewDate.setMonth(reviewDate.getMonth() + 6);
-      const decisionSnapshot = finalCollege.apiId ? null : {
-        name: finalCollege.name,
-        shortName: finalCollege.shortName,
-        program: finalCollege.branch,
-        quota: finalCollege.mlAdmission?.quota,
-        seatType: finalCollege.mlAdmission?.seatType,
-        gender: finalCollege.mlAdmission?.gender,
-        openingRank: finalCollege.mlAdmission?.openingRank,
-        closingRank: finalCollege.mlAdmission?.closingRank,
-        probability: finalCollege.mlAdmission?.probability,
-        source: finalCollege.isDatasetResult ? 'cutoff-dataset' : 'local',
+      const decisionSnapshot = selectedCol.apiId ? null : {
+        name: selectedCol.name,
+        shortName: selectedCol.shortName,
+        program: selectedCol.branch,
+        quota: selectedCol.mlAdmission?.quota,
+        seatType: selectedCol.mlAdmission?.seatType,
+        gender: selectedCol.mlAdmission?.gender,
+        openingRank: selectedCol.mlAdmission?.openingRank,
+        closingRank: selectedCol.mlAdmission?.closingRank,
+        probability: selectedCol.mlAdmission?.probability,
+        source: selectedCol.isDatasetResult ? 'cutoff-dataset' : 'local',
       };
 
       const { decision } = await createDecision(
-        finalCollege.apiId || null,
-        finalCollege.score,
-        finalCollege.confidence,
-        finalCollege.isDatasetResult
-          ? [`Selected from cutoff dataset for rank ${admissionProfile.score}: ${finalCollege.branch}, closing rank ${finalCollege.mlAdmission?.closingRank}, admission signal ${finalCollege.mlAdmission?.probability}%.`]
-          : [`Selected during onboarding based on fit score of ${finalCollege.score}% against family priorities.`],
+        selectedCol.apiId || null,
+        selectedCol.score,
+        selectedCol.confidence,
+        selectedCol.isDatasetResult
+          ? [`Selected from cutoff dataset for rank ${admissionProfile.score}: ${selectedCol.branch}, closing rank ${selectedCol.mlAdmission?.closingRank}, admission signal ${selectedCol.mlAdmission?.probability}%.`]
+          : [`Selected during onboarding based on fit score of ${selectedCol.score}% against family priorities.`],
         reviewDate,
         decisionSnapshot
       );
@@ -931,9 +1021,80 @@ function App() {
       setConfirmedDecisionId(decision._id);
       setHasConfirmedDecision(true);
       await refreshActivities();
-      showToast('Decision for ' + finalCollege.name + ' confirmed & saved!', 'success');
+      showToast('Decision for ' + selectedCol.name + ' confirmed & saved!', 'success');
     } catch (err) {
       showToast(getFriendlyError(err, 'Failed to save decision.'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmMlBestFit = async (college) => {
+    if (!college) return;
+    try {
+      setIsLoading(true);
+      let apiCollegeId = college.apiId;
+
+      // If it's a prediction from cutoffs that has not been saved yet, save it to the shortlist first
+      if (college.isDatasetResult || !apiCollegeId) {
+        await savePredictionShortlist({
+          institute: college.name,
+          program: college.mlAdmission?.program || college.branch,
+          quota: college.mlAdmission?.quota || 'AI',
+          seatType: college.mlAdmission?.seatType || 'OPEN',
+          gender: college.mlAdmission?.gender || 'Gender-Neutral',
+          openingRank: college.mlAdmission?.openingRank || 0,
+          closingRank: college.mlAdmission?.closingRank || 0,
+          probability: college.mlAdmission?.probability || 0,
+        });
+
+        // Refresh user data so that local state has this college in catalogs/shortlists
+        await loadUserData();
+
+        // Find the new API ID by fetching raw info
+        const meData = await getMe();
+        const latestShortlist = meData.shortlists?.find(
+          (s) => s.college?.name === college.name && s.college?.branch === (college.mlAdmission?.program || college.branch)
+        );
+        if (latestShortlist) {
+          apiCollegeId = latestShortlist._id;
+        }
+      }
+
+      const reviewDate = new Date();
+      reviewDate.setMonth(reviewDate.getMonth() + 6);
+      
+      const decisionSnapshot = apiCollegeId ? null : {
+        name: college.name,
+        shortName: college.shortName,
+        program: college.mlAdmission?.program || college.branch,
+        quota: college.mlAdmission?.quota || 'AI',
+        seatType: college.mlAdmission?.seatType || 'OPEN',
+        gender: college.mlAdmission?.gender || 'Gender-Neutral',
+        openingRank: college.mlAdmission?.openingRank || 0,
+        closingRank: college.mlAdmission?.closingRank || 0,
+        probability: college.mlAdmission?.probability || 0,
+        source: 'cutoff-dataset',
+      };
+
+      const { decision } = await createDecision(
+        apiCollegeId || null,
+        college.score || 100,
+        college.mlAdmission?.probability || college.confidence || 90,
+        [`Locked directly from recommended Best Fit: ${college.branch}, fit signal ${college.mlAdmission?.probability || college.score}%`],
+        reviewDate,
+        decisionSnapshot
+      );
+
+      await loadUserData();
+      setDecisionId(college.id);
+      setConfirmedDecisionId(decision._id);
+      setHasConfirmedDecision(true);
+      await refreshActivities();
+      showToast(`Locked ${college.shortName} as your final decision!`, 'success');
+      goToSection('reflection');
+    } catch (err) {
+      showToast(getFriendlyError(err, 'Failed to lock final decision from Best Fit.'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -966,12 +1127,52 @@ function App() {
     }
   };
 
+  const isClass12Planner = admissionProfile.journey === 'Class 12 planning' || admissionProfile.scoreType === 'Board %';
+
   const datasetCatalog = useMemo(
-    () => admissionPredictions.map((prediction, index) => predictionToCollege(prediction, index)),
-    [admissionPredictions],
+    () => admissionPredictions.map((prediction, index) => predictionToCollege(prediction, index, catalog)),
+    [admissionPredictions, catalog],
   );
   const isDatasetDiscovery = datasetCatalog.length > 0;
-  const discoveryCatalog = isDatasetDiscovery ? datasetCatalog : catalog;
+  const discoveryCatalog = useMemo(() => {
+    if (isDatasetDiscovery) {
+      // Filter out detailed catalog colleges that are NOT JoSAA-only (e.g. state counseling, BITSAT, private exams)
+      const nonJosaa = catalog.filter((c) => {
+        const channel = c.admissionChannel || '';
+        return channel.includes('JAC') || channel.includes('BITSAT') || channel.includes('WBJEE') || channel.includes('MHT') || channel.includes('UPTAC') || channel.includes('VITEEE') || channel.includes('Thapar') || channel.includes('BIT') || c.type === 'Private University' || c.type === 'State Technical University';
+      });
+
+      // Map mock predictions for JEE Main accepting state options (DTU, NSUT, etc.)
+      const enrichedNonJosaa = nonJosaa.map((college) => {
+        let mlAdmission = null;
+        const studentRank = Number(admissionProfile.score);
+        if (studentRank && college.admissionChannel?.includes('JEE Main')) {
+          const probability = studentRank <= college.cutoff 
+            ? Math.round(85 + Math.min(15, ((college.cutoff - studentRank) / college.cutoff) * 15)) 
+            : Math.round(Math.max(5, 85 - ((studentRank - college.cutoff) / college.cutoff) * 85));
+          mlAdmission = {
+            institute: college.name,
+            program: college.branch,
+            quota: 'State Counselling',
+            seatType: 'OPEN',
+            gender: 'Gender-Neutral',
+            openingRank: Math.round(college.cutoff * 0.8),
+            closingRank: college.cutoff,
+            probability: Math.min(100, Math.max(5, probability)),
+            isNonJosaaStateOption: true,
+          };
+        }
+        return {
+          ...college,
+          mlAdmission,
+          mlAdmissionStatus: getMlAdmissionStatus(mlAdmission?.probability),
+        };
+      });
+
+      return [...datasetCatalog, ...enrichedNonJosaa];
+    }
+    return catalog;
+  }, [isDatasetDiscovery, datasetCatalog, catalog, admissionProfile.score]);
 
   const states = ['All', ...new Set(discoveryCatalog.map((college) => college.state))];
   const branches = ['All', ...new Set(discoveryCatalog.map((college) => college.branch))];
@@ -980,42 +1181,48 @@ function App() {
     return catalog
       .map((college) => {
         const eligibilityInfo = checkEligibility(college, admissionProfile);
-        const mlAdmission = college.mlAdmission || getAdmissionPredictionForCollege(college, admissionPredictions);
+        const mlAdmission = isClass12Planner
+          ? null
+          : (getAdmissionPredictionForCollege(college, admissionPredictions) || (admissionPredictions.length > 0 ? null : college.mlAdmission));
         const mlAdmissionStatus = getMlAdmissionStatus(mlAdmission?.probability);
         return {
           ...college,
-          score: scoreCollege({ ...college, mlAdmission }, priorities, catalog),
+          score: scoreCollege({ ...college, mlAdmission }, priorities, catalog, isClass12Planner),
           eligibility: eligibilityInfo,
           mlAdmission,
           mlAdmissionStatus,
         };
       })
       .sort((a, b) => b.score - a.score);
-  }, [catalog, priorities, admissionProfile, admissionPredictions]);
+  }, [catalog, priorities, admissionProfile, admissionPredictions, isClass12Planner]);
 
   const scoredDiscoveryColleges = useMemo(() => {
     return discoveryCatalog
       .map((college) => {
         const eligibilityInfo = checkEligibility(college, admissionProfile);
-        const mlAdmission = college.mlAdmission || getAdmissionPredictionForCollege(college, admissionPredictions);
+        const mlAdmission = isClass12Planner
+          ? null
+          : (getAdmissionPredictionForCollege(college, admissionPredictions) || (admissionPredictions.length > 0 ? null : college.mlAdmission));
         const mlAdmissionStatus = getMlAdmissionStatus(mlAdmission?.probability);
         return {
           ...college,
-          score: scoreCollege({ ...college, mlAdmission }, priorities, discoveryCatalog),
+          score: scoreCollege({ ...college, mlAdmission }, priorities, discoveryCatalog, isClass12Planner),
           eligibility: eligibilityInfo,
           mlAdmission,
           mlAdmissionStatus,
         };
       })
       .sort((a, b) => b.score - a.score);
-  }, [discoveryCatalog, priorities, admissionProfile, admissionPredictions]);
+  }, [discoveryCatalog, priorities, admissionProfile, admissionPredictions, isClass12Planner]);
 
   const filteredColleges = scoredDiscoveryColleges.filter((college) => {
     const searchTarget = `${college.name} ${college.shortName} ${college.branch} ${college.state} ${college.tags.join(' ')}`.toLowerCase();
     const matchesQuery = searchTarget.includes(query.toLowerCase());
     const matchesState = stateFilter === 'All' || college.state === stateFilter;
     const matchesBranch = branchFilter === 'All' || college.branch === branchFilter;
-    return matchesQuery && matchesState && matchesBranch;
+    const collegeType = getStandardizedType(college.type, college.name);
+    const matchesType = typeFilter === 'All' || collegeType === typeFilter;
+    return matchesQuery && matchesState && matchesBranch && matchesType;
   });
 
   const shortlisted = scoredSavedColleges.filter((college) => shortlistedIds.includes(college.id));
@@ -1025,9 +1232,14 @@ function App() {
     : (scoredSavedColleges.find((college) => college.id === selectedId) || scoredSavedColleges[0] || { name: '', shortName: '', score: 0, pros: [], cons: [], tags: [], researchLinks: [] });
   const finalCollege = shortlisted.find((college) => college.id === decisionId) || shortlisted[0] || selectedCollege || { name: '', shortName: '', score: 0, confidence: 0 };
   const topMlPrediction = admissionPredictions[0] || null;
-  const bestMlCollege = scoredSavedColleges.find((college) => college.mlAdmission) || (datasetCatalog[0] ? predictionToCollege(admissionPredictions[0], 0) : null);
+  const bestMlCollege = scoredDiscoveryColleges[0] || null;
   const mlMatchedShortlistCount = shortlisted.filter((college) => college.mlAdmission).length;
-  const isClass12Planner = admissionProfile.journey === 'Class 12 planning' || admissionProfile.scoreType === 'Board %';
+  const recommendedCollege = isClass12Planner
+    ? (scoredSavedColleges[0] || null)
+    : bestMlCollege;
+  const topRecommendations = isClass12Planner
+    ? scoredSavedColleges.slice(0, 3)
+    : scoredDiscoveryColleges.slice(0, 3);
 
   useEffect(() => {
     if (selectedId && scoredSavedColleges.some((college) => college.id === selectedId)) return;
@@ -1175,7 +1387,7 @@ function App() {
     if (!currentUser || !rank) {
       setAdmissionPredictions([]);
       setMlLastRunAt('');
-      setMlError('Enter a valid rank in your profile to unlock automatic ML admission guidance.');
+      setMlError('Enter a valid rank in your profile to unlock automatic College Vault admission guidance.');
       return;
     }
 
@@ -1196,7 +1408,7 @@ function App() {
       if (res.message) setMlError(res.message);
     } catch (err) {
       setAdmissionPredictions([]);
-      setMlError(getFriendlyError(err, 'ML admission guidance is unavailable right now.'));
+      setMlError(getFriendlyError(err, 'College Vault admission guidance is unavailable right now.'));
     } finally {
       setPredictingAdmission(false);
     }
@@ -1243,30 +1455,49 @@ function App() {
       <JourneyScreen
         onHome={() => setAppStage('landing')}
         onClass12={() => {
-          setAdmissionProfile({
-            journey: 'Class 12 planning',
-            exam: 'Class 12',
-            scoreType: 'Board %',
-            score: '86',
-            category: 'General',
-            homeState: 'Uttar Pradesh',
-            preferredBranches: 'Computer Science, Data Science, Electronics',
-            stream: 'PCM',
-            budget: 'Up to INR 8L total',
-            targetExam: 'JEE Main',
-            fileName: '',
-            scorecardBase64: '',
-          });
+          if (admissionProfile.journey !== 'Class 12 planning') {
+            setAdmissionProfile({
+              journey: 'Class 12 planning',
+              exam: 'Class 12',
+              scoreType: 'Board %',
+              score: '86',
+              category: 'General',
+              homeState: 'Uttar Pradesh',
+              preferredBranches: 'Computer Science, Data Science, Electronics',
+              stream: 'PCM',
+              budget: 'Up to INR 8L total',
+              targetExam: 'JEE Main',
+              fileName: '',
+              scorecardBase64: '',
+            });
+          }
           setAppStage('class12-intake');
         }}
         onEntrance={() => {
-          setAdmissionProfile((current) => ({
-            ...current,
-            journey: 'Entrance result ready',
-            exam: current.exam === 'Class 12' ? 'JEE Main' : current.exam,
-            scoreType: current.scoreType === 'Board %' ? 'Rank' : current.scoreType,
-            score: current.scoreType === 'Board %' ? '8900' : current.score,
-          }));
+          if (admissionProfile.journey !== 'Entrance result ready') {
+            setAdmissionProfile({
+              journey: 'Entrance result ready',
+              exam: 'JEE Main',
+              scoreType: 'Rank',
+              score: '8900',
+              category: 'General',
+              homeState: '',
+              preferredBranches: '',
+              stream: '',
+              budget: '',
+              targetExam: '',
+              fileName: '',
+              scorecardBase64: '',
+            });
+          } else {
+            setAdmissionProfile((current) => ({
+              ...current,
+              journey: 'Entrance result ready',
+              exam: current.exam === 'Class 12' ? 'JEE Main' : current.exam,
+              scoreType: current.scoreType === 'Board %' ? 'Rank' : current.scoreType,
+              score: current.scoreType === 'Board %' ? '8900' : current.score,
+            }));
+          }
           setAppStage('intake');
         }}
       />
@@ -1467,15 +1698,21 @@ function App() {
           />
         </label>
 
+        <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+          {['All', 'IIT', 'NIT', 'IIIT', 'State University', 'Private / Deemed', 'GFTI / Other'].map((type) => (
+            <option key={type} value={type}>{type === 'All' ? 'All Types' : type}</option>
+          ))}
+        </select>
+
         <select value={stateFilter} onChange={(event) => setStateFilter(event.target.value)}>
           {states.map((state) => (
-            <option key={state}>{state}</option>
+            <option key={state} value={state}>{state === 'All' ? 'All States' : state}</option>
           ))}
         </select>
 
         <select value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}>
           {branches.map((branch) => (
-            <option key={branch}>{branch}</option>
+            <option key={branch} value={branch}>{branch === 'All' ? 'All Branches' : branch}</option>
           ))}
         </select>
       </div>
@@ -1494,6 +1731,7 @@ function App() {
                 setQuery('');
                 setStateFilter('All');
                 setBranchFilter('All');
+                setTypeFilter('All');
               }}
             >
               Clear filters
@@ -1521,9 +1759,14 @@ function App() {
               <span className={`eligibilityBadge ${college.eligibility?.status.toLowerCase().replace(' ', '-')}`} title={college.eligibility?.reason}>
                 {college.eligibility?.status}
               </span>
+              {college.admissionChannel && (
+                <span className="admissionChannelBadge" style={{ background: 'rgba(108, 92, 231, 0.12)', color: '#6c5ce7', border: '1px solid rgba(108, 92, 231, 0.25)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
+                  Exam: {college.admissionChannel}
+                </span>
+              )}
               {college.mlAdmission && (
                 <span className={`eligibilityBadge ${college.mlAdmissionStatus.className}`} title={`${college.mlAdmission.program} / closing rank ${college.mlAdmission.closingRank}`}>
-                  ML {college.mlAdmission.probability}%
+                  Vault {college.mlAdmission.probability}%
                 </span>
               )}
               {college.isDatasetResult ? (
@@ -1682,7 +1925,7 @@ function App() {
         <div className="comparisonSection">
           <div className="panelHeader subtle">
             <div>
-              <p className="eyebrow">ML predictions</p>
+              <p className="eyebrow">College Vault predictions</p>
               <h3>Cutoff matches for rank {admissionProfile.score || jeeRank}</h3>
             </div>
             <span className="quietBadge">{datasetCatalog.length} matches</span>
@@ -1742,7 +1985,7 @@ function App() {
         {isClass12Planner
           ? 'You are in Class 12 planning mode. Use the sliders to explore trade-offs before entrance results arrive.'
           : bestMlCollege
-          ? `${bestMlCollege.shortName} currently has the strongest seeded cutoff signal at ${bestMlCollege.mlAdmission.probability}%.`
+          ? `${bestMlCollege.shortName} currently has the strongest seeded cutoff signal at ${bestMlCollege.mlAdmission?.probability || 0}%.`
           : 'Save a valid rank profile to add automatic cutoff guidance to this matrix.'}
       </div>
 
@@ -1764,23 +2007,259 @@ function App() {
         </div>
       </div>
 
-      <div className="priorityList" style={{ padding: '18px' }}>
-        {priorities.map((priority) => (
-          <label className="priorityItem" key={priority.key} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-            <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <strong>{priority.label}</strong>
-              <small style={{ color: 'var(--text-secondary)' }}>{priority.weight}/5 priority</small>
-            </span>
-            <input
-              type="range"
-              min="1"
-              max="5"
-              value={priority.weight}
-              onChange={(event) => updatePriority(priority.key, event.target.value)}
-              style={{ width: '100%' }}
-            />
-          </label>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: vaultColleges.length > 0 ? '1.1fr 0.9fr' : '1fr', gap: '24px', padding: '18px', borderTop: '1px dashed var(--border-color)', marginTop: '10px' }}>
+        
+        {/* Left Column: Interactive SVG ROI Value Chart */}
+        {vaultColleges.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* Chart 1: Scatter Plot */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: 0 }}>
+                📊 Value Matrix: Fees vs. Placements (Scatter Trade-off)
+              </p>
+              <div style={{ position: 'relative', width: '100%', height: '220px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px 16px 8px 16px', boxSizing: 'border-box' }}>
+                <svg viewBox="0 0 400 220" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                  {/* Axes lines */}
+                  <line x1="45" y1="15" x2="45" y2="175" stroke="var(--border-color)" strokeWidth="1.5" />
+                  <line x1="45" y1="175" x2="385" y2="175" stroke="var(--border-color)" strokeWidth="1.5" />
+
+                  {/* Grid Lines & Y-ticks */}
+                  {[10, 20, 30, 40].map((pkg) => {
+                    const y = 175 - (pkg / 40) * 160;
+                    return (
+                      <g key={pkg}>
+                        <line x1="45" y1={y} x2="385" y2={y} stroke="var(--border-color)" strokeDasharray="3,3" strokeWidth="1" />
+                        <text x="38" y={y + 3} fill="var(--text-secondary)" fontSize="8.5" textAnchor="end">{pkg}L</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Grid Lines & X-ticks */}
+                  {[0, 3, 6, 9, 12].map((fee) => {
+                    const x = 45 + (fee / 12) * 340;
+                    return (
+                      <g key={fee}>
+                        <line x1={x} y1="15" x2={x} y2="175" stroke="var(--border-color)" strokeDasharray="3,3" strokeWidth="1" />
+                        <text x={x} y="188" fill="var(--text-secondary)" fontSize="8.5" textAnchor="middle">{fee === 0 ? '0' : `${fee}L`}</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Axis Titles */}
+                  <text x="215" y="208" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" textAnchor="middle">Tuition Fees (Lakhs)</text>
+                  <text x="12" y="95" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" transform="rotate(-90 12 95)" textAnchor="middle">Average Salary (LPA)</text>
+
+                  {/* Quadrant Guide Labels */}
+                  <text x="380" y="26" fill="rgba(108, 92, 231, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">💎 High return</text>
+                  <text x="55" y="26" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite ROI</text>
+                  <text x="380" y="165" fill="rgba(230, 126, 34, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">⚠️ Premium Fees</text>
+
+                  {/* Data points */}
+                  {vaultColleges.map((college) => {
+                    const feeLakhs = college.fees ? (college.fees / 100000) : 0;
+                    const pkg = college.avgPackage || 0;
+                    const isLeader = finalCollege.name === college.name;
+
+                    // Map coordinates
+                    const x = 45 + Math.min(1, Math.max(0, feeLakhs / 12)) * 340;
+                    const y = 175 - Math.min(1, Math.max(0, pkg / 40)) * 160;
+
+                    return (
+                      <g key={college.id}>
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={isLeader ? 7.5 : 6}
+                          fill={isLeader ? '#27ae60' : '#6c5ce7'}
+                          stroke={isLeader ? '#fff' : 'rgba(255, 255, 255, 0.8)'}
+                          strokeWidth={isLeader ? 2 : 1}
+                          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                          onMouseEnter={(e) => {
+                            setHoveredRoiCollege({
+                              college,
+                              x: x,
+                              y: y - 10
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredRoiCollege(null)}
+                        />
+                        {isLeader && (
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="11"
+                            fill="none"
+                            stroke="#27ae60"
+                            strokeWidth="1"
+                            strokeDasharray="2,2"
+                          />
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Custom Tooltip */}
+                {hoveredRoiCollege && (
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      left: `${(hoveredRoiCollege.x / 400) * 100}%`,
+                      bottom: `${100 - (hoveredRoiCollege.y / 220) * 100 + 4}%`,
+                      transform: 'translateX(-50%)',
+                      background: 'rgba(17, 24, 39, 0.95)',
+                      color: '#fff',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                      border: '1px solid #6c5ce7',
+                      fontSize: '0.78rem',
+                      pointerEvents: 'none',
+                      whiteSpace: 'nowrap',
+                      zIndex: 10,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '3px'
+                    }}
+                  >
+                    <strong style={{ color: '#a29bfe' }}>{hoveredRoiCollege.college.name}</strong>
+                    <div style={{ color: '#ccc' }}>Program: <span style={{ color: '#fff', fontWeight: 'bold' }}>{hoveredRoiCollege.college.branch || 'CSE'}</span></div>
+                    <div style={{ color: '#ccc' }}>Fees: <strong>INR {hoveredRoiCollege.college.fees ? `${(hoveredRoiCollege.college.fees/100000).toFixed(2)} Lakhs` : 'Dataset only'}</strong></div>
+                    <div style={{ color: '#ccc' }}>Average Package: <strong>{hoveredRoiCollege.college.avgPackage ? `${hoveredRoiCollege.college.avgPackage} LPA` : 'Dataset only'}</strong></div>
+                    <div style={{ color: '#ccc' }}>Priority Fit Score: <strong style={{ color: '#2dfc52' }}>{hoveredRoiCollege.college.score}%</strong></div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Chart 2: Grouped Bar Chart */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: 0 }}>
+                📊 Absolute comparison: Fees (Lakhs) vs Average Package (LPA)
+              </p>
+              <div style={{ position: 'relative', width: '100%', height: '180px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px 16px 8px 16px', boxSizing: 'border-box' }}>
+                <svg viewBox="0 0 400 150" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                  {/* Axes lines */}
+                  <line x1="45" y1="10" x2="45" y2="125" stroke="var(--border-color)" strokeWidth="1.5" />
+                  <line x1="45" y1="125" x2="385" y2="125" stroke="var(--border-color)" strokeWidth="1.5" />
+
+                  {/* Grid Lines & Y-ticks */}
+                  {[10, 20, 30, 40].map((val) => {
+                    const y = 125 - (val / 40) * 115;
+                    return (
+                      <g key={val}>
+                        <line x1="45" y1={y} x2="385" y2={y} stroke="var(--border-color)" strokeDasharray="3,3" strokeWidth="1" />
+                        <text x="38" y={y + 3} fill="var(--text-secondary)" fontSize="8.5" textAnchor="end">{val}</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Bars rendering */}
+                  {vaultColleges.map((college, idx) => {
+                    const feeLakhs = college.fees ? (college.fees / 100000) : 0;
+                    const pkg = college.avgPackage || 0;
+                    const isLeader = finalCollege.name === college.name;
+
+                    const groupWidth = 340 / vaultColleges.length;
+                    const barWidth = Math.min(18, groupWidth / 3.5);
+                    const spacing = 4;
+                    const startX = 45 + idx * groupWidth + (groupWidth - (2 * barWidth + spacing)) / 2;
+
+                    // Heights
+                    const feeHeight = Math.min(115, (feeLakhs / 12) * 115);
+                    const pkgHeight = Math.min(115, (pkg / 40) * 115);
+
+                    // Y positions
+                    const feeY = 125 - feeHeight;
+                    const pkgY = 125 - pkgHeight;
+
+                    return (
+                      <g key={college.id}>
+                        {/* Fee Bar */}
+                        <rect
+                          x={startX}
+                          y={feeY}
+                          width={barWidth}
+                          height={feeHeight}
+                          fill="#e67e22"
+                          rx="2"
+                          style={{ transition: 'all 0.3s ease' }}
+                        />
+                        {/* Package Bar */}
+                        <rect
+                          x={startX + barWidth + spacing}
+                          y={pkgY}
+                          width={barWidth}
+                          height={pkgHeight}
+                          fill="#27ae60"
+                          rx="2"
+                          style={{ transition: 'all 0.3s ease' }}
+                        />
+                        {/* College Shortname Label */}
+                        <text
+                          x={startX + barWidth + spacing / 2}
+                          y="138"
+                          fill={isLeader ? '#27ae60' : 'var(--text-primary)'}
+                          fontSize="9"
+                          fontWeight={isLeader ? 'bold' : 'normal'}
+                          textAnchor="middle"
+                        >
+                          {college.shortName}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+                {/* Legend indicator */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '4px', fontSize: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#e67e22', borderRadius: '2px' }} />
+                    <span style={{ color: 'var(--text-secondary)' }}>Tuition Fee (Lakhs)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#27ae60', borderRadius: '2px' }} />
+                    <span style={{ color: 'var(--text-secondary)' }}>Average Package (LPA)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        ) : (
+          <div className="notesBlock" style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <strong>No shortlist data yet</strong>
+            <p style={{ margin: '6px 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Add colleges to your shortlist/Vault on the Discovery page to populate the ROI value scatter matrix comparison.
+            </p>
+          </div>
+        )}
+
+        {/* Right Column: Sliders List */}
+        <div>
+          <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            ⚙️ Slider Weights (1-5 Scale)
+          </p>
+          <div className="priorityList" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {priorities.map((priority) => (
+              <label className="priorityItem" key={priority.key} style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
+                <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <strong style={{ fontSize: '0.8rem' }}>{priority.label}</strong>
+                  <small style={{ color: 'var(--text-secondary)' }}>{priority.weight}/5 priority</small>
+                </span>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={priority.weight}
+                  onChange={(event) => updatePriority(priority.key, event.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
       </div>
     </section>
   );
@@ -1809,9 +2288,38 @@ function App() {
         </div>
       ) : (
         <>
+      {topRecommendations.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', margin: '0 20px 20px' }}>
+          {topRecommendations.map((college, idx) => (
+            <div key={college.id} className="mlBestFitBanner" style={{ margin: 0, padding: '16px', background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.2)', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6c5ce7', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  ⭐ Best Fit #{idx + 1}
+                </span>
+                <h4 style={{ margin: '6px 0 2px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{college.name}</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {isClass12Planner 
+                    ? `Scores ${college.score}% against your family priorities.` 
+                    : `${college.branch || 'Computer Science'} — ${college.mlAdmission?.probability || 95}% admission likelihood.`}
+                </p>
+              </div>
+              <button 
+                type="button" 
+                className="primaryAction" 
+                disabled={hasConfirmedDecision}
+                style={{ width: '100%', minHeight: '32px', margin: 0, padding: '6px 12px', fontSize: '0.75rem', opacity: hasConfirmedDecision ? 0.6 : 1, cursor: hasConfirmedDecision ? 'not-allowed' : 'pointer' }} 
+                onClick={() => handleConfirmMlBestFit(college)}
+              >
+                {hasConfirmedDecision && confirmedDecisionSnapshot?.name === college.name ? 'Decision Locked' : 'Lock as Final Decision'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="notesBlock" style={{ padding: '14px', margin: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
         <div>
-          <strong>ML admission signal</strong>
+        <strong>College Vault admission signal</strong>
           <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
             {selectedCollege.mlAdmission
               ? `${selectedCollege.mlAdmission.program} closes near rank ${selectedCollege.mlAdmission.closingRank}.`
@@ -1823,135 +2331,126 @@ function App() {
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '20px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="twoCol" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="decisionList">
-              <h4>Pros</h4>
-              {selectedCollege.pros.map((pro) => (
-                <p className="positive" key={pro} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{pro}</span>
-                  {selectedCollege.shortlistId && (
-                    <button type="button" onClick={() => handleDeletePro(pro)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0392b', padding: 0 }} title="Remove pro">
-                      <X size={13} />
-                    </button>
-                  )}
-                </p>
-              ))}
-              {selectedCollege.shortlistId && (
-                <form onSubmit={handleAddPro} className="inlineAddForm">
-                  <input value={newPro} onChange={e => setNewPro(e.target.value)} placeholder="Add pro..." required />
-                  <button type="submit">+</button>
-                </form>
-              )}
-            </div>
-            <div className="decisionList">
-              <h4>Cons</h4>
-              {selectedCollege.cons.map((con) => (
-                <p key={con} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{con}</span>
-                  {selectedCollege.shortlistId && (
-                    <button type="button" onClick={() => handleDeleteCon(con)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0392b', padding: 0 }} title="Remove con">
-                      <X size={13} />
-                    </button>
-                  )}
-                </p>
-              ))}
-              {selectedCollege.shortlistId && (
-                <form onSubmit={handleAddCon} className="inlineAddForm">
-                  <input value={newCon} onChange={e => setNewCon(e.target.value)} placeholder="Add con..." required />
-                  <button type="submit">+</button>
-                </form>
-              )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', padding: '20px' }}>
+        {/* Left Column: College Stats & Ratings */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Card 1: College Specs & Information */}
+          <div className="notesBlock" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              ℹ️ College Information & Stats
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', fontSize: '0.84rem' }}>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Institute Type</span>
+                <strong>{selectedCollege.type || 'Dataset only'}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admission Exam</span>
+                <strong>{selectedCollege.admissionChannel || 'JEE Main'}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NIRF Rank</span>
+                <strong>{selectedCollege.nirfRank && selectedCollege.nirfRank < 9999 ? `#${selectedCollege.nirfRank}` : 'Not ranked'}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hostel Facility</span>
+                <strong>{selectedCollege.hostel ? 'Available on campus' : 'Not available'}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Academic Fees</span>
+                <strong>{formatFee(selectedCollege.fees)}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Average Salary Package</span>
+                <strong>{formatPackage(selectedCollege.avgPackage)}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Median Salary Package</span>
+                <strong>{formatPackage(selectedCollege.medianPackage)}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Placement Rate</span>
+                <strong>{selectedCollege.placementRate ? `${selectedCollege.placementRate}%` : 'Dataset only'}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location</span>
+                <strong>{selectedCollege.city}, {selectedCollege.state}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance from home</span>
+                <strong>{selectedCollege.distanceKm ? `${selectedCollege.distanceKm} km` : 'Dataset only'}</strong>
+              </div>
             </div>
           </div>
 
-          <div className="notesBlock">
-            <h4>Personal notes</h4>
-            {selectedCollege.rawNotes?.map((note) => (
-              <p key={note._id} className="noteItem" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{note.body}</span>
-                <button type="button" className="iconAction" onClick={() => handleDeleteNote(note._id)} title="Delete note" style={{ background: 'transparent', border: 'none', padding: 0 }}>
-                  <Trash2 size={14} />
-                </button>
-              </p>
-            ))}
-            {selectedCollege.shortlistId && (
-              <form onSubmit={handleAddNote} className="noteAddForm">
-                <textarea
-                  value={newNote}
-                  onChange={e => setNewNote(e.target.value)}
-                  placeholder="Add new research note..."
-                  required
-                  rows={2}
-                />
-                <button type="submit" className="textButton">Save Note</button>
-              </form>
-            )}
+          {/* Card 2: Ratings & Quality Metrics */}
+          <div className="notesBlock" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📊 Quality & fit metrics (Out of 10)
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 24px' }}>
+              {[
+                { label: 'Campus Life & Culture', val: selectedCollege.campusLife },
+                { label: 'Faculty & Academics Quality', val: selectedCollege.faculty },
+                { label: 'Research & Labs Output', val: selectedCollege.research },
+                { label: 'Return on Investment (ROI)', val: selectedCollege.roi },
+              ].map(({ label, val }) => (
+                <div key={label}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '4px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                    <strong>{val ? `${val}/10` : 'N/A'}</strong>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${(val || 0) * 10}%`, background: '#6c5ce7', borderRadius: '3px' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Card 3: Pros & Cons (Read-only) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+              <h4 style={{ color: '#27ae60', margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                ✅ Pros
+              </h4>
+              {selectedCollege.pros?.length > 0 ? (
+                selectedCollege.pros.map((pro, index) => (
+                  <p key={index} style={{ fontSize: '0.82rem', margin: '6px 0', paddingLeft: '12px', textIndent: '-12px', color: 'var(--text-primary)' }}>
+                    • {pro}
+                  </p>
+                ))
+              ) : (
+                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No pros listed.</p>
+              )}
+            </div>
+            <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+              <h4 style={{ color: '#c0392b', margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                ❌ Cons
+              </h4>
+              {selectedCollege.cons?.length > 0 ? (
+                selectedCollege.cons.map((con, index) => (
+                  <p key={index} style={{ fontSize: '0.82rem', margin: '6px 0', paddingLeft: '12px', textIndent: '-12px', color: 'var(--text-primary)' }}>
+                    • {con}
+                  </p>
+                ))
+              ) : (
+                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No cons listed.</p>
+              )}
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {selectedCollege.shortlistId ? (
-            <div className="aiSummarizer" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-app)', padding: '16px', borderRadius: '8px' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#526b35', margin: '0 0 10px 0' }}>
-                <Sparkles size={16} /> Google Gemini AI Research Summarizer
-              </h4>
-              <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Paste YouTube transcripts, senior comments, or placement reports. Gemini AI extracts pros, cons, and reliability rating.
-              </p>
-              <form onSubmit={handleAiSummarize} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <textarea
-                  value={aiInputText}
-                  onChange={(e) => setAiInputText(e.target.value)}
-                  placeholder="Paste research text here..."
-                  rows={3}
-                  style={{ width: '100%', padding: '8px', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  required
-                />
-                <button type="submit" className="primaryAction" style={{ padding: '6px 12px', fontSize: '0.8rem', width: 'fit-content' }} disabled={aiLoading}>
-                  {aiLoading ? 'Gemini is summarizing...' : 'Summarize with Gemini AI'}
-                </button>
-              </form>
-
-              {aiResult && (
-                <div style={{ marginTop: '12px', background: 'rgba(39, 174, 96, 0.1)', border: '1px solid #27ae60', padding: '12px', borderRadius: '6px' }}>
-                  {aiResult.source === 'fallback' && (
-                    <span className="quietBadge" style={{ marginBottom: '8px', display: 'inline-flex' }}>
-                      Local fallback summary
-                    </span>
-                  )}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                    <div>
-                      <strong style={{ color: '#27ae60' }}>Pros:</strong>
-                      <ul style={{ paddingLeft: '15px', margin: '4px 0 0 0', fontSize: '0.78rem' }}>
-                        {aiResult.pros.map((p, idx) => <li key={idx}>{p}</li>)}
-                      </ul>
-                    </div>
-                    <div>
-                      <strong style={{ color: '#c0392b' }}>Cons:</strong>
-                      <ul style={{ paddingLeft: '15px', margin: '4px 0 0 0', fontSize: '0.78rem' }}>
-                        {aiResult.cons.map((c, idx) => <li key={idx}>{c}</li>)}
-                      </ul>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '8px', fontSize: '0.78rem' }}>
-                    <span>Reliability Score: <strong>{aiResult.confidence}%</strong></span>
-                    <button type="button" onClick={handleImportAiInsights} className="textButton" style={{ padding: '4px 8px', textDecoration: 'underline', fontWeight: 'bold' }}>
-                      Import into Vault
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-
+        {/* Right Column: Q&A Counselor & Links */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
           {/* Gemini AI Q&A Counselor */}
-          <div className="aiCounselor" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-app)', padding: '16px', borderRadius: '8px' }}>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#526b35', margin: '0 0 10px 0' }}>
-              <GraduationCap size={16} /> Google Gemini Admissions Counselor Q&A
+          <div className="aiCounselor" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6c5ce7', margin: '0 0 10px 0' }}>
+              <Sparkles size={16} /> Google Gemini Admissions Counselor Q&A
             </h4>
-            <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               Ask specific questions such as "Will I get CSE at this rank?" or "How is hostel mess here?".
             </p>
             <form onSubmit={handleAskGemini} style={{ display: 'flex', gap: '8px' }}>
@@ -1959,15 +2458,15 @@ function App() {
                 value={geminiQuestion}
                 onChange={(e) => setGeminiQuestion(e.target.value)}
                 placeholder="Type your Q&A question here..."
-                style={{ flex: 1, padding: '8px', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                style={{ flex: 1, padding: '8px', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
                 required
               />
-              <button type="submit" className="primaryAction" style={{ padding: '8px 12px', fontSize: '0.8rem' }} disabled={geminiQaLoading}>
+              <button type="submit" className="primaryAction" style={{ padding: '8px 16px', fontSize: '0.8rem', width: 'auto' }} disabled={geminiQaLoading}>
                 {geminiQaLoading ? 'Asking...' : 'Ask'}
               </button>
             </form>
             {geminiAnswer && (
-              <div className="notesBlock" style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-card)', borderLeft: '3px solid #1a56db', fontSize: '0.82rem', whiteSpace: 'pre-line' }}>
+              <div className="notesBlock" style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-app)', borderLeft: '3px solid #6c5ce7', fontSize: '0.82rem', whiteSpace: 'pre-line' }}>
                 {geminiAnswer.source === 'fallback' && (
                   <span className="quietBadge" style={{ marginBottom: '8px', display: 'inline-flex' }}>
                     Local fallback answer
@@ -1978,34 +2477,146 @@ function App() {
             )}
           </div>
 
-          <div className="researchLinks">
-            <h4>Evidence links</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {selectedCollege.researchLinks.map((link, index) => (
-                <a href={link.url} target="_blank" rel="noreferrer" key={`${link.label}-${index}`} style={{ display: 'flex', gap: '6px', alignItems: 'center', textDecoration: 'none', color: '#1a56db', fontSize: '0.82rem' }}>
-                  <Link2 size={15} />
-                  <span>{link.label}</span>
-                  <small style={{ color: 'var(--text-secondary)' }}>({link.type})</small>
-                </a>
-              ))}
+          {/* Placement & ROI Analytics */}
+          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 16px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📈 Placement & ROI Analytics
+            </h4>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Placement Success Rate Gauge */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Placement Success Rate</span>
+                  <strong style={{ color: '#27ae60' }}>{selectedCollege.placementRate ? `${selectedCollege.placementRate}%` : 'Dataset only'}</strong>
+                </div>
+                <div style={{ height: '8px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${selectedCollege.placementRate || 0}%`, background: '#27ae60', borderRadius: '4px' }} />
+                </div>
+              </div>
+
+              {/* Salary Packages Comparison Meters */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--bg-app)', padding: '12px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Salary Package Benchmark (LPA)
+                </div>
+                
+                {/* Average Package */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '2px' }}>
+                    <span>Average Package</span>
+                    <strong>{formatPackage(selectedCollege.avgPackage)}</strong>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.min(100, ((selectedCollege.avgPackage || 0) / 45) * 100)}%`, background: '#6c5ce7', borderRadius: '3px' }} />
+                  </div>
+                </div>
+
+                {/* Median Package */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '2px' }}>
+                    <span>Median Package</span>
+                    <strong>{formatPackage(selectedCollege.medianPackage)}</strong>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.min(100, ((selectedCollege.medianPackage || 0) / 45) * 100)}%`, background: '#00cec9', borderRadius: '3px' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ROI & Cost-Benefit Ratio Tag */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', fontSize: '0.82rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-secondary)' }}>ROI Score:</span>{' '}
+                  <strong>{selectedCollege.roi ? `${selectedCollege.roi}/10` : 'N/A'}</strong>
+                </div>
+                {selectedCollege.avgPackage && selectedCollege.fees ? (() => {
+                  const feeInLakhs = selectedCollege.fees / 100000;
+                  const ratio = feeInLakhs > 0 ? (selectedCollege.avgPackage / feeInLakhs) : 999;
+                  let badgeText = '⚖️ Balanced ROI';
+                  let badgeBg = 'rgba(120, 120, 120, 0.12)';
+                  let badgeColor = 'var(--text-secondary)';
+
+                  if (ratio >= 15) {
+                    badgeText = '🔥 Elite ROI Ratio';
+                    badgeBg = 'rgba(39, 174, 96, 0.12)';
+                    badgeColor = '#27ae60';
+                  } else if (ratio >= 6) {
+                    badgeText = '✅ High ROI Ratio';
+                    badgeBg = 'rgba(39, 174, 96, 0.12)';
+                    badgeColor = '#27ae60';
+                  } else if (ratio < 2.5) {
+                    badgeText = '⚠️ Premium Fees';
+                    badgeBg = 'rgba(230, 126, 34, 0.12)';
+                    badgeColor = '#e67e22';
+                  }
+                  
+                  return (
+                    <span style={{ background: badgeBg, color: badgeColor, padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                      {badgeText}
+                    </span>
+                  );
+                })() : null}
+              </div>
+
             </div>
-            {selectedCollege.shortlistId && (
-              <form onSubmit={handleAddLink} className="linkAddForm" style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                <input value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Link label (e.g. PDF)" required style={{ padding: '6px', fontSize: '0.8rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }} />
-                <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="URL" required type="url" style={{ padding: '6px', fontSize: '0.8rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }} />
-                <select value={linkType} onChange={e => setLinkType(e.target.value)} style={{ padding: '6px', fontSize: '0.8rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
-                  <option>Official</option>
-                  <option>Placement PDF</option>
-                  <option>YouTube</option>
-                  <option>Reddit</option>
-                  <option>Senior Note</option>
-                  <option>Article</option>
-                  <option>Other</option>
-                </select>
-                <button type="submit" style={{ padding: '6px 12px', background: '#526b35', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>Add Link</button>
-              </form>
-            )}
           </div>
+
+          {/* Evidence and Reference Links */}
+          <div className="researchLinks" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              <Link2 size={16} /> Reference & Information Links
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectedCollege.researchLinks?.length > 0 ? (
+                selectedCollege.researchLinks.map((link, index) => (
+                  <a 
+                    href={link.url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    key={`${link.label}-${index}`} 
+                    style={{ 
+                      display: 'flex', 
+                      gap: '8px', 
+                      alignItems: 'center', 
+                      textDecoration: 'none', 
+                      color: '#6c5ce7', 
+                      fontSize: '0.82rem', 
+                      padding: '8px 12px', 
+                      background: 'var(--bg-app)', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-color)',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <Link2 size={14} />
+                    <strong>{link.label}</strong>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>({link.type})</span>
+                  </a>
+                ))
+              ) : (
+                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No links available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Personal Research Notes (Read-only) */}
+          {selectedCollege.rawNotes?.length > 0 && (
+            <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                📝 Saved Research Notes
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedCollege.rawNotes.map((note) => (
+                  <div key={note._id} style={{ fontSize: '0.82rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '6px', borderLeft: '3px solid var(--text-secondary)', color: 'var(--text-primary)' }}>
+                    {note.body}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
         </>
@@ -2013,133 +2624,163 @@ function App() {
     </section>
   );
 
-  const renderReflectionPanel = () => (
-    <section className="panel" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
-      <div className="panelHeader">
-        <div>
-          <p className="eyebrow">Final decision</p>
-          <h3>Lock Seat & 6-Month Reflection</h3>
-        </div>
-        <select value={decisionId} onChange={(event) => setDecisionId(event.target.value)} disabled={hasConfirmedDecision} style={{ padding: '6px', borderRadius: '6px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
-          {shortlisted.map((college) => (
-            <option value={college.id} key={college.id}>
-              {college.shortName}
-            </option>
-          ))}
-        </select>
-      </div>
+  const renderReflectionPanel = () => {
+    const confirmedCollege = (hasConfirmedDecision && confirmedDecisionSnapshot)
+      ? {
+          name: confirmedDecisionSnapshot.name,
+          shortName: confirmedDecisionSnapshot.shortName || confirmedDecisionSnapshot.name.slice(0, 8),
+          branch: confirmedDecisionSnapshot.program,
+          score: 100,
+          confidence: confirmedDecisionSnapshot.probability || 90,
+          isDatasetResult: confirmedDecisionSnapshot.source === 'cutoff-dataset',
+        }
+      : (shortlisted.find((college) => college.id === decisionId) || null);
 
-      <div style={{ padding: '24px', maxWidth: '800px' }}>
-        <div className="decisionSummary" style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-app)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
-          <span className="decisionLogo" style={{ width: '48px', height: '48px', borderRadius: '8px', background: '#526b35', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
-            {finalCollege.shortName.slice(0, 2)}
-          </span>
+    return (
+      <section className="panel" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
+        <div className="panelHeader">
           <div>
-            <strong style={{ fontSize: '1.1rem', display: 'block' }}>{finalCollege.name}</strong>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Best balance of ROI, placement signal, coding culture, and practical fit.</p>
+            <p className="eyebrow">Final decision</p>
+            <h3>Lock Seat & 6-Month Reflection</h3>
           </div>
+          <select value={decisionId} onChange={(event) => setDecisionId(event.target.value)} disabled={hasConfirmedDecision} style={{ padding: '6px', borderRadius: '6px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+            <option value="">-- Choose a college --</option>
+            {shortlisted.map((college) => (
+              <option value={college.id} key={college.id}>
+                {college.shortName}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          {hasConfirmedDecision ? (
-            <span style={{ color: '#1e7e34', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={20} /> Decision Confirmed & Locked to MongoDB
-            </span>
-          ) : (
-            <div style={{ background: 'var(--bg-app)', padding: '16px', borderRadius: '8px' }}>
-              <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
-                Ready to lock this choice? Confirming will save it to the database.
-              </small>
-              <button type="button" onClick={handleConfirmDecision} className="primaryAction" style={{ width: 'auto', padding: '10px 20px' }}>
-                Confirm College Decision
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="reflectionBox" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
-          <h4 style={{ marginBottom: '8px' }}>Post-Admission Reflection Loop</h4>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>Record retrospective feedback after 6 months on campus to validate the decision matrix accuracy.</p>
-
-          {!hasConfirmedDecision ? (
-            <p style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>
-              Please confirm your college decision first to unlock the reflection form.
-            </p>
-          ) : hasReflected ? (
-            <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '16px', borderRadius: '8px', color: '#27ae60' }}>
-              <strong style={{ display: 'block', marginBottom: '8px' }}>✅ Reflection Logged successfully!</strong>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                <p>Satisfaction: <strong>{satisfaction}/10</strong></p>
-                <p>Placements accurate: <strong>{placementAccurate ? 'Yes' : 'No'}</strong></p>
-                <p>Would choose again: <strong>{chooseAgain ? 'Yes' : 'No'}</strong></p>
-                {surprise && <p>Surprise: {surprise}</p>}
-                {regret && <p>Regret: {regret}</p>}
+        <div style={{ padding: '24px', maxWidth: '800px' }}>
+          {confirmedCollege ? (
+            <div className="decisionSummary" style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-app)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+              <span className="decisionLogo" style={{ width: '48px', height: '48px', borderRadius: '8px', background: '#526b35', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                {(confirmedCollege.shortName || confirmedCollege.name).slice(0, 2)}
+              </span>
+              <div>
+                <strong style={{ fontSize: '1.1rem', display: 'block' }}>{confirmedCollege.name}</strong>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {confirmedCollege.branch ? `${confirmedCollege.branch} — ` : ''}Best balance of ROI, placement signal, coding culture, and practical fit.
+                </p>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSaveReflection} className="reflectionForm" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                Retrospective Satisfaction (1-10)
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={satisfaction}
-                    onChange={(e) => setSatisfaction(e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <span>{satisfaction}</span>
-                </div>
-              </label>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={placementAccurate}
-                  onChange={(e) => setPlacementAccurate(e.target.checked)}
-                />
-                Placement and packages data was accurate
-              </label>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={chooseAgain}
-                  onChange={(e) => setChooseAgain(e.target.checked)}
-                />
-                Would choose this college again
-              </label>
-
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                Biggest Surprise
-                <input
-                  type="text"
-                  value={surprise}
-                  onChange={(e) => setSurprise(e.target.value)}
-                  placeholder="e.g. Coding culture was even better..."
-                  style={{ padding: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
-                />
-              </label>
-
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                Biggest Regret / Caveat
-                <input
-                  type="text"
-                  value={regret}
-                  onChange={(e) => setRegret(e.target.value)}
-                  placeholder="e.g. Hostel rooms are small..."
-                  style={{ padding: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
-                />
-              </label>
-
-              <button type="submit" className="primaryAction" style={{ width: 'fit-content', padding: '10px 20px', marginTop: '10px' }}>Submit 6-Month Reflection</button>
-            </form>
+            <div className="decisionSummary" style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-app)', padding: '20px', borderRadius: '8px', marginBottom: '24px', border: '1px dashed var(--border-color)', justifyContent: 'center' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                No college decision confirmed yet. Please select a college from the dropdown above to review and lock it in.
+              </p>
+            </div>
           )}
+
+          <div style={{ marginBottom: '24px' }}>
+            {hasConfirmedDecision ? (
+              <span style={{ color: '#1e7e34', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={20} /> Decision Confirmed & Locked to MongoDB
+              </span>
+            ) : (
+              <div style={{ background: 'var(--bg-app)', padding: '16px', borderRadius: '8px' }}>
+                <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                  {decisionId ? 'Ready to lock this choice? Confirming will save it to the database.' : 'Please select a college from the dropdown menu first.'}
+                </small>
+                <button 
+                  type="button" 
+                  onClick={handleConfirmDecision} 
+                  className="primaryAction" 
+                  disabled={!decisionId}
+                  style={{ width: 'auto', padding: '10px 20px', opacity: decisionId ? 1 : 0.5, cursor: decisionId ? 'pointer' : 'not-allowed' }}
+                >
+                  Confirm College Decision
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="reflectionBox" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
+            <h4 style={{ marginBottom: '8px' }}>Post-Admission Reflection Loop</h4>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>Record retrospective feedback after 6 months on campus to validate the decision matrix accuracy.</p>
+
+            {!hasConfirmedDecision ? (
+              <p style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                Please confirm your college decision first to unlock the reflection form.
+              </p>
+            ) : hasReflected ? (
+              <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '16px', borderRadius: '8px', color: '#27ae60' }}>
+                <strong style={{ display: 'block', marginBottom: '8px' }}>✅ Reflection Logged successfully!</strong>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                  <p>Satisfaction: <strong>{satisfaction}/10</strong></p>
+                  <p>Placements accurate: <strong>{placementAccurate ? 'Yes' : 'No'}</strong></p>
+                  <p>Would choose again: <strong>{chooseAgain ? 'Yes' : 'No'}</strong></p>
+                  {surprise && <p>Surprise: {surprise}</p>}
+                  {regret && <p>Regret: {regret}</p>}
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveReflection} className="reflectionForm" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  Retrospective Satisfaction (1-10)
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={satisfaction}
+                      onChange={(e) => setSatisfaction(e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <span>{satisfaction}</span>
+                  </div>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={placementAccurate}
+                    onChange={(e) => setPlacementAccurate(e.target.checked)}
+                  />
+                  Placement and packages data was accurate
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={chooseAgain}
+                    onChange={(e) => setChooseAgain(e.target.checked)}
+                  />
+                  Would choose this college again
+                </label>
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  Biggest Surprise
+                  <input
+                    type="text"
+                    value={surprise}
+                    onChange={(e) => setSurprise(e.target.value)}
+                    placeholder="e.g. Coding culture was even better..."
+                    style={{ padding: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                  />
+                </label>
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  Biggest Regret / Caveat
+                  <input
+                    type="text"
+                    value={regret}
+                    onChange={(e) => setRegret(e.target.value)}
+                    placeholder="e.g. Hostel rooms are small..."
+                    style={{ padding: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                  />
+                </label>
+
+                <button type="submit" className="primaryAction" style={{ width: 'fit-content', padding: '10px 20px', marginTop: '10px' }}>Submit 6-Month Reflection</button>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
-    </section>
-  );
+      </section>
+    );
+  };
 
   const renderTimelinePanel = () => (
     <article className="panel decisionTimeline" style={{ width: '100%', textAlign: 'left', animation: 'fadeIn 0.2s ease' }}>
@@ -2369,7 +3010,7 @@ function App() {
 
         {placementPrediction && (
           <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4>Trained ML Outputs</h4>
+            <h4>Trained College Vault Outputs</h4>
             <div style={{ display: 'flex', gap: '16px' }}>
               <div className="metric" style={{ flex: 1, textAlign: 'center', padding: '16px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block' }}>Placement Probability</span>
@@ -2392,7 +3033,7 @@ function App() {
             </div>
 
             <div className="notesBlock" style={{ padding: '12px' }}>
-              <strong>ML Diagnostic Feedback:</strong>
+              <strong>College Vault Diagnostic Feedback:</strong>
               <ul style={{ paddingLeft: '16px', fontSize: '0.8rem', marginTop: '6px', color: 'var(--text-primary)' }}>
                 {studentBacklogs > 0 && <li style={{ color: '#c0392b' }}>Backlogs negatively affect placement odds. Resolve backlogs to increase likelihood by ~15% per backlog.</li>}
                 {studentCgpa < 7.5 && <li>Your CGPA is slightly low. Reaching a CGPA of 8.0+ increases expected package by approximately 1.5 LPA.</li>}
@@ -2476,82 +3117,167 @@ function App() {
               <p className="eyebrow">College Decision Management System</p>
               <h2>Choose with data, remember the reasoning.</h2>
             </div>
-            <div className="topbarRight">
-              <div className="topbarStats" aria-label="Decision status">
-                <span>{admissionProfile.journey}</span>
-                <span>{admissionProfile.exam}</span>
-                <span>
-                  {admissionProfile.scoreType}: {admissionProfile.score}
+            <div className="topbarRight" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              
+              {/* Row 1: Profile stats badges */}
+              <div className="topbarStats" aria-label="Decision status" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ background: 'rgba(108, 92, 231, 0.08)', color: '#6c5ce7', border: '1px solid rgba(108, 92, 231, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                  🎯 {admissionProfile.journey === 'Entrance result ready' ? 'Entrance Ready' : (admissionProfile.journey === 'Class 12 planning' ? 'Class 12 Planner' : admissionProfile.journey)}
                 </span>
-                <span>{shortlisted.length} shortlisted</span>
-                <span>{finalCollege.score}% fit score</span>
-                <span>Review due in 6 months</span>
+                <span style={{ background: 'rgba(52, 152, 219, 0.08)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                  ⚡ {admissionProfile.exam || 'JEE Main'}: {admissionProfile.score} ({admissionProfile.scoreType || 'Rank'})
+                </span>
+                <span style={{ background: 'rgba(46, 204, 113, 0.08)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                  📁 {shortlisted.length} Saved
+                </span>
+                <span style={{ background: 'rgba(230, 126, 34, 0.08)', color: '#e67e22', border: '1px solid rgba(230, 126, 34, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                  🏆 Leader: {finalCollege.score}% Fit
+                </span>
               </div>
-              <button 
-                type="button" 
-                className="themeToggle" 
-                onClick={toggleTheme} 
-                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', color: 'var(--text-primary)' }}
-                aria-label="Toggle dark mode"
-              >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button className="logoutButton light" type="button" onClick={handleLogout}>
-                Logout
-              </button>
+
+              {/* Row 2: Action buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAboutModal(true)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    borderColor: '#6c5ce7', 
+                    color: '#6c5ce7', 
+                    background: 'rgba(108, 92, 231, 0.05)', 
+                    fontWeight: 'bold',
+                    border: '1px solid rgba(108, 92, 231, 0.25)',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Info size={14} /> About CollegeVault
+                </button>
+                <button 
+                  className="logoutButton light" 
+                  type="button" 
+                  onClick={() => window.print()}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--border-color)', color: 'var(--text-primary)', background: 'var(--bg-card)', fontWeight: 'bold', padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                >
+                  <FileText size={14} /> Export Report
+                </button>
+                <button 
+                  type="button" 
+                  className="themeToggle" 
+                  onClick={toggleTheme} 
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px', color: 'var(--text-primary)' }}
+                  aria-label="Toggle dark mode"
+                >
+                  {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+                <button 
+                  className="logoutButton light" 
+                  type="button" 
+                  onClick={handleLogout}
+                  style={{ padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 'bold' }}
+                >
+                  Logout
+                </button>
+              </div>
+
             </div>
           </header>
 
           {activeSection === 'dashboard' && (
             <>
               <section className="analyticsStrip" id="analytics" style={{ animation: 'fadeIn 0.3s ease' }}>
-                <Metric icon={<Timer size={18} />} label={isClass12Planner ? 'Planning Mode' : 'ML Status'} value={isClass12Planner ? 'Early' : (predictingAdmission ? 'Running' : (mlLastRunAt ? 'Ready' : 'Needs Rank'))} />
+                <Metric icon={<Timer size={18} />} label={isClass12Planner ? 'Planning Mode' : 'Vault Status'} value={isClass12Planner ? 'Early' : (predictingAdmission ? 'Running' : (mlLastRunAt ? 'Ready' : 'Needs Rank'))} />
                 <Metric icon={<Building2 size={18} />} label="Compared" value={String(shortlisted.length)} />
-                <Metric icon={<Target size={18} />} label="ML Matches" value={String(mlMatchedShortlistCount)} />
-                <Metric icon={<Star size={18} />} label={isClass12Planner ? 'Best Fit' : 'Best ML Signal'} value={isClass12Planner ? `${finalCollege.shortName || 'College'} ${finalCollege.score}%` : (bestMlCollege ? `${bestMlCollege.shortName} ${bestMlCollege.mlAdmission.probability}%` : 'Pending')} />
+                <Metric icon={<Target size={18} />} label="Vault Matches" value={String(mlMatchedShortlistCount)} />
+                <Metric icon={<Star size={18} />} label={isClass12Planner ? 'Best Fit' : 'Best Vault Signal'} value={isClass12Planner ? `${finalCollege.shortName || 'College'} ${finalCollege.score}%` : (bestMlCollege ? `${bestMlCollege.shortName} (${getShortBranch(bestMlCollege.branch)}) ${bestMlCollege.score}%` : 'Pending')} />
               </section>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', animation: 'fadeIn 0.3s ease', marginBottom: '20px' }}>
-                <article className="panel decisionTrail">
-                  <div className="panelHeader">
-                    <div>
-                      <p className="eyebrow">Decision record</p>
-                      <h3>Why this shortlist exists</h3>
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '24px', width: '100%', animation: 'fadeIn 0.3s ease', marginBottom: '24px' }}>
+                
+                {/* Panel 1: Your Academic & Priority Profile */}
+                <article className="panel decisionTrail" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px' }}>
+                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6c5ce7', fontWeight: 'bold' }}>
+                      📋 Decision Context
+                    </span>
+                    <h3 style={{ margin: '4px 0 0 0', fontSize: '1.15rem', color: 'var(--text-primary)' }}>Your Target Profile & Leader</h3>
                   </div>
-                  <div className="trailList">
-                    <span>
-                      <strong>Profile basis:</strong> {admissionProfile.journey} / {admissionProfile.exam} / {admissionProfile.scoreType} {admissionProfile.score} / {admissionProfile.category}
-                    </span>
-                    <span>
-                      <strong>Branch focus:</strong> {admissionProfile.preferredBranches}
-                    </span>
-                    <span>
-                      <strong>Current leader:</strong> {finalCollege.name} because it scores highest ({finalCollege.score}%) against family priorities.
-                    </span>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Profile Items */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                        <small style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>Journey Route</small>
+                        <strong style={{ fontSize: '0.86rem', color: 'var(--text-primary)' }}>{admissionProfile.journey || 'Not selected'}</strong>
+                      </div>
+                      <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                        <small style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>Exam & Score</small>
+                        <strong style={{ fontSize: '0.86rem', color: 'var(--text-primary)' }}>
+                          {admissionProfile.exam || 'JEE Main'}: {admissionProfile.score || 'N/A'} ({admissionProfile.scoreType || 'Rank'})
+                        </strong>
+                      </div>
+                      <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                        <small style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>Seat Category</small>
+                        <strong style={{ fontSize: '0.86rem', color: 'var(--text-primary)' }}>{admissionProfile.category || 'General'}</strong>
+                      </div>
+                      <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                        <small style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase' }}>Branch Focus</small>
+                        <strong style={{ fontSize: '0.86rem', color: 'var(--text-primary)' }}>{admissionProfile.preferredBranches || 'All Branches'}</strong>
+                      </div>
+                    </div>
+
+                    {/* Leader Highlight */}
+                    <div style={{ marginTop: '4px', background: 'rgba(39, 174, 96, 0.08)', border: '1px solid rgba(39, 174, 96, 0.2)', padding: '14px', borderRadius: '8px' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#27ae60', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        🏆 Top Match Leader
+                      </span>
+                      <h4 style={{ margin: '4px 0 2px 0', fontSize: '1rem', color: 'var(--text-primary)' }}>{finalCollege.name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        Recommended because it fits **{finalCollege.score}%** of your priorities (fees, placement packages, location, and campus life).
+                      </p>
+                    </div>
                   </div>
                 </article>
 
-                <article className="panel reviewQueue">
-                  <div className="panelHeader">
-                    <div>
-                      <p className="eyebrow">Next actions</p>
-                      <h3>Research still pending</h3>
-                    </div>
+                {/* Panel 2: Research Checklist */}
+                <article className="panel reviewQueue" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px' }}>
+                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#e67e22', fontWeight: 'bold' }}>
+                      ⚡ Action Required
+                    </span>
+                    <h3 style={{ margin: '4px 0 0 0', fontSize: '1.15rem', color: 'var(--text-primary)' }}>Next Research Steps</h3>
                   </div>
-                  <div className="queueGrid">
-                    <span>Verify branch-wise placement reports for {finalCollege.shortName}</span>
-                    <span>Ask one senior about hostel, mess, and coding culture</span>
-                    <span>Compare total four-year cost with family budget</span>
-                    <span>Record final reason before accepting the seat</span>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {[
+                      { text: `Verify branch-wise placement reports for ${finalCollege.shortName}`, desc: 'Check actual average vs. median package distributions.' },
+                      { text: 'Connect with a senior regarding hostels and coding culture', desc: 'Ask about college life, mess quality, and competitive coding environment.' },
+                      { text: 'Compare four-year tuition fees with family budget', desc: 'Verify the financial plan to avoid surprises later.' },
+                      { text: 'Record final reason in Reflection before locking', desc: 'Log your justification to secure your admission path.' }
+                    ].map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'grid', placeItems: 'center', width: '20px', height: '20px', background: 'rgba(230, 126, 34, 0.1)', color: '#e67e22', borderRadius: '50%', fontSize: '0.72rem', fontWeight: 'bold', flexShrink: 0 }}>
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <strong style={{ fontSize: '0.82rem', display: 'block', color: 'var(--text-primary)' }}>{item.text}</strong>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{item.desc}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </article>
+
               </div>
 
               <article className="panel" style={{ width: '100%', animation: 'fadeIn 0.3s ease', marginBottom: '20px' }}>
                 <div className="panelHeader">
                   <div>
-                    <p className="eyebrow">{isClass12Planner ? 'Early planner guidance' : 'Automatic ML guidance'}</p>
+                    <p className="eyebrow">{isClass12Planner ? 'Early planner guidance' : 'Automatic College Vault guidance'}</p>
                     <h3>{isClass12Planner ? 'Explore before entrance results' : 'Admission signal from your saved rank'}</h3>
                   </div>
                   <span className="quietBadge">
@@ -2609,6 +3335,203 @@ function App() {
           {activeSection === 'reflection' && renderReflectionPanel()}
         </section>
       </main>
+      
+      {/* Hidden A4 Print Report Container */}
+      <div id="print-report" style={{ display: 'none' }}>
+        <div style={{ padding: '40px', fontFamily: 'system-ui, sans-serif', color: '#111', background: '#fff', textAlign: 'left' }}>
+          
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #6c5ce7', paddingBottom: '20px', marginBottom: '30px' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#6c5ce7', fontWeight: '800', letterSpacing: '-0.02em' }}>DECISIONVAULT</h1>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Counseling & Decision Matrix Report</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 'bold' }}>Date: {new Date().toLocaleDateString('en-IN')}</p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#666' }}>Report ID: DV-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+            </div>
+          </div>
+
+          {/* Student Profile & Context */}
+          <div style={{ background: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#333', borderBottom: '1px solid #dee2e6', paddingBottom: '6px' }}>Student Profile Context</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.85rem' }}>
+              <div><strong>Target Journey:</strong> {admissionProfile.journey}</div>
+              <div><strong>Entrance Exam:</strong> {admissionProfile.exam}</div>
+              <div><strong>Category Rank/Score:</strong> {admissionProfile.score} ({admissionProfile.scoreType})</div>
+              <div><strong>Counselling Seat Category:</strong> {admissionProfile.category}</div>
+              <div style={{ gridColumn: '1 / -1' }}><strong>Preferred Branches:</strong> {admissionProfile.preferredBranches || 'All Branches'}</div>
+            </div>
+          </div>
+
+          {/* Shortlisted Leaderboard */}
+          <div style={{ marginBottom: '24px' }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#333', borderBottom: '1px solid #dee2e6', paddingBottom: '6px' }}>Vault Shortlist & Blended Fit Scores</h2>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: '#f1f3f5' }}>
+                  <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Rank</th>
+                  <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Institute & Branch</th>
+                  <th style={{ padding: '10px', textAlign: 'right', borderBottom: '2px solid #dee2e6' }}>Blended Fit Score</th>
+                  <th style={{ padding: '10px', textAlign: 'right', borderBottom: '2px solid #dee2e6' }}>Admission Likelihood</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vaultColleges.map((college, idx) => (
+                  <tr key={college.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                    <td style={{ padding: '10px', fontWeight: 'bold' }}>#{idx + 1}</td>
+                    <td style={{ padding: '10px' }}>
+                      <div style={{ fontWeight: 'bold' }}>{college.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#666' }}>{college.branch} &bull; {college.city}, {college.state}</div>
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold', color: '#6c5ce7' }}>{college.score}%</td>
+                    <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold', color: college.mlAdmissionStatus?.className === 'eligible' ? '#27ae60' : '#e67e22' }}>
+                      {college.mlAdmission?.probability ? `${college.mlAdmission.probability}%` : 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Priorities Slider Weights */}
+          <div style={{ background: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#333', borderBottom: '1px solid #dee2e6', paddingBottom: '6px' }}>Decision Priorities & Weights</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: '0.8rem' }}>
+              {priorities.map((p) => (
+                <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #dee2e6', paddingBottom: '4px' }}>
+                  <span style={{ color: '#555' }}>{p.label}</span>
+                  <strong style={{ color: '#333' }}>Weight: {p.weight}/5</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action checklist */}
+          <div style={{ marginBottom: '24px' }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#333', borderBottom: '1px solid #dee2e6', paddingBottom: '6px' }}>Pending Research Checklist</h2>
+            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', lineHeight: '1.6' }}>
+              <li>Verify branch-wise placement reports for {finalCollege.shortName} (check average vs. median distributions).</li>
+              <li>Connect with a senior regarding hostels, mess, and coding culture.</li>
+              <li>Compare four-year tuition fees with family budget constraints.</li>
+              <li>Record final reason in Reflection before locking admission path.</li>
+            </ul>
+          </div>
+
+          {/* Footer */}
+          <div style={{ borderTop: '1px solid #dee2e6', paddingTop: '15px', marginTop: '40px', textAlign: 'center', fontSize: '0.75rem', color: '#888' }}>
+            Report generated automatically by DecisionVault. All cutoff ranks are mathematically modeled based on historical JoSAA/CSAB datasets (2018-2025).
+          </div>
+          
+        </div>
+      </div>
+
+      {/* Glassmorphic About Project Modal */}
+      {showAboutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '16px',
+            width: '600px',
+            maxWidth: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            padding: '30px',
+            position: 'relative',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+            color: 'var(--text-primary)',
+            textAlign: 'left'
+          }}>
+            <button 
+              onClick={() => setShowAboutModal(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ background: '#6c5ce7', color: '#fff', borderRadius: '8px', padding: '6px', display: 'flex' }}>
+                <GraduationCap size={24} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>About DecisionVault</h3>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Decision-Support System</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.86rem', lineHeight: '1.5' }}>
+              <p>
+                <strong>DecisionVault</strong> is an intelligent counseling portal designed to assist engineering students in navigating the complex admissions process. It acts as an analytical, evidence-based partner to remove emotional bias and ensure a rational decision.
+              </p>
+
+              <div>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', color: '#6c5ce7' }}>🚀 Key Features & Modules</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                    <strong>🔮 Cutoff Estimation Model</strong>
+                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      Powered by a JoSAA/CSAB historical dataset containing **432,000+ cutoff records (2018–2025)** to calculate your category rank probability in real-time.
+                    </span>
+                  </div>
+                  <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                    <strong>⚖️ Priority Decision Matrix</strong>
+                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      Drag sliders to weight factors like Placements, Tuition Budget, Campus Ratings, and Distance to see which options offer the highest blended fit.
+                    </span>
+                  </div>
+                  <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                    <strong>💬 Google Gemini Counselor Q&A</strong>
+                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      An integrated, context-aware AI chatbot that pulls detailed specs, packages, hostel reviews, and links to guide you through qualitative research.
+                    </span>
+                  </div>
+                  <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
+                    <strong>📄 Printable PDF Export</strong>
+                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      Instantly compile your dashboard, priorities list, and research checklists into a professional A4 PDF printout to share with family members.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(39, 174, 96, 0.08)', border: '1px solid rgba(39, 174, 96, 0.2)', padding: '12px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                <strong>💡 How to use the platform:</strong> Shortlist colleges from <strong>Discovery</strong>, weigh your sliders in the <strong>Matrix</strong>, research campus details with the <strong>Gemini Chatbot</strong>, and print your summary!
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowAboutModal(false)}
+              className="primaryAction"
+              style={{ width: '100%', marginTop: '20px', minHeight: '38px' }}
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

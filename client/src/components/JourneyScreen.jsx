@@ -18,8 +18,10 @@ export default function JourneyScreen({ onHome, onClass12, onEntrance }) {
 
       <section className="journeyContent">
         <div>
-          <p className="eyebrow">Choose your starting point</p>
-          <h2>CollegeVault adapts to where the student is right now.</h2>
+          <p className="eyebrow" style={{ color: '#6c5ce7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose your starting point</p>
+          <h2 style={{ background: 'linear-gradient(135deg, var(--text-primary) 30%, #6c5ce7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            CollegeVault adapts to where the student is right now.
+          </h2>
           <p>
             Some students are planning after Class 12. Others already have an entrance rank or scorecard. Both paths
             lead to the same decision dashboard, but the first profile screen is different.
@@ -36,7 +38,7 @@ export default function JourneyScreen({ onHome, onClass12, onEntrance }) {
             <small>Best for early college exploration</small>
           </button>
 
-          <button className="journeyCard dark" type="button" onClick={onEntrance}>
+          <button className="journeyCard" type="button" onClick={onEntrance}>
             <span>
               <Upload size={22} />
             </span>

@@ -9,11 +9,13 @@ const cutoffSchema = new mongoose.Schema(
     gender: { type: String, required: true, index: true },
     openingRank: { type: Number, required: true },
     closingRank: { type: Number, required: true, index: true },
+    round: { type: Number, required: true, index: true },
+    year: { type: Number, required: true, index: true },
   },
   { timestamps: true }
 );
 
 // Compounded index for lightning-fast matching queries
-cutoffSchema.index({ seatType: 1, gender: 1, quota: 1, closingRank: 1 });
+cutoffSchema.index({ seatType: 1, gender: 1, quota: 1, year: -1, round: -1, closingRank: 1 });
 
 export const Cutoff = mongoose.model('Cutoff', cutoffSchema);

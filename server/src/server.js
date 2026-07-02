@@ -26,7 +26,7 @@ app.set('trust proxy', 1);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: process.env.NODE_ENV === 'production' ? 200 : 10000, // Loose limit in development
   message: { message: 'Too many requests from this IP, please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,

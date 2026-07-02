@@ -9,7 +9,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const csvPath = path.resolve(__dirname, '../../datasets/2024_Round_1.csv');
+const csvPath = path.resolve(__dirname, '../../datasets/merged_jee_cutoff_2018_2025.csv');
 
 function parseCSVLine(line) {
   const result = [];
@@ -30,6 +30,13 @@ function parseCSVLine(line) {
   return result;
 }
 
+const cleanRank = (str) => {
+  if (!str) return NaN;
+  const cleaned = str.replace(/[^0-9.]/g, '');
+  const val = parseFloat(cleaned);
+  return isNaN(val) ? NaN : Math.round(val);
+};
+
 async function runSeeder() {
   try {
     console.log('Connecting to MongoDB...');
@@ -43,21 +50,24 @@ async function runSeeder() {
     const lines = data.split(/\r?\n/);
     
     const cutoffs = [];
+    console.log(`Parsing ${lines.length - 1} lines from CSV...`);
+    
     // Skip header line
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       if (!line.trim()) continue;
       
       const columns = parseCSVLine(line);
-      if (columns.length < 7) continue;
+      if (columns.length < 9) continue;
       
-      const [institute, program, quota, seatType, gender, openRankStr, closeRankStr] = columns;
+      const [institute, program, quota, seatType, gender, openRankStr, closeRankStr, roundStr, yearStr] = columns;
       
-      // Clean and parse ranks (JEE ranks can sometimes have P suffix for prep list)
-      const openingRank = parseInt(openRankStr.replace(/[^0-9]/g, ''), 10);
-      const closingRank = parseInt(closeRankStr.replace(/[^0-9]/g, ''), 10);
+      const openingRank = cleanRank(openRankStr);
+      const closingRank = cleanRank(closeRankStr);
+      const round = parseInt(roundStr, 10);
+      const year = parseInt(yearStr, 10);
       
-      if (isNaN(openingRank) || isNaN(closingRank)) continue;
+      if (isNaN(openingRank) || isNaN(closingRank) || isNaN(round) || isNaN(year)) continue;
       
       cutoffs.push({
         institute,
@@ -66,14 +76,16 @@ async function runSeeder() {
         seatType,
         gender,
         openingRank,
-        closingRank
+        closingRank,
+        round,
+        year
       });
     }
     
     console.log(`Parsed ${cutoffs.length} valid cutoffs. Seeding to database...`);
     
     // Batch insert for performance
-    const batchSize = 1000;
+    const batchSize = 10000;
     for (let i = 0; i < cutoffs.length; i += batchSize) {
       const batch = cutoffs.slice(i, i + batchSize);
       await Cutoff.insertMany(batch);

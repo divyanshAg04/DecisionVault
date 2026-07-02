@@ -44,7 +44,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
 
         <div className="intakeGrid">
           <label>
-            Stream
+            Stream <span style={{ color: '#ff4d4f' }}>*</span>
             <select value={admissionProfile.stream || 'PCM'} onChange={(event) => updateAdmissionProfile('stream', event.target.value)}>
               <option>PCM</option>
               <option>PCB</option>
@@ -54,7 +54,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label>
-            Board percentage
+            Board percentage <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.score}
               onChange={(event) => updateAdmissionProfile('score', event.target.value)}
@@ -63,7 +63,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label>
-            Target exam
+            Target exam <span style={{ color: '#ff4d4f' }}>*</span>
             <select
               value={admissionProfile.targetExam || 'JEE Main'}
               onChange={(event) => {
@@ -80,7 +80,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label>
-            Category
+            Category <span style={{ color: '#ff4d4f' }}>*</span>
             <select
               value={admissionProfile.category}
               onChange={(event) => updateAdmissionProfile('category', event.target.value)}
@@ -95,7 +95,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label>
-            Home state
+            Home state <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.homeState}
               onChange={(event) => updateAdmissionProfile('homeState', event.target.value)}
@@ -104,7 +104,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label>
-            Budget range
+            Budget range <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.budget || ''}
               onChange={(event) => updateAdmissionProfile('budget', event.target.value)}
@@ -113,7 +113,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label className="wideField">
-            Preferred branches or interests
+            Preferred branches or interests <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.preferredBranches}
               onChange={(event) => updateAdmissionProfile('preferredBranches', event.target.value)}
@@ -174,8 +174,8 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
         <label className="uploadBox">
           <Upload size={22} />
           <span>
-            <strong>{admissionProfile.fileName || 'Upload marksheet or scorecard'}</strong>
-            <small>PDF, JPG, or PNG. You can also continue by entering the details manually.</small>
+            <strong>{admissionProfile.fileName || 'Upload supporting document (Optional)'}</strong>
+            <small>PDF, JPG, or PNG. This is optional. Please enter your rank/score details below manually.</small>
           </span>
           <input
             type="file"
@@ -186,7 +186,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
 
         <div className="intakeGrid">
           <label>
-            Exam
+            Exam <span style={{ color: '#ff4d4f' }}>*</span>
             <select value={admissionProfile.exam} onChange={(event) => updateAdmissionProfile('exam', event.target.value)}>
               <option>JEE Main</option>
               <option>JEE Advanced</option>
@@ -198,7 +198,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           </label>
 
           <label>
-            Score type
+            Score type <span style={{ color: '#ff4d4f' }}>*</span>
             <select
               value={admissionProfile.scoreType}
               onChange={(event) => updateAdmissionProfile('scoreType', event.target.value)}
@@ -210,7 +210,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           </label>
 
           <label>
-            Rank / score
+            Rank / score <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.score}
               onChange={(event) => updateAdmissionProfile('score', event.target.value)}
@@ -219,7 +219,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           </label>
 
           <label>
-            Category
+            Category <span style={{ color: '#ff4d4f' }}>*</span>
             <select
               value={admissionProfile.category}
               onChange={(event) => updateAdmissionProfile('category', event.target.value)}
@@ -234,7 +234,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           </label>
 
           <label>
-            Home state
+            Home state <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.homeState}
               onChange={(event) => updateAdmissionProfile('homeState', event.target.value)}
@@ -243,7 +243,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           </label>
 
           <label>
-            Preferred branches
+            Preferred branches <span style={{ color: '#ff4d4f' }}>*</span>
             <input
               value={admissionProfile.preferredBranches}
               onChange={(event) => updateAdmissionProfile('preferredBranches', event.target.value)}

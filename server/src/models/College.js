@@ -47,6 +47,7 @@ const collegeSchema = new mongoose.Schema(
       probability: Number,
       source: { type: String, trim: true },
     },
+    admissionChannel: { type: String, trim: true },
   },
   { timestamps: true },
 );
