@@ -70,35 +70,70 @@ router.post('/predict-admission', async (req, res, next) => {
       });
     }
     
-    // Compute probability for each choice
-    const predictions = cutoffs.map((row) => {
-      let probability = 0.0;
+    // Group by institute + program in memory to prevent duplicate results in UI
+    const groups = {};
+    for (const row of cutoffs) {
+      const key = `${row.institute}|${row.program}`;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(row);
+    }
+
+    const predictions = [];
+    for (const [key, rows] of Object.entries(groups)) {
+      const [institute, program] = key.split('|');
+
+      // Sort rows by year (descending) and round (descending) to establish the latest baseline
+      rows.sort((a, b) => b.year - a.year || b.round - a.round);
       
-      if (studentRank <= row.closingRank) {
-        // Ranks lower than the closing rank have high probability (up to 1.0)
-        // If close to opening rank, probability is absolute
-        const diffRatio = (row.closingRank - studentRank) / row.closingRank;
-        probability = 0.85 + Math.min(0.15, diffRatio);
-      } else {
-        // Beyond closing rank: exponential decay
-        const diff = studentRank - row.closingRank;
-        probability = Math.exp(-diff / (row.closingRank * 0.15));
+      const latestRow = rows[0];
+      const latestClosingRank = latestRow.closingRank;
+      const latestOpeningRank = latestRow.openingRank;
+
+      // Count years where the candidate's rank would have been eligible
+      let eligibleYearsCount = 0;
+      const yearsSeen = new Set();
+      for (const r of rows) {
+        if (!yearsSeen.has(r.year)) {
+          yearsSeen.add(r.year);
+          if (studentRank <= r.closingRank) {
+            eligibleYearsCount++;
+          }
+        }
+      }
+      const totalYearsCount = yearsSeen.size;
+
+      // Calculate base probability against the latest year's closing rank
+      let baseProbability = 0;
+      if (latestClosingRank > 0) {
+        if (studentRank <= latestClosingRank) {
+          const diffRatio = (latestClosingRank - studentRank) / latestClosingRank;
+          baseProbability = 0.85 + Math.min(0.15, diffRatio);
+        } else {
+          const diff = studentRank - latestClosingRank;
+          baseProbability = Math.exp(-diff / (latestClosingRank * 0.15));
+        }
       }
 
-      // Convert to clean percentage
-      const probabilityPercent = Math.round(probability * 1000) / 10;
+      // Calculate historical probability (success rate)
+      const historicalSuccessRate = totalYearsCount > 0 ? (eligibleYearsCount / totalYearsCount) : 0.5;
 
-      return {
-        institute: row.institute,
-        program: row.program,
-        quota: row.quota,
-        seatType: row.seatType,
-        gender: row.gender,
-        openingRank: row.openingRank,
-        closingRank: row.closingRank,
+      // Blend them: 60% latest year, 40% historical trend
+      const blendedProbability = (baseProbability * 0.6) + (historicalSuccessRate * 0.4);
+      const probabilityPercent = Math.round(blendedProbability * 1000) / 10;
+
+      predictions.push({
+        institute,
+        program,
+        quota: latestRow.quota,
+        seatType: latestRow.seatType,
+        gender: latestRow.gender,
+        openingRank: latestOpeningRank,
+        closingRank: latestClosingRank,
         probability: Math.max(0.1, Math.min(100.0, probabilityPercent))
-      };
-    });
+      });
+    }
 
     // Sort by highest probability and return a bounded result set for discovery.
     predictions.sort((a, b) => b.probability - a.probability);
