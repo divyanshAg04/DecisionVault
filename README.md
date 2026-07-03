@@ -28,12 +28,6 @@
 
 <br/><br/>
 
-<!-- live repo badges -->
-<img src="https://img.shields.io/github/last-commit/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
-<img src="https://img.shields.io/github/repo-size/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
-<img src="https://img.shields.io/github/issues/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
-<img src="https://img.shields.io/github/stars/divyanshAg04/DecisionVault?style=flat-square&color=7C3AED" />
-
 </div>
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=6,11,20&height=4" width="100%" />
