@@ -1,28 +1,60 @@
+import fs from 'fs';
+import path from 'path';
 import { createWorker } from 'tesseract.js';
 
-export async function parseScorecardText(base64Data) {
+/**
+ * Parses text from a scorecard image (from base64, url, or local path) using Tesseract OCR.
+ * @param {string} source - base64 string, http/https URL, or local filepath
+ * @returns {Promise<string|null>} Extracted text
+ */
+export async function parseScorecardText(source) {
   try {
-    if (!base64Data) return null;
+    if (!source) return null;
 
-    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      console.warn('OCR skipped: Invalid base64 format');
+    let imageSource = null;
+
+    if (source.startsWith('data:')) {
+      const matches = source.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        console.warn('OCR skipped: Invalid base64 format');
+        return null;
+      }
+      const base64Content = matches[2];
+      imageSource = Buffer.from(base64Content, 'base64');
+    } else if (source.startsWith('http://') || source.startsWith('https://')) {
+      if (source.includes('/uploads/')) {
+        const filename = source.split('/uploads/')[1];
+        const filePath = path.join(process.cwd(), 'public/uploads', filename);
+        if (fs.existsSync(filePath)) {
+          imageSource = fs.readFileSync(filePath);
+        }
+      }
+      
+      if (!imageSource) {
+        const response = await fetch(source);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image from URL: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageSource = Buffer.from(arrayBuffer);
+      }
+    } else {
+      if (fs.existsSync(source)) {
+        imageSource = fs.readFileSync(source);
+      } else {
+        console.warn(`OCR skipped: Local file not found at '${source}'`);
+        return null;
+      }
+    }
+
+    if (!imageSource) {
+      console.warn('OCR skipped: No readable image source resolved.');
       return null;
     }
 
-    const contentType = matches[1];
-    const base64Content = matches[2];
-
-    if (!contentType.startsWith('image/')) {
-      console.warn(`OCR skipped: Content-Type '${contentType}' is not an image.`);
-      return null;
-    }
-
-    const buffer = Buffer.from(base64Content, 'base64');
-    
     console.log('Starting OCR text extraction...');
     const worker = await createWorker('eng');
-    const { data: { text } } = await worker.recognize(buffer);
+    const { data: { text } } = await worker.recognize(imageSource);
     await worker.terminate();
     console.log('OCR text extracted.');
     

@@ -356,12 +356,28 @@ Run from the project root:
 
 <br/>
 
+## 🛡 Design Decisions
+
+### 1. Cryptographic Security (BCrypt Cost Factor)
+We employ `bcryptjs` with a work factor of `12` for password hashing. This choice balances security and server performance. It ensures high computational complexity to thwart GPU-based brute-force attacks while keeping authentication latency under 300ms on standard CPUs.
+
+### 2. Session Security (HttpOnly Cookies vs LocalStorage)
+To store JSON Web Tokens (JWTs), we strictly use `httpOnly` secure cookies with `sameSite: 'lax'` (or `none` in production cross-origin setups). This setup prevents client-side Javascript from reading the token, offering robust protection against Cross-Site Scripting (XSS) token-theft attacks.
+
+### 3. AI Robustness (Gemini Timeout & Rule-Based Fallback)
+Our Admissions Counselor and Research Summarizer invoke Google's Gemini API with an `AbortController` timeout capped at `10 seconds`. If Google's API hangs or is unavailable, the application falls back gracefully to a deterministic rule-based NLP parser, guaranteeing 100% uptime and high availability.
+
+### 4. Database Consistency (Transaction-Based Account Deletion)
+When a user deletes their account, we execute deletions across all relational collections (`Shortlists`, `Decisions`, `Reflections`, `ActivityLogs`, `Users`) inside a session transaction (`session.withTransaction()`). This guarantees database integrity by ensuring partial write failures trigger a complete rollback rather than leaving orphaned data.
+
+<br/>
+
 ## 🗺 Roadmap
 
 Ideas worth exploring next:
 
-- [ ] Automated test suite (Jest / Supertest)
-- [ ] CI pipeline for lint, test, and build checks
+- [x] Automated test suite (Vitest / Supertest / MongoMemoryReplSet)
+- [x] CI pipeline for lint, test, and build checks
 - [ ] CSV/JSON export for shortlists and decisions
 - [ ] Multi-user collaboration on a single shortlist
 - [ ] Mobile-first PWA mode

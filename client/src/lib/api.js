@@ -27,6 +27,19 @@ async function request(url, options = {}) {
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${url}`, config);
+    if (response.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/refresh') && !url.includes('/auth/logout')) {
+      try {
+        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (refreshResponse.ok) {
+          response = await fetch(`${API_BASE_URL}${url}`, config);
+        }
+      } catch (refreshErr) {
+        console.warn('Silent token refresh failed:', refreshErr);
+      }
+    }
   } catch (error) {
     throw new Error(error?.message === 'Failed to fetch'
       ? 'Server is unavailable. Please check the API connection and try again.'
@@ -198,3 +211,14 @@ export async function predictPlacement(profile) {
   });
 }
 
+export async function resendVerification() {
+  return request('/auth/resend-verification', {
+    method: 'POST',
+  });
+}
+
+export async function verifyEmail(token) {
+  return request(`/auth/verify-email?token=${token}`, {
+    method: 'GET',
+  });
+}

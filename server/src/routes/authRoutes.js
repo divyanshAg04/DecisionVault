@@ -9,6 +9,11 @@ import { Decision } from '../models/Decision.js';
 import { Reflection } from '../models/Reflection.js';
 import { ActivityLog } from '../models/ActivityLog.js';
 import { parseScorecardText, extractScoreDetails } from '../utils/ocr.js';
+import { uploadScorecard } from '../utils/s3.js';
+import mongoose from 'mongoose';
+import crypto from 'crypto';
+import { RefreshToken } from '../models/RefreshToken.js';
+import { sendVerificationEmail } from '../utils/mailer.js';
 
 const router = express.Router();
 
@@ -40,9 +45,59 @@ const profileSchema = z.object({
   scorecardBase64: z.string().optional(),
 });
 
+const COOKIE_OPTS = (req) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  ...(req?.hostname !== 'localhost' ? { domain: req?.hostname } : {}),
+});
+
 function signToken(userId) {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  // Short-lived access token (15 min)
+  return jwt.sign({ userId }, process.env.JWT_SECRET || 'test-secret', { expiresIn: '15m' });
 }
+
+async function issueRefreshToken(userId) {
+  const raw = crypto.randomBytes(64).toString('hex');
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  await RefreshToken.create({ token: raw, user: userId, expiresAt });
+  return raw;
+}
+
+// POST /refresh — Refresh Token Rotation
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const incomingToken = req.cookies?.refreshToken;
+    if (!incomingToken) {
+      return res.status(401).json({ message: 'No refresh token provided' });
+    }
+
+    const stored = await RefreshToken.findOne({ token: incomingToken });
+
+    if (!stored || stored.revoked || stored.expiresAt < new Date()) {
+      // Possible token reuse — revoke all tokens for this user
+      if (stored) {
+        await RefreshToken.updateMany({ user: stored.user }, { revoked: true });
+      }
+      return res.status(401).json({ message: 'Refresh token invalid or expired. Please log in again.' });
+    }
+
+    // Rotate: revoke old token and issue a fresh pair
+    const newRefreshToken = await issueRefreshToken(stored.user);
+    stored.revoked = true;
+    stored.replacedByToken = newRefreshToken;
+    await stored.save();
+
+    const accessToken = signToken(stored.user);
+
+    res.cookie('token', accessToken, { ...COOKIE_OPTS(req), maxAge: 15 * 60 * 1000 });
+    res.cookie('refreshToken', newRefreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+
+    return res.json({ message: 'Token refreshed successfully' });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 function serializeUser(user) {
   return {
@@ -62,16 +117,13 @@ function serializeUser(user) {
     budget: user.budget,
     targetExam: user.targetExam,
     scorecardName: user.scorecardName,
+    scorecardUrl: user.scorecardUrl || '',
+    emailVerified: user.emailVerified || false,
   };
 }
 
-function setTokenCookie(res, token) {
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+function setTokenCookie(res, req, token) {
+  res.cookie('token', token, { ...COOKIE_OPTS(req), maxAge: 15 * 60 * 1000 });
 }
 
 // REGISTER
@@ -85,15 +137,79 @@ router.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
-    const user = await User.create({ ...input, passwordHash });
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const user = await User.create({
+      ...input,
+      passwordHash,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
     const token = signToken(user._id);
+    const refreshToken = await issueRefreshToken(user._id);
 
-    setTokenCookie(res, token);
+    setTokenCookie(res, req, token);
+    res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+
+    // Send verification email (non-blocking — don't fail registration if mail fails)
+    const verifyLink = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+    sendVerificationEmail(user.email, verifyLink).catch((err) =>
+      console.error('[Mailer] Failed to send verification email:', err.message)
+    );
 
     return res.status(201).json({
       token,
       user: serializeUser(user),
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// GET /verify-email?token=...
+router.get('/verify-email', async (req, res, next) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ message: 'Verification token is required' });
+    }
+
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+
+    return res.json({ message: 'Email verified successfully', user: serializeUser(user) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// POST /resend-verification
+router.post('/resend-verification', requireAuth, async (req, res, next) => {
+  try {
+    const user = req.user;
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    const verifyLink = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+    await sendVerificationEmail(user.email, verifyLink);
+
+    return res.json({ message: 'Verification email resent' });
   } catch (error) {
     return next(error);
   }
@@ -116,7 +232,10 @@ router.post('/login', async (req, res, next) => {
     }
 
     const token = signToken(user._id);
-    setTokenCookie(res, token);
+    const refreshToken = await issueRefreshToken(user._id);
+
+    setTokenCookie(res, req, token);
+    res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
 
     return res.json({
       token,
@@ -128,13 +247,18 @@ router.post('/login', async (req, res, next) => {
 });
 
 // LOGOUT
-router.post('/logout', (req, res) => {
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  });
-  return res.json({ message: 'Logged out successfully' });
+router.post('/logout', async (req, res, next) => {
+  try {
+    const incomingRefresh = req.cookies?.refreshToken;
+    if (incomingRefresh) {
+      await RefreshToken.findOneAndUpdate({ token: incomingRefresh }, { revoked: true });
+    }
+    res.clearCookie('token', COOKIE_OPTS(req));
+    res.clearCookie('refreshToken', COOKIE_OPTS(req));
+    return res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 // GET PROFILE
@@ -147,9 +271,12 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
   try {
     const input = profileSchema.parse(req.body);
     let ocrExtracted = null;
+    let scorecardUrl = null;
 
     if (input.scorecardBase64) {
-      console.log('Detected scorecard upload. Running OCR...');
+      console.log('Detected scorecard upload. Running OCR and storage upload...');
+      scorecardUrl = await uploadScorecard(input.scorecardBase64, input.scorecardName);
+      
       const text = await parseScorecardText(input.scorecardBase64);
       const extracted = extractScoreDetails(text);
       if (extracted) {
@@ -162,9 +289,15 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
       }
     }
 
+    const updateData = { ...input };
+    if (scorecardUrl) {
+      updateData.scorecardUrl = scorecardUrl;
+    }
+    delete updateData.scorecardBase64;
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { $set: input },
+      { $set: updateData },
       { new: true },
     ).select('-passwordHash');
 
@@ -176,28 +309,51 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
 
 // DELETE ACCOUNT — NEW
 router.delete('/account', requireAuth, async (req, res, next) => {
+  let session = null;
   try {
     const userId = req.user._id;
 
-    // User ka saara data delete karo
-    await Promise.all([
-      Shortlist.deleteMany({ user: userId }),
-      Decision.deleteMany({ user: userId }),
-      Reflection.deleteMany({ user: userId }),
-      ActivityLog.deleteMany({ user: userId }),
-      User.findByIdAndDelete(userId),
-    ]);
+    try {
+      session = await mongoose.startSession();
+      await session.withTransaction(async () => {
+        await Shortlist.deleteMany({ user: userId }).session(session);
+        await Decision.deleteMany({ user: userId }).session(session);
+        await Reflection.deleteMany({ user: userId }).session(session);
+        await ActivityLog.deleteMany({ user: userId }).session(session);
+        await User.findByIdAndDelete(userId).session(session);
+      });
+    } catch (txError) {
+      // Fallback if transaction is not supported by database topology (e.g. standalone server)
+      const isUnsupported = txError.message?.includes('Transaction numbers are only allowed') || 
+                            txError.codeName === 'IllegalOperation' ||
+                            txError.code === 20;
+      
+      if (isUnsupported) {
+        console.warn('[Transaction Fallback] Transactions not supported on this MongoDB deployment. Falling back to non-transactional deletion.');
+        await Promise.all([
+          Shortlist.deleteMany({ user: userId }),
+          Decision.deleteMany({ user: userId }),
+          Reflection.deleteMany({ user: userId }),
+          ActivityLog.deleteMany({ user: userId }),
+          RefreshToken.deleteMany({ user: userId }),
+          User.findByIdAndDelete(userId),
+        ]);
+      } else {
+        throw txError;
+      }
+    }
 
-    // Cookie clear karo
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
+    // Clear all auth cookies
+    res.clearCookie('token', COOKIE_OPTS(req));
+    res.clearCookie('refreshToken', COOKIE_OPTS(req));
 
     return res.json({ message: 'Account and all associated data deleted successfully' });
   } catch (error) {
     return next(error);
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
   }
 });
 

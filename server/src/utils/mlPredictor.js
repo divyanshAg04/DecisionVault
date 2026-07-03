@@ -311,7 +311,13 @@ export function predictPlacementAndPackage(studentProfile) {
   }
 
   if (!placementModel || !packageModel) {
-    return { placedProbability: 0.5, expectedPackageLpa: 0.0, status: 'Model not trained' };
+    return {
+      placedProbability: 0.5,
+      expectedPackageLpa: 0.0,
+      expectedPackageMin: 0.0,
+      expectedPackageMax: 0.0,
+      status: 'Model not trained',
+    };
   }
 
   const { weights: wC, bias: bC, means, stds } = placementModel;
@@ -351,10 +357,23 @@ export function predictPlacementAndPackage(studentProfile) {
 
   // Constrain predicted package to realistic values
   const expectedPackageLpa = prob >= 0.35 ? Math.max(3.0, Math.min(45.0, yPred)) : 0.0;
+  
+  let expectedPackageMin = 0.0;
+  let expectedPackageMax = 0.0;
+  if (prob >= 0.35) {
+    const std = 1.5; // fallback standard deviation for JS linear regressor
+    expectedPackageMin = Math.max(3.0, Math.round((expectedPackageLpa - std) * 100) / 100);
+    expectedPackageMax = Math.min(45.0, Math.round((expectedPackageLpa + std) * 100) / 100);
+    if (expectedPackageMin >= expectedPackageMax) {
+      expectedPackageMax = expectedPackageMin + 1.0;
+    }
+  }
 
   return {
     placedProbability: prob,
     expectedPackageLpa: Math.round(expectedPackageLpa * 100) / 100,
+    expectedPackageMin,
+    expectedPackageMax,
     status: 'Success'
   };
 }

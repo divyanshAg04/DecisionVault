@@ -630,40 +630,86 @@ function App() {
   };
 
   useEffect(() => {
-    const isSessionActive = sessionStorage.getItem('dv-session-active') === 'true';
-    if (!isSessionActive) {
-      setAppStage('landing');
-      return;
-    }
-
-    getMe()
-      .then(({ user }) => {
-        setCurrentUser(user);
-        if (user.journey) {
-          setAdmissionProfile({
-            journey: user.journey || 'Entrance result ready',
-            exam: user.exam || 'JEE Main',
-            scoreType: user.scoreType || 'Rank',
-            score: user.score || '8900',
-            category: user.category || 'General',
-            homeState: user.homeState || '',
-            preferredBranches: user.preferredBranches || '',
-            stream: user.stream || '',
-            budget: user.budget || '',
-            targetExam: user.targetExam || '',
-            fileName: user.scorecardName || '',
-            scorecardBase64: user.scorecardBase64 || '',
-          });
-          loadUserData();
-          setAppStage('dashboard');
-        } else {
-          setAppStage('journey');
-        }
-      })
-      .catch(() => {
+    // Check if email verification token is in URL (Improvement #16)
+    const params = new URLSearchParams(window.location.search);
+    const verifyToken = params.get('token');
+    
+    const checkSession = () => {
+      const isSessionActive = sessionStorage.getItem('dv-session-active') === 'true';
+      if (!isSessionActive) {
         setAppStage('landing');
-        sessionStorage.removeItem('dv-session-active');
-      });
+        return;
+      }
+
+      getMe()
+        .then(({ user }) => {
+          setCurrentUser(user);
+          if (user.journey) {
+            setAdmissionProfile({
+              journey: user.journey || 'Entrance result ready',
+              exam: user.exam || 'JEE Main',
+              scoreType: user.scoreType || 'Rank',
+              score: user.score || '8900',
+              category: user.category || 'General',
+              homeState: user.homeState || '',
+              preferredBranches: user.preferredBranches || '',
+              stream: user.stream || '',
+              budget: user.budget || '',
+              targetExam: user.targetExam || '',
+              fileName: user.scorecardName || '',
+              scorecardBase64: user.scorecardBase64 || '',
+            });
+            loadUserData();
+            setAppStage('dashboard');
+          } else {
+            setAppStage('journey');
+          }
+        })
+        .catch(() => {
+          setAppStage('landing');
+          sessionStorage.removeItem('dv-session-active');
+        });
+    };
+
+    if (verifyToken) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setIsLoading(true);
+      verifyEmail(verifyToken)
+        .then((res) => {
+          showToast('Email verified successfully! Welcome to DecisionVault.', 'success');
+          sessionStorage.setItem('dv-session-active', 'true');
+          setCurrentUser(res.user);
+          if (res.user.journey) {
+            setAdmissionProfile({
+              journey: res.user.journey,
+              exam: res.user.exam,
+              scoreType: res.user.scoreType,
+              score: res.user.score,
+              category: res.user.category,
+              homeState: res.user.homeState,
+              preferredBranches: res.user.preferredBranches,
+              stream: res.user.stream || '',
+              budget: res.user.budget || '',
+              targetExam: res.user.targetExam || '',
+              fileName: res.user.scorecardName || '',
+              scorecardBase64: res.user.scorecardBase64 || '',
+            });
+            loadUserData();
+            setAppStage('dashboard');
+          } else {
+            setAppStage('journey');
+          }
+        })
+        .catch((err) => {
+          showToast(err?.message || 'Verification link invalid or expired.', 'error');
+          checkSession();
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      checkSession();
+    }
   }, []);
 
   // Sync priorities to shortlist in DB (debounced)
@@ -2418,35 +2464,72 @@ function App() {
             </div>
           </div>
 
-          {/* Card 3: Pros & Cons (Read-only) */}
+          {/* Card 3: Pros & Cons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+            <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column' }}>
               <h4 style={{ color: '#27ae60', margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                 ✅ Pros
               </h4>
-              {selectedCollege.pros?.length > 0 ? (
-                selectedCollege.pros.map((pro, index) => (
-                  <p key={index} style={{ fontSize: '0.82rem', margin: '6px 0', paddingLeft: '12px', textIndent: '-12px', color: 'var(--text-primary)' }}>
-                    • {pro}
-                  </p>
-                ))
-              ) : (
-                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No pros listed.</p>
-              )}
+              <div style={{ flex: 1 }}>
+                {selectedCollege.pros?.length > 0 ? (
+                  selectedCollege.pros.map((pro, index) => (
+                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
+                      <span>• {pro}</span>
+                      <button 
+                        onClick={() => handleRemovePro(pro)} 
+                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No pros listed.</p>
+                )}
+              </div>
+              <form onSubmit={handleAddPro} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                <input
+                  value={newPro}
+                  onChange={(e) => setNewPro(e.target.value)}
+                  placeholder="Add pro..."
+                  style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
+                  required
+                />
+                <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
+              </form>
             </div>
-            <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+            
+            <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column' }}>
               <h4 style={{ color: '#c0392b', margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                 ❌ Cons
               </h4>
-              {selectedCollege.cons?.length > 0 ? (
-                selectedCollege.cons.map((con, index) => (
-                  <p key={index} style={{ fontSize: '0.82rem', margin: '6px 0', paddingLeft: '12px', textIndent: '-12px', color: 'var(--text-primary)' }}>
-                    • {con}
-                  </p>
-                ))
-              ) : (
-                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No cons listed.</p>
-              )}
+              <div style={{ flex: 1 }}>
+                {selectedCollege.cons?.length > 0 ? (
+                  selectedCollege.cons.map((con, index) => (
+                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
+                      <span>• {con}</span>
+                      <button 
+                        onClick={() => handleRemoveCon(con)} 
+                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No cons listed.</p>
+                )}
+              </div>
+              <form onSubmit={handleAddCon} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                <input
+                  value={newCon}
+                  onChange={(e) => setNewCon(e.target.value)}
+                  placeholder="Add con..."
+                  style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
+                  required
+                />
+                <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
+              </form>
             </div>
           </div>
         </div>
@@ -2476,12 +2559,56 @@ function App() {
             </form>
             {geminiAnswer && (
               <div className="notesBlock" style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-app)', borderLeft: '3px solid #6c5ce7', fontSize: '0.82rem', whiteSpace: 'pre-line' }}>
-                {geminiAnswer.source === 'fallback' && (
-                  <span className="quietBadge" style={{ marginBottom: '8px', display: 'inline-flex' }}>
-                    Local fallback answer
-                  </span>
-                )}
+                <div style={{ marginBottom: '6px' }}>
+                  {geminiAnswer.source === 'fallback' ? (
+                    <span style={{ display: 'inline-flex', background: 'rgba(230, 126, 34, 0.12)', color: '#e67e22', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                      Local Fallback Answer
+                    </span>
+                  ) : (
+                    <span style={{ display: 'inline-flex', background: 'rgba(39, 174, 96, 0.12)', color: '#27ae60', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                      Gemini AI Answer
+                    </span>
+                  )}
+                </div>
                 <div>{geminiAnswer.answer}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Gemini AI Research Summarizer */}
+          <div className="aiSummarizer" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6c5ce7', margin: '0 0 10px 0' }}>
+              <Sparkles size={16} /> AI Research Summarizer & Pro/Con Extractor
+            </h4>
+            <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Paste raw research text, forum threads, or article reviews to auto-extract pros, cons, and confidence.
+            </p>
+            <form onSubmit={handleAiSummarize} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <textarea
+                value={aiInputText}
+                onChange={(e) => setAiInputText(e.target.value)}
+                placeholder="Paste research text here..."
+                rows={3}
+                style={{ padding: '8px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)', resize: 'vertical' }}
+                required
+              />
+              <button type="submit" className="primaryAction" style={{ padding: '8px 16px', fontSize: '0.8rem', width: 'auto', alignSelf: 'flex-end' }} disabled={aiLoading}>
+                {aiLoading ? 'Summarizing...' : 'Extract Insights'}
+              </button>
+            </form>
+            {aiResult && (
+              <div className="notesBlock" style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-app)', borderLeft: '3px solid #6c5ce7', fontSize: '0.82rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 'bold' }}>Extracted Insights</span>
+                  <span style={{ display: 'inline-flex', background: aiResult.source === 'fallback' ? 'rgba(230, 126, 34, 0.12)' : 'rgba(39, 174, 96, 0.12)', color: aiResult.source === 'fallback' ? '#e67e22' : '#27ae60', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                    {aiResult.source === 'fallback' ? 'Local Fallback' : 'Gemini AI'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div><strong>Confidence Score:</strong> {aiResult.confidence || 50}%</div>
+                  <div><strong>Pros Extracted:</strong> {aiResult.pros?.join(', ') || 'None'}</div>
+                  <div><strong>Cons Extracted:</strong> {aiResult.cons?.join(', ') || 'None'}</div>
+                </div>
               </div>
             )}
           </div>
@@ -2610,21 +2737,88 @@ function App() {
             </div>
           </div>
 
-          {/* Personal Research Notes (Read-only) */}
-          {selectedCollege.rawNotes?.length > 0 && (
-            <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                📝 Saved Research Notes
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Personal Research Notes */}
+          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📝 Saved Research Notes
+            </h4>
+            
+            {selectedCollege.rawNotes?.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                 {selectedCollege.rawNotes.map((note) => (
-                  <div key={note._id} style={{ fontSize: '0.82rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '6px', borderLeft: '3px solid var(--text-secondary)', color: 'var(--text-primary)' }}>
-                    {note.body}
+                  <div key={note._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '0.82rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '6px', borderLeft: '3px solid var(--text-secondary)', color: 'var(--text-primary)' }}>
+                    <div style={{ flex: 1 }}>{note.body}</div>
+                    <button 
+                      onClick={() => handleDeleteNote(note._id)} 
+                      style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', marginLeft: '8px', padding: '2px' }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                No notes saved yet. Add a research note below.
+              </p>
+            )}
+
+            <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Write a personal research note..."
+                rows={2}
+                style={{ padding: '8px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)', resize: 'vertical' }}
+                required
+              />
+              <button type="submit" className="primaryAction" style={{ width: 'auto', alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.78rem' }}>
+                Save Note
+              </button>
+            </form>
+          </div>
+
+          {/* Decision Drift History Timeline */}
+          <div className="driftTimeline" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📈 Decision Drift History
+            </h4>
+            <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Track how your confidence, pros, and cons for {selectedCollege.shortName} changed over time.
+            </p>
+            {(() => {
+              const collegeActivities = activities.filter(act => 
+                act.details.includes(selectedCollege.shortName) || 
+                act.details.includes(selectedCollege.name)
+              );
+
+              if (collegeActivities.length === 0) {
+                return (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    No history log entries recorded for this college yet.
+                  </p>
+                );
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {collegeActivities.map((act) => (
+                    <div key={act._id || act.createdAt} style={{ fontSize: '0.8rem', padding: '8px 10px', background: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#6c5ce7', textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                          {act.action.replace('_', ' ')}
+                        </span>
+                        <small style={{ color: 'var(--text-secondary)' }}>
+                          {new Date(act.createdAt).toLocaleDateString()} {new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </small>
+                      </div>
+                      <div style={{ color: 'var(--text-primary)' }}>{act.details}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
 
         </div>
       </div>
@@ -3195,6 +3389,60 @@ function App() {
 
             </div>
           </header>
+
+          {currentUser && !currentUser.emailVerified && (
+            <div style={{
+              background: 'rgba(230, 126, 34, 0.08)',
+              border: '1px solid rgba(230, 126, 34, 0.3)',
+              borderRadius: '8px',
+              padding: '12px 18px',
+              margin: '0 24px 20px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              fontSize: '0.85rem',
+              color: 'var(--text-primary)',
+              animation: 'fadeIn 0.2s ease'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+                <span>
+                  <strong>Verify your email:</strong> Your email address is unverified. Please verify your email to unlock all features (adding shortlists, notes, counselor Q&A, decisions).
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.target.disabled = true;
+                  const originalText = e.target.innerText;
+                  e.target.innerText = 'Sending...';
+                  try {
+                    await resendVerification();
+                    showToast('Verification email sent! Check your inbox.', 'success');
+                    e.target.innerText = 'Sent!';
+                  } catch (err) {
+                    showToast(getFriendlyError(err, 'Failed to resend verification email.'), 'error');
+                    e.target.disabled = false;
+                    e.target.innerText = originalText;
+                  }
+                }}
+                style={{
+                  background: '#e67e22',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '6px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Resend Email
+              </button>
+            </div>
+          )}
 
           {activeSection === 'dashboard' && (
             <>

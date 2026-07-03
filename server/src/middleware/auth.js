@@ -31,3 +31,14 @@ export async function requireAuth(req, res, next) {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 }
+
+export function requireVerifiedEmail(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication is required' });
+  }
+  if (!req.user.emailVerified) {
+    return res.status(403).json({ message: 'Email verification is required to perform this action' });
+  }
+  return next();
+}
+
