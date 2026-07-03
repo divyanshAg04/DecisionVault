@@ -513,6 +513,7 @@ a {
   color: #ffffff;
   background: linear-gradient(135deg, #ffffff 40%, #a78bfa 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -701,6 +702,7 @@ a {
   letter-spacing: 0;
   background: linear-gradient(135deg, #ffffff 40%, #a78bfa 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -863,7 +865,24 @@ a {
   padding: 28px 22px;
   background: #111823;
   color: #f7f4ec;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
 
 .brandBlock,
 .navItem,
