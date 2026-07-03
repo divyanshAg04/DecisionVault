@@ -24,11 +24,11 @@ export async function callGemini(contents, options = {}) {
     throw new Error('GEMINI_API_KEY is not configured.');
   }
 
-  // Set up 15-second timeout
+  // Set up 10-second timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
-  }, 15000);
+  }, 10000);
 
   try {
     const systemInstructionText = options.systemInstruction || DEFAULT_GUARDRAILS;
@@ -79,7 +79,7 @@ export async function callGemini(contents, options = {}) {
   } catch (error) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      throw new Error('Gemini API call timed out after 15 seconds.');
+      throw new Error('Gemini API call timed out after 10 seconds.');
     }
     throw error;
   }

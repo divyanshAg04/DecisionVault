@@ -1,18 +1,22 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireVerifiedEmail } from '../middleware/auth.js';
 import { callGemini } from '../utils/geminiClient.js';
+import { getCached, setCached } from '../utils/cache.js';
 
 const router = express.Router();
 
 // AI routes ke liye dedicated rate limiter
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 5,              // 5 AI calls per minute per IP
+  max: 5,              // 5 AI calls per minute per user
   message: { message: 'AI rate limit exceeded. Please wait a minute before trying again.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.user?._id?.toString() || req.ip;
+  },
 });
 
 const aiInputSchema = z.object({
@@ -24,6 +28,7 @@ const askSchema = z.object({
 });
 
 router.use(requireAuth);
+router.use(requireVerifiedEmail);
 router.use(aiLimiter);
 
 router.post('/summarize', async (req, res, next) => {
@@ -130,6 +135,13 @@ router.post('/ask', async (req, res, next) => {
     const { question } = askSchema.parse(req.body);
     const user = req.user;
 
+    const cacheKey = `ask:${user._id}:${question.trim().toLowerCase()}`;
+    const cachedResponse = getCached(cacheKey);
+    if (cachedResponse) {
+      console.log(`[Cache Hit] Serving cached response for question: "${question}"`);
+      return res.json(cachedResponse);
+    }
+
     const profileDescription = `
 Candidate Name: ${user.name}
 Target Exam: ${user.examTrack} (Details: ${user.exam || 'N/A'})
@@ -140,6 +152,8 @@ Home State: ${user.homeState || 'Not Specified'}
 Preferred Branches: ${user.preferredBranches || 'N/A'}
 Onboarding Status: ${user.journey || 'N/A'}
     `.trim();
+
+    let responseData = null;
 
     if (process.env.GEMINI_API_KEY) {
       try {
@@ -170,20 +184,27 @@ Onboarding Status: ${user.journey || 'N/A'}
           systemInstruction: counselorGuardrails,
         });
 
-        return res.json({ answer: result.answer, source: 'gemini' });
+        responseData = { answer: result.answer, source: 'gemini' };
       } catch (error) {
         console.error('Gemini counselor failed, falling back:', error.message);
       }
     }
 
-    // Fallback agar API key missing ho ya fail ho
-    const mockAnswers = [
-      `Based on your target exam ${user.examTrack} and rank/score ${user.score || 'N/A'}, you have a solid chance at top State Technical Universities. Your preference for ${user.preferredBranches || 'CS'} aligns well with your stats.`,
-      `With a rank of ${user.score || 'N/A'} in category ${user.category || 'General'}, prioritize branches carefully. For Computer Science, IIIT Lucknow has historically strong placement stats.`,
-      `Since you are in the "${user.journey}" stage, start comparing the ROI of your shortlisted choices. Your preferred branches (${user.preferredBranches || 'CS'}) are highly competitive, so having backup options is key.`,
-    ];
-    const randomIndex = Math.abs(question.length) % mockAnswers.length;
-    return res.json({ answer: mockAnswers[randomIndex], source: 'fallback' });
+    if (!responseData) {
+      // Fallback agar API key missing ho ya fail ho
+      const mockAnswers = [
+        `Based on your target exam ${user.examTrack} and rank/score ${user.score || 'N/A'}, you have a solid chance at top State Technical Universities. Your preference for ${user.preferredBranches || 'CS'} aligns well with your stats.`,
+        `With a rank of ${user.score || 'N/A'} in category ${user.category || 'General'}, prioritize branches carefully. For Computer Science, IIIT Lucknow has historically strong placement stats.`,
+        `Since you are in the "${user.journey}" stage, start comparing the ROI of your shortlisted choices. Your preferred branches (${user.preferredBranches || 'CS'}) are highly competitive, so having backup options is key.`,
+      ];
+      const randomIndex = Math.abs(question.length) % mockAnswers.length;
+      responseData = { answer: mockAnswers[randomIndex], source: 'fallback' };
+    }
+
+    // Cache the response for 5 minutes (300 seconds)
+    setCached(cacheKey, responseData, 300);
+
+    return res.json(responseData);
   } catch (error) {
     return next(error);
   }

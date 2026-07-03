@@ -16,3 +16,4 @@ server/.env
 server/.venv/
 server/uploads/
 server/models/
+server/public/uploads/

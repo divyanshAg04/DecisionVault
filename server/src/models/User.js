@@ -22,7 +22,10 @@ const userSchema = new mongoose.Schema(
     budget: { type: String, default: '' },
     targetExam: { type: String, default: '' },
     scorecardName: { type: String, default: '' },
-    scorecardBase64: { type: String, default: '' },
+    scorecardUrl: { type: String, default: '' },
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, default: null },
+    emailVerificationExpires: { type: Date, default: null },
   },
   { timestamps: true },
 );

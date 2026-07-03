@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireVerifiedEmail } from '../middleware/auth.js';
 import { Decision } from '../models/Decision.js';
 import { Reflection } from '../models/Reflection.js';
 import { logActivity } from '../utils/activityLogger.js';
@@ -39,6 +39,13 @@ const reflectionSchema = z.object({
 });
 
 router.use(requireAuth);
+
+router.use((req, res, next) => {
+  if (req.method !== 'GET') {
+    return requireVerifiedEmail(req, res, next);
+  }
+  return next();
+});
 
 router.get('/', async (req, res, next) => {
   try {

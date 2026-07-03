@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireVerifiedEmail } from '../middleware/auth.js';
 import { College } from '../models/College.js';
 import { Shortlist } from '../models/Shortlist.js';
 import { logActivity } from '../utils/activityLogger.js';
@@ -50,6 +50,13 @@ const predictionShortlistSchema = z.object({
 
 router.use(requireAuth);
 
+router.use((req, res, next) => {
+  if (req.method !== 'GET') {
+    return requireVerifiedEmail(req, res, next);
+  }
+  return next();
+});
+
 // GET all shortlists
 router.get('/', async (req, res, next) => {
   try {
@@ -75,7 +82,7 @@ router.post('/', async (req, res, next) => {
     await logActivity(
       req.user._id,
       'shortlist_add',
-      `Shortlisted college: ${shortlist.college.name} (${shortlist.college.shortName})`,
+      `Shortlisted college: ${shortlist.college?.name || 'Unknown'} (${shortlist.college?.shortName || 'Unknown'})`,
     );
 
     // Log research links agar add kiye hain
