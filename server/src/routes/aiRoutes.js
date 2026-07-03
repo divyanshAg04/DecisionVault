@@ -2,6 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
+import { callGemini } from '../utils/geminiClient.js';
 
 const router = express.Router();
 
@@ -28,44 +29,46 @@ router.use(aiLimiter);
 router.post('/summarize', async (req, res, next) => {
   try {
     const { text } = aiInputSchema.parse(req.body);
-    const apiKey = process.env.GEMINI_API_KEY;
 
-    if (apiKey) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const contents = [
+          {
+            parts: [
               {
-                parts: [
-                  {
-                    text: `Analyze the following college research feedback or web content and extract exactly 3 key pros, 3 key cons, and a recommended confidence level (an integer from 1 to 100 based on resource reliability). You MUST respond in valid JSON format only, matching this schema: { "pros": ["string"], "cons": ["string"], "confidence": 75 }. Do not include markdown code block formatting or backticks around JSON. Here is the research text: \n\n${text}`,
-                  },
-                ],
+                text: `Analyze the following college research feedback or web content and extract exactly 3 key pros, 3 key cons, and a recommended confidence level (an integer from 1 to 100 based on resource reliability). Here is the research text: \n\n${text}`,
               },
             ],
-          }),
-        }
-      );
+          },
+        ];
 
-      if (response.ok) {
-        const data = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        try {
-          const cleanJson = rawText
-            .trim()
-            .replace(/^```json/, '')
-            .replace(/```$/, '')
-            .trim();
-          const parsed = JSON.parse(cleanJson);
-          return res.json({ ...parsed, source: 'gemini' });
-        } catch (e) {
-          // JSON parse fail hua — fallback pe jayenge
-        }
+        const responseSchema = {
+          type: 'OBJECT',
+          properties: {
+            pros: {
+              type: 'ARRAY',
+              items: { type: 'STRING' },
+            },
+            cons: {
+              type: 'ARRAY',
+              items: { type: 'STRING' },
+            },
+            confidence: {
+              type: 'INTEGER',
+            },
+          },
+          required: ['pros', 'cons', 'confidence'],
+        };
+
+        const result = await callGemini(contents, { responseSchema });
+        return res.json({
+          pros: result.pros || [],
+          cons: result.cons || [],
+          confidence: typeof result.confidence === 'number' ? result.confidence : 75,
+          source: 'gemini',
+        });
+      } catch (error) {
+        console.error('Gemini summary failed, falling back:', error.message);
       }
     }
 
@@ -126,7 +129,6 @@ router.post('/ask', async (req, res, next) => {
   try {
     const { question } = askSchema.parse(req.body);
     const user = req.user;
-    const apiKey = process.env.GEMINI_API_KEY;
 
     const profileDescription = `
 Candidate Name: ${user.name}
@@ -139,36 +141,38 @@ Preferred Branches: ${user.preferredBranches || 'N/A'}
 Onboarding Status: ${user.journey || 'N/A'}
     `.trim();
 
-    if (apiKey) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const contents = [
+          {
+            parts: [
               {
-                parts: [
-                  {
-                    text: `You are DecisionVault's College Selection AI counselor. Use the following student profile details to answer the student's question objectively and concisely. Keep the response under 150 words. Do not use markdown headers, just plain formatting.\n\nStudent Profile:\n${profileDescription}\n\nStudent Question:\n"${question}"`,
-                  },
-                ],
+                text: `Use the following student profile details to answer the student's question objectively and concisely. Keep the response under 150 words. Do not use markdown headers, just plain formatting.\n\nStudent Profile:\n${profileDescription}\n\nStudent Question:\n"${question}"`,
               },
             ],
-          }),
-        }
-      );
+          },
+        ];
 
-      if (response.ok) {
-        const data = await response.json();
-        const rawText =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
-        return res.json({ answer: rawText.trim(), source: 'gemini' });
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        console.error('Gemini API call failed in /ask:', errData);
+        const responseSchema = {
+          type: 'OBJECT',
+          properties: {
+            answer: {
+              type: 'STRING',
+            },
+          },
+          required: ['answer'],
+        };
+
+        const counselorGuardrails = `You are DecisionVault's College Selection AI counselor. Restrict your answers strictly to Indian college selection, admissions, exams (such as JEE, BITSAT, State entrance exams), placements, candidate preferences, and related academic counseling. Politely decline to answer any off-topic queries.`;
+
+        const result = await callGemini(contents, {
+          responseSchema,
+          systemInstruction: counselorGuardrails,
+        });
+
+        return res.json({ answer: result.answer, source: 'gemini' });
+      } catch (error) {
+        console.error('Gemini counselor failed, falling back:', error.message);
       }
     }
 
