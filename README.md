@@ -291,6 +291,10 @@ Classification: Accuracy 1.0000, Precision 1.0000, Recall 1.0000, F1 1.0000, ROC
 Regression:     R2 0.8483, MAE 0.6753, RMSE 1.4948, MSE 2.2344
 ```
 
+> [!IMPORTANT]
+> **Dataset and Predictability Disclaimer:**
+> These metrics are computed on synthetic, rule-generated data (`Indian_Student_Placement_Dataset_2025.csv`) and reflect pattern-fitting of the underlying deterministic rules, not validated real-world predictive accuracy. No independent real-world out-of-sample holdout validation has been performed.
+
 > [!WARNING]
 > This app is built for decision support. Cutoff and placement predictions are estimates, not guarantees of admission or placement outcomes.
 

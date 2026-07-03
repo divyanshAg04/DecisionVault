@@ -611,8 +611,14 @@ def write_report(
     comparison_df.to_csv(REPORTS_DIR / "model_comparison.csv", index=False)
     feature_importance.to_csv(REPORTS_DIR / "feature_importance.csv", index=False)
     correlations.to_csv(REPORTS_DIR / "feature_correlations.csv")
-
     report = f"""# DecisionVault ML Evaluation Report
+
+> [!IMPORTANT]
+> **Dataset and Predictability Disclaimer:**
+> The primary training dataset (`Indian_Student_Placement_Dataset_2025.csv`) is synthetic and rule-generated.
+> As a result, tree-based models (such as Random Forest, Gradient Boosting, and XGBoost) are able to fit the underlying deterministic rules perfectly, yielding perfect metrics (100% accuracy, precision, recall, etc.).
+> These metrics reflect pattern-fitting on generated data, not validated real-world predictive power.
+> No independent real-world out-of-sample holdout validation has been performed.
 
 ==============================
 CLASSIFICATION RESULTS
