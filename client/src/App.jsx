@@ -3614,137 +3614,152 @@ function App() {
         </aside>
 
         <section className="workspace">
-          <header className="topbar">
-            <div>
-              <p className="eyebrow">College Decision Management System</p>
-              <h2>Choose with data, remember the reasoning.</h2>
+          <header className="topbar" style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            background: 'var(--bg-card)',
+            borderBottom: '1px solid var(--border-color)',
+            padding: '12px 24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            gap: '16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          }}>
+            {/* Left: Profile stats badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ background: 'rgba(108, 92, 231, 0.08)', color: '#6c5ce7', border: '1px solid rgba(108, 92, 231, 0.2)', padding: '5px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                🎯 {admissionProfile.journey === 'Entrance result ready' ? 'Entrance Ready' : (admissionProfile.journey === 'Class 12 planning' ? 'Class 12 Planner' : admissionProfile.journey)}
+              </span>
+              <span style={{ background: 'rgba(52, 152, 219, 0.08)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.2)', padding: '5px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                ⚡ {admissionProfile.exam || 'JEE Main'}: {admissionProfile.score} ({admissionProfile.scoreType || 'Rank'})
+              </span>
+              <span style={{ background: 'rgba(46, 204, 113, 0.08)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.2)', padding: '5px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                📁 {shortlisted.length} Saved
+              </span>
+              <span style={{ background: 'rgba(230, 126, 34, 0.08)', color: '#e67e22', border: '1px solid rgba(230, 126, 34, 0.2)', padding: '5px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                🏆 Leader: {finalCollege.score}% Fit
+              </span>
             </div>
-            <div className="topbarRight" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-              
-              {/* Row 1: Profile stats badges */}
-              <div className="topbarStats" aria-label="Decision status" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ background: 'rgba(108, 92, 231, 0.08)', color: '#6c5ce7', border: '1px solid rgba(108, 92, 231, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
-                  🎯 {admissionProfile.journey === 'Entrance result ready' ? 'Entrance Ready' : (admissionProfile.journey === 'Class 12 planning' ? 'Class 12 Planner' : admissionProfile.journey)}
-                </span>
-                <span style={{ background: 'rgba(52, 152, 219, 0.08)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
-                  ⚡ {admissionProfile.exam || 'JEE Main'}: {admissionProfile.score} ({admissionProfile.scoreType || 'Rank'})
-                </span>
-                <span style={{ background: 'rgba(46, 204, 113, 0.08)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
-                  📁 {shortlisted.length} Saved
-                </span>
-                <span style={{ background: 'rgba(230, 126, 34, 0.08)', color: '#e67e22', border: '1px solid rgba(230, 126, 34, 0.2)', padding: '3px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
-                  🏆 Leader: {finalCollege.score}% Fit
-                </span>
-              </div>
 
-              {/* Row 2: Action buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <select
-                  value={workspaceUserId}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      handleWorkspaceChange('', 'owner');
-                    } else {
-                      const selectedSpace = sharedWorkspaces.find(s => s.owner._id === val);
-                      handleWorkspaceChange(val, selectedSpace?.role || 'viewer');
-                    }
-                  }}
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '4px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                  aria-label="Select workspace"
-                >
-                  <option value="">📁 Personal Workspace</option>
-                  {sharedWorkspaces.map(s => (
-                    <option key={s.owner._id} value={s.owner._id}>
-                      👥 {s.owner.name}'s Workspace ({s.role})
-                    </option>
-                  ))}
-                </select>
+            {/* Right: Action buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <select
+                value={workspaceUserId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    handleWorkspaceChange('', 'owner');
+                  } else {
+                    const selectedSpace = sharedWorkspaces.find(s => s.owner._id === val);
+                    handleWorkspaceChange(val, selectedSpace?.role || 'viewer');
+                  }
+                }}
+                style={{
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+                aria-label="Select workspace"
+              >
+                <option value="">📁 Personal Workspace</option>
+                {sharedWorkspaces.map(s => (
+                  <option key={s.owner._id} value={s.owner._id}>
+                    👥 {s.owner.name}'s Workspace ({s.role})
+                  </option>
+                ))}
+              </select>
 
-                <button 
-                  type="button" 
-                  onClick={() => setShowAboutModal(true)}
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '4px', 
-                    borderColor: '#6c5ce7', 
-                    color: '#6c5ce7', 
-                    background: 'rgba(108, 92, 231, 0.05)', 
-                    fontWeight: 'bold',
-                    border: '1px solid rgba(108, 92, 231, 0.25)',
-                    padding: '4px 10px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Info size={14} /> About CollegeVault
-                </button>
-                <button 
-                  className="logoutButton light" 
-                  type="button" 
-                  onClick={() => window.print()}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--border-color)', color: 'var(--text-primary)', background: 'var(--bg-card)', fontWeight: 'bold', padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  🖨️ Print PDF
-                </button>
-                <select
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === 'csv-shortlist') handleExportData('shortlists', 'csv');
-                    else if (val === 'csv-decisions') handleExportData('decisions', 'csv');
-                    else if (val === 'json-shortlist') handleExportData('shortlists', 'json');
-                    e.target.value = '';
-                  }}
-                  style={{
-                    borderColor: 'var(--border-color)',
-                    color: 'var(--text-primary)',
-                    background: 'var(--bg-card)',
-                    fontWeight: 'bold',
-                    padding: '4px 10px',
-                    fontSize: '0.75rem',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    outline: 'none'
-                  }}
-                >
-                  <option value="">💾 Export Data</option>
-                  <option value="csv-shortlist">📊 CSV Shortlist</option>
-                  <option value="csv-decisions">🏆 CSV Decisions</option>
-                  <option value="json-shortlist">JSON Shortlist</option>
-                </select>
-                <button 
-                  type="button" 
-                  className="themeToggle" 
-                  onClick={toggleTheme} 
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px', color: 'var(--text-primary)' }}
-                  aria-label="Toggle dark mode"
-                >
-                  {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                </button>
-                <button 
-                  className="logoutButton light" 
-                  type="button" 
-                  onClick={handleLogout}
-                  style={{ padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 'bold' }}
-                >
-                  Logout
-                </button>
-              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowAboutModal(true)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  borderColor: '#6c5ce7', 
+                  color: '#6c5ce7', 
+                  background: 'rgba(108, 92, 231, 0.05)', 
+                  fontWeight: 'bold',
+                  border: '1px solid rgba(108, 92, 231, 0.25)',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <Info size={14} /> About CollegeVault
+              </button>
 
+              <button 
+                className="logoutButton light" 
+                type="button" 
+                onClick={() => window.print()}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--border-color)', color: 'var(--text-primary)', background: 'var(--bg-card)', fontWeight: 'bold', padding: '5px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                🖨️ Print PDF
+              </button>
+
+              <select
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'csv-shortlist') handleExportData('shortlists', 'csv');
+                  else if (val === 'csv-decisions') handleExportData('decisions', 'csv');
+                  else if (val === 'json-shortlist') handleExportData('shortlists', 'json');
+                  e.target.value = '';
+                }}
+                style={{
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card)',
+                  fontWeight: 'bold',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                <option value="">💾 Export Data</option>
+                <option value="csv-shortlist">📊 CSV Shortlist</option>
+                <option value="csv-decisions">🏆 CSV Decisions</option>
+                <option value="json-shortlist">JSON Shortlist</option>
+              </select>
+
+              <button 
+                type="button" 
+                className="themeToggle" 
+                onClick={toggleTheme} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px 10px', color: 'var(--text-primary)' }}
+                aria-label="Toggle dark mode"
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+
+              <button 
+                className="logoutButton light" 
+                type="button" 
+                onClick={handleLogout}
+                style={{ padding: '5px 12px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 'bold' }}
+              >
+                Logout
+              </button>
             </div>
           </header>
+
+          <div className="workspaceContent" style={{ padding: '24px 24px 48px 24px', flex: 1, overflowY: 'auto' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <p className="eyebrow" style={{ margin: 0 }}>College Decision Management System</p>
+              <h2 style={{ margin: '4px 0 0 0', fontSize: '1.6rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Choose with data, remember the reasoning.</h2>
+            </div>
 
           {currentUser && !currentUser.emailVerified && (
             <div style={{
@@ -4002,6 +4017,7 @@ function App() {
           {activeSection === 'vault' && renderVaultPanel()}
           {activeSection === 'timeline' && renderTimelinePanel()}
           {activeSection === 'reflection' && renderReflectionPanel()}
+          </div>
         </section>
       </main>
       

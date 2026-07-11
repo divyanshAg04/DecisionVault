@@ -1044,7 +1044,7 @@ a {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 26px 26px 42px;
+  padding: 0;
   scroll-behavior: smooth;
 }
 
