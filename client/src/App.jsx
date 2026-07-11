@@ -2817,6 +2817,97 @@ function App() {
               )}
             </div>
           </div>
+
+          {/* Evidence and Reference Links */}
+          <div className="researchLinks" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              <Link2 size={16} /> Reference & Information Links
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectedCollege.researchLinks?.length > 0 ? (
+                selectedCollege.researchLinks.map((link, index) => (
+                  <a 
+                    href={link.url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    key={`${link.label}-${index}`} 
+                    style={{ 
+                      display: 'flex', 
+                      gap: '8px', 
+                      alignItems: 'center', 
+                      textDecoration: 'none', 
+                      color: '#6c5ce7', 
+                      fontSize: '0.82rem', 
+                      padding: '8px 12px', 
+                      background: 'var(--bg-app)', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-color)',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <Link2 size={14} />
+                    <strong>{link.label}</strong>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>({link.type})</span>
+                  </a>
+                ))
+              ) : (
+                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No links available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Personal Research Notes */}
+          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📝 Saved Research Notes
+            </h4>
+            
+            {selectedCollege.rawNotes?.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                {selectedCollege.rawNotes.map((note) => (
+                  <div key={note._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '0.82rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '6px', borderLeft: '3px solid var(--text-secondary)', color: 'var(--text-primary)' }}>
+                    <div style={{ flex: 1 }}>
+                      <div>{note.body}</div>
+                      {note.authorName && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
+                          Added by {note.authorName}
+                        </div>
+                      )}
+                    </div>
+                    {workspaceRole !== 'viewer' && (
+                      <button 
+                        onClick={() => handleDeleteNote(note._id)} 
+                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', marginLeft: '8px', padding: '2px' }}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                No notes saved yet. Add a research note below.
+              </p>
+            )}
+
+            {workspaceRole !== 'viewer' && (
+              <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Write a personal research note..."
+                  rows={2}
+                  style={{ padding: '8px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)', resize: 'vertical' }}
+                  required
+                />
+                <button type="submit" className="primaryAction" style={{ width: 'auto', alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.78rem' }}>
+                  Save Note
+                </button>
+              </form>
+            )}
+          </div>
+
         </div>
 
         {/* Right Column: Q&A Counselor & Links */}
@@ -2984,95 +3075,7 @@ function App() {
             </div>
           </div>
 
-          {/* Evidence and Reference Links */}
-          <div className="researchLinks" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-              <Link2 size={16} /> Reference & Information Links
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {selectedCollege.researchLinks?.length > 0 ? (
-                selectedCollege.researchLinks.map((link, index) => (
-                  <a 
-                    href={link.url} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    key={`${link.label}-${index}`} 
-                    style={{ 
-                      display: 'flex', 
-                      gap: '8px', 
-                      alignItems: 'center', 
-                      textDecoration: 'none', 
-                      color: '#6c5ce7', 
-                      fontSize: '0.82rem', 
-                      padding: '8px 12px', 
-                      background: 'var(--bg-app)', 
-                      borderRadius: '6px', 
-                      border: '1px solid var(--border-color)',
-                      transition: 'background 0.2s'
-                    }}
-                  >
-                    <Link2 size={14} />
-                    <strong>{link.label}</strong>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>({link.type})</span>
-                  </a>
-                ))
-              ) : (
-                <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No links available.</p>
-              )}
-            </div>
-          </div>
 
-          {/* Personal Research Notes */}
-          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-              📝 Saved Research Notes
-            </h4>
-            
-            {selectedCollege.rawNotes?.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                {selectedCollege.rawNotes.map((note) => (
-                  <div key={note._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '0.82rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '6px', borderLeft: '3px solid var(--text-secondary)', color: 'var(--text-primary)' }}>
-                    <div style={{ flex: 1 }}>
-                      <div>{note.body}</div>
-                      {note.authorName && (
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                          Added by {note.authorName}
-                        </div>
-                      )}
-                    </div>
-                    {workspaceRole !== 'viewer' && (
-                      <button 
-                        onClick={() => handleDeleteNote(note._id)} 
-                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', marginLeft: '8px', padding: '2px' }}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                No notes saved yet. Add a research note below.
-              </p>
-            )}
-
-            {workspaceRole !== 'viewer' && (
-              <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Write a personal research note..."
-                  rows={2}
-                  style={{ padding: '8px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)', resize: 'vertical' }}
-                  required
-                />
-                <button type="submit" className="primaryAction" style={{ width: 'auto', alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.78rem' }}>
-                  Save Note
-                </button>
-              </form>
-            )}
-          </div>
 
           {/* Decision Drift History Timeline */}
           <div className="driftTimeline" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
