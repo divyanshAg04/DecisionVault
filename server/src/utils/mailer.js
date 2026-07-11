@@ -1,6 +1,11 @@
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
+import dns from 'dns';
+
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 let _transporter = null;
 
@@ -44,7 +49,7 @@ export async function sendVerificationEmail(to, otp) {
   const transporter = await getTransporter();
 
   const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM || '"DecisionVault" <noreply@decisionvault.dev>',
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || '"DecisionVault" <noreply@decisionvault.dev>',
     to,
     subject: 'Your DecisionVault Verification OTP Code',
     text: `Hello! Your verification OTP code is: ${otp}`,
@@ -79,7 +84,7 @@ export async function sendCollaborationInviteEmail(to, inviterName, role, link) 
   const transporter = await getTransporter();
 
   const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM || '"DecisionVault" <noreply@decisionvault.dev>',
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || '"DecisionVault" <noreply@decisionvault.dev>',
     to,
     subject: `Invite to collaborate on ${inviterName}'s college shortlist`,
     text: `Hello! ${inviterName} has invited you to collaborate as a ${role} on their college shortlist. Join/accept by visiting: ${link}`,
