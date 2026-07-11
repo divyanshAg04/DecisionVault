@@ -19,7 +19,6 @@ import shortlistRoutes from './routes/shortlistRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import mlRoutes from './routes/mlRoutes.js';
-import collaboratorRoutes from './routes/collaboratorRoutes.js';
 
 dotenv.config();
 
@@ -126,7 +125,6 @@ app.use('/api/decisions', decisionRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/ml', mlRoutes);
-app.use('/api/collaborators', collaboratorRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
   app.get('/api/debug-error', (req, res) => {
