@@ -24,11 +24,16 @@ async function getTransporter() {
       console.warn(`[Mailer] DNS IPv4 resolution failed for ${process.env.SMTP_HOST}:`, dnsErr.message);
     }
 
+    const port = Number(process.env.SMTP_PORT) || 587;
+    const secure = port === 465;
+
+    console.log(`[Mailer] Creating transporter for ${host}:${port} (secure: ${secure})`);
+
     // Production/staging: use configured SMTP credentials
     _transporter = nodemailer.createTransport({
       host,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465,
+      port,
+      secure,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
