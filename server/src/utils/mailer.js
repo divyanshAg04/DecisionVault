@@ -115,3 +115,13 @@ export async function sendCollaborationInviteEmail(to, inviterName, role, link) 
 
   return info;
 }
+
+export async function verifySMTP() {
+  try {
+    const transporter = await getTransporter();
+    await transporter.verify();
+    console.log('[Mailer] SMTP connection verified successfully! Ready to send emails.');
+  } catch (err) {
+    console.error('[Mailer] SMTP verification failed:', err.message);
+  }
+}
