@@ -77,30 +77,31 @@ export async function sendVerificationEmail(to, otp) {
       </div>
     `;
 
-  if (process.env.RESEND_API_KEY) {
-    console.log(`[Mailer] Sending verification email via Resend HTTP API to ${to}...`);
+  if (process.env.BREVO_API_KEY) {
+    console.log(`[Mailer] Sending verification email via Brevo HTTP API to ${to}...`);
     try {
-      const response = await fetch('https://api.resend.com/emails', {
+      const senderEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@decisionvault.dev';
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'api-key': process.env.BREVO_API_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.SMTP_FROM || 'onboarding@resend.dev',
-          to,
+          sender: { name: 'DecisionVault', email: senderEmail },
+          to: [{ email: to }],
           subject,
-          html,
+          htmlContent: html,
         }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || `HTTP ${response.status}`);
       }
-      console.log('[Mailer] Verification email sent successfully via Resend API:', data.id);
+      console.log('[Mailer] Verification email sent successfully via Brevo API:', data.messageId);
       return data;
     } catch (err) {
-      console.error('[Mailer] Failed to send email via Resend API:', err.message);
+      console.error('[Mailer] Failed to send email via Brevo API:', err.message);
       throw err;
     }
   }
@@ -148,30 +149,31 @@ export async function sendCollaborationInviteEmail(to, inviterName, role, link) 
       </div>
     `;
 
-  if (process.env.RESEND_API_KEY) {
-    console.log(`[Mailer] Sending collaboration email via Resend HTTP API to ${to}...`);
+  if (process.env.BREVO_API_KEY) {
+    console.log(`[Mailer] Sending collaboration email via Brevo HTTP API to ${to}...`);
     try {
-      const response = await fetch('https://api.resend.com/emails', {
+      const senderEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@decisionvault.dev';
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'api-key': process.env.BREVO_API_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.SMTP_FROM || 'onboarding@resend.dev',
-          to,
+          sender: { name: 'DecisionVault', email: senderEmail },
+          to: [{ email: to }],
           subject,
-          html,
+          htmlContent: html,
         }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || `HTTP ${response.status}`);
       }
-      console.log('[Mailer] Collaboration email sent successfully via Resend API:', data.id);
+      console.log('[Mailer] Collaboration email sent successfully via Brevo API:', data.messageId);
       return data;
     } catch (err) {
-      console.error('[Mailer] Failed to send collaboration email via Resend API:', err.message);
+      console.error('[Mailer] Failed to send collaboration email via Brevo API:', err.message);
       throw err;
     }
   }
@@ -205,8 +207,8 @@ export async function sendCollaborationInviteEmail(to, inviterName, role, link) 
 }
 
 export async function verifySMTP() {
-  if (process.env.RESEND_API_KEY) {
-    console.log('[Mailer] Resend API Key detected. Ready to send emails via HTTP API.');
+  if (process.env.BREVO_API_KEY) {
+    console.log('[Mailer] Brevo API Key detected. Ready to send emails via HTTP API.');
     return;
   }
   try {
