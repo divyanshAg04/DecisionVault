@@ -2643,9 +2643,9 @@ function App() {
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', padding: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', padding: '16px' }}>
         {/* Left Column: College Stats & Ratings */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           
           {/* Card 1: College Specs & Information */}
           <div className="notesBlock" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
@@ -2820,10 +2820,10 @@ function App() {
         </div>
 
         {/* Right Column: Q&A Counselor & Links */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           
           {/* Gemini AI Q&A Counselor */}
-          <div className="aiCounselor" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+          <div className="aiCounselor" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6c5ce7', margin: '0 0 10px 0' }}>
               <Sparkles size={16} /> Google Gemini Admissions Counselor Q&A
             </h4>
@@ -2861,7 +2861,7 @@ function App() {
           </div>
 
           {/* Gemini AI Research Summarizer */}
-          <div className="aiSummarizer" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+          <div className="aiSummarizer" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6c5ce7', margin: '0 0 10px 0' }}>
               <Sparkles size={16} /> AI Research Summarizer & Pro/Con Extractor
             </h4>
@@ -2899,7 +2899,7 @@ function App() {
           </div>
 
           {/* Placement & ROI Analytics */}
-          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 16px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
               📈 Placement & ROI Analytics
             </h4>
@@ -2985,7 +2985,7 @@ function App() {
           </div>
 
           {/* Evidence and Reference Links */}
-          <div className="researchLinks" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+          <div className="researchLinks" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
               <Link2 size={16} /> Reference & Information Links
             </h4>
@@ -3023,7 +3023,7 @@ function App() {
           </div>
 
           {/* Personal Research Notes */}
-          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+          <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
               📝 Saved Research Notes
             </h4>
@@ -3075,7 +3075,7 @@ function App() {
           </div>
 
           {/* Decision Drift History Timeline */}
-          <div className="driftTimeline" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '20px', borderRadius: '8px' }}>
+          <div className="driftTimeline" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
               📈 Decision Drift History
             </h4>
