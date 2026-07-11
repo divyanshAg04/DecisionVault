@@ -65,14 +65,9 @@ async function getTransporter() {
  * @param {string} otp - 6-digit OTP code
  */
 export async function sendVerificationEmail(to, otp) {
-  const transporter = await getTransporter();
-
-  const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER || '"DecisionVault" <noreply@decisionvault.dev>',
-    to,
-    subject: 'Your DecisionVault Verification OTP Code',
-    text: `Hello! Your verification OTP code is: ${otp}`,
-    html: `
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER || '"DecisionVault" <noreply@decisionvault.dev>';
+  const subject = 'Your DecisionVault Verification OTP Code';
+  const html = `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;border:1px solid #ddd;padding:20px;border-radius:8px;">
         <h2 style="color:#6c5ce7;margin-top:0;">DecisionVault — Email Verification</h2>
         <p>Please use the following 6-digit OTP code to verify your email address. The code expires in 15 minutes.</p>
@@ -80,7 +75,44 @@ export async function sendVerificationEmail(to, otp) {
           ${otp}
         </div>
       </div>
-    `,
+    `;
+
+  if (process.env.RESEND_API_KEY) {
+    console.log(`[Mailer] Sending verification email via Resend HTTP API to ${to}...`);
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.SMTP_FROM || 'onboarding@resend.dev',
+          to,
+          subject,
+          html,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}`);
+      }
+      console.log('[Mailer] Verification email sent successfully via Resend API:', data.id);
+      return data;
+    } catch (err) {
+      console.error('[Mailer] Failed to send email via Resend API:', err.message);
+      throw err;
+    }
+  }
+
+  const transporter = await getTransporter();
+
+  const info = await transporter.sendMail({
+    from,
+    to,
+    subject,
+    text: `Hello! Your verification OTP code is: ${otp}`,
+    html,
   });
 
   // In dev/test, log the Ethereal preview URL
@@ -100,14 +132,9 @@ export async function sendVerificationEmail(to, otp) {
  * @param {string} link         - Join/Register link
  */
 export async function sendCollaborationInviteEmail(to, inviterName, role, link) {
-  const transporter = await getTransporter();
-
-  const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER || '"DecisionVault" <noreply@decisionvault.dev>',
-    to,
-    subject: `Invite to collaborate on ${inviterName}'s college shortlist`,
-    text: `Hello! ${inviterName} has invited you to collaborate as a ${role} on their college shortlist. Join/accept by visiting: ${link}`,
-    html: `
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER || '"DecisionVault" <noreply@decisionvault.dev>';
+  const subject = `Invite to collaborate on ${inviterName}'s college shortlist`;
+  const html = `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;border:1px solid #ddd;padding:20px;border-radius:8px;">
         <h2 style="color:#6c5ce7;margin-top:0;">DecisionVault — Collaboration Invite</h2>
         <p><strong>${inviterName}</strong> has invited you to collaborate as a <strong>${role}</strong> on their college shortlist.</p>
@@ -119,7 +146,44 @@ export async function sendCollaborationInviteEmail(to, inviterName, role, link) 
           Or copy this link: <a href="${link}">${link}</a>
         </p>
       </div>
-    `,
+    `;
+
+  if (process.env.RESEND_API_KEY) {
+    console.log(`[Mailer] Sending collaboration email via Resend HTTP API to ${to}...`);
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.SMTP_FROM || 'onboarding@resend.dev',
+          to,
+          subject,
+          html,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}`);
+      }
+      console.log('[Mailer] Collaboration email sent successfully via Resend API:', data.id);
+      return data;
+    } catch (err) {
+      console.error('[Mailer] Failed to send collaboration email via Resend API:', err.message);
+      throw err;
+    }
+  }
+
+  const transporter = await getTransporter();
+
+  const info = await transporter.sendMail({
+    from,
+    to,
+    subject,
+    text: `Hello! ${inviterName} has invited you to collaborate as a ${role} on their college shortlist. Join/accept by visiting: ${link}`,
+    html,
   });
 
   const previewUrl = nodemailer.getTestMessageUrl(info);
@@ -141,6 +205,10 @@ export async function sendCollaborationInviteEmail(to, inviterName, role, link) 
 }
 
 export async function verifySMTP() {
+  if (process.env.RESEND_API_KEY) {
+    console.log('[Mailer] Resend API Key detected. Ready to send emails via HTTP API.');
+    return;
+  }
   try {
     const transporter = await getTransporter();
     await transporter.verify();
