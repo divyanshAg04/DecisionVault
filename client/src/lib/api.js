@@ -99,12 +99,12 @@ export async function getColleges() {
   return request('/colleges');
 }
 
-export async function getShortlists() {
-  return request('/shortlists');
+export async function getShortlists(userId) {
+  return request(userId ? `/shortlists?userId=${userId}` : '/shortlists');
 }
 
-export async function upsertShortlist(collegeId, data = {}) {
-  return request('/shortlists', {
+export async function upsertShortlist(collegeId, data = {}, userId) {
+  return request(userId ? `/shortlists?userId=${userId}` : '/shortlists', {
     method: 'POST',
     body: JSON.stringify({
       college: collegeId,
@@ -113,32 +113,32 @@ export async function upsertShortlist(collegeId, data = {}) {
   });
 }
 
-export async function deleteShortlist(shortlistId) {
-  return request(`/shortlists/${shortlistId}`, {
+export async function deleteShortlist(shortlistId, userId) {
+  return request(userId ? `/shortlists/${shortlistId}?userId=${userId}` : `/shortlists/${shortlistId}`, {
     method: 'DELETE',
   });
 }
 
-export async function addShortlistNote(shortlistId, body, source = 'User research note') {
-  return request(`/shortlists/${shortlistId}/notes`, {
+export async function addShortlistNote(shortlistId, body, source = 'User research note', userId) {
+  return request(userId ? `/shortlists/${shortlistId}/notes?userId=${userId}` : `/shortlists/${shortlistId}/notes`, {
     method: 'POST',
     body: JSON.stringify({ body, source }),
   });
 }
 
-export async function updateShortlistStatus(shortlistId, status) {
-  return request(`/shortlists/${shortlistId}/status`, {
+export async function updateShortlistStatus(shortlistId, status, userId) {
+  return request(userId ? `/shortlists/${shortlistId}/status?userId=${userId}` : `/shortlists/${shortlistId}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
   });
 }
 
-export async function getDecisions() {
-  return request('/decisions');
+export async function getDecisions(userId) {
+  return request(userId ? `/decisions?userId=${userId}` : '/decisions');
 }
 
-export async function createDecision(selectedCollegeId, finalScore, confidence, reasons, reviewDueAt, selectedCollegeSnapshot = null) {
-  return request('/decisions', {
+export async function createDecision(selectedCollegeId, finalScore, confidence, reasons, reviewDueAt, selectedCollegeSnapshot = null, userId) {
+  return request(userId ? `/decisions?userId=${userId}` : '/decisions', {
     method: 'POST',
     body: JSON.stringify({
       selectedCollege: selectedCollegeId,
@@ -151,8 +151,8 @@ export async function createDecision(selectedCollegeId, finalScore, confidence, 
   });
 }
 
-export async function createReflection(decisionId, satisfaction, placementDataAccurate, wouldChooseAgain, biggestSurprise, biggestRegret) {
-  return request('/decisions/reflections', {
+export async function createReflection(decisionId, satisfaction, placementDataAccurate, wouldChooseAgain, biggestSurprise, biggestRegret, userId) {
+  return request(userId ? `/decisions/reflections?userId=${userId}` : '/decisions/reflections', {
     method: 'POST',
     body: JSON.stringify({
       decision: decisionId,
@@ -165,8 +165,8 @@ export async function createReflection(decisionId, satisfaction, placementDataAc
   });
 }
 
-export async function getActivities() {
-  return request('/activities');
+export async function getActivities(userId) {
+  return request(userId ? `/activities?userId=${userId}` : '/activities');
 }
 
 export async function summarizeResearch(text) {
@@ -186,8 +186,8 @@ export async function deleteAccount() {
   return request('/auth/account', { method: 'DELETE' });
 }
 
-export async function deleteShortlistNote(shortlistId, noteId) {
-  return request(`/shortlists/${shortlistId}/notes/${noteId}`, { method: 'DELETE' });
+export async function deleteShortlistNote(shortlistId, noteId, userId) {
+  return request(userId ? `/shortlists/${shortlistId}/notes/${noteId}?userId=${userId}` : `/shortlists/${shortlistId}/notes/${noteId}`, { method: 'DELETE' });
 }
 
 export async function predictAdmission({ rank, seatType, gender, quota, limit }) {
@@ -197,8 +197,8 @@ export async function predictAdmission({ rank, seatType, gender, quota, limit })
   });
 }
 
-export async function savePredictionShortlist(prediction) {
-  return request('/shortlists/prediction', {
+export async function savePredictionShortlist(prediction, userId) {
+  return request(userId ? `/shortlists/prediction?userId=${userId}` : '/shortlists/prediction', {
     method: 'POST',
     body: JSON.stringify(prediction),
   });
@@ -217,8 +217,38 @@ export async function resendVerification() {
   });
 }
 
-export async function verifyEmail(token) {
-  return request(`/auth/verify-email?token=${token}`, {
-    method: 'GET',
+export async function verifyEmail(otp) {
+  return request('/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ otp }),
+  });
+}
+
+// Collaborator API Helpers
+export async function inviteCollaborator(email, role) {
+  return request('/collaborators/invite', {
+    method: 'POST',
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export async function getInvitations() {
+  return request('/collaborators/invitations');
+}
+
+export async function respondToInvitation(inviteId, accept) {
+  return request(`/collaborators/invitations/${inviteId}/respond`, {
+    method: 'POST',
+    body: JSON.stringify({ accept }),
+  });
+}
+
+export async function getSharedWorkspaces() {
+  return request('/collaborators/shares');
+}
+
+export async function removeShare(shareId) {
+  return request(`/collaborators/shares/${shareId}`, {
+    method: 'DELETE',
   });
 }

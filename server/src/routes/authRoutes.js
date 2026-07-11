@@ -14,8 +14,21 @@ import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { sendVerificationEmail } from '../utils/mailer.js';
+import fs from 'fs';
+import path from 'path';
 
 const router = express.Router();
+
+function writeOtpDebug(email, otp) {
+  if (process.env.NODE_ENV === 'production') return;
+  try {
+    const filePath = path.join(process.cwd(), 'otp_debug.txt');
+    fs.writeFileSync(filePath, `Email: ${email}\nOTP Code: ${otp}\nGenerated At: ${new Date().toLocaleTimeString()}\n`);
+    console.log(`[OTP Debug] Wrote OTP to ${filePath}`);
+  } catch (err) {
+    console.error('[OTP Debug] Failed to write otp_debug.txt:', err.message);
+  }
+}
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -137,12 +150,12 @@ router.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const user = await User.create({
       ...input,
       passwordHash,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      emailVerificationToken: otpCode,
+      emailVerificationExpires: new Date(Date.now() + 15 * 60 * 1000),
     });
     const token = signToken(user._id);
     const refreshToken = await issueRefreshToken(user._id);
@@ -150,9 +163,10 @@ router.post('/register', async (req, res, next) => {
     setTokenCookie(res, req, token);
     res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
 
-    // Send verification email (non-blocking — don't fail registration if mail fails)
-    const verifyLink = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
-    sendVerificationEmail(user.email, verifyLink).catch((err) =>
+    // Send verification email (non-blocking)
+    console.log(`[OTP] Verification code for ${user.email}: ${otpCode}`);
+    writeOtpDebug(user.email, otpCode);
+    sendVerificationEmail(user.email, otpCode).catch((err) =>
       console.error('[Mailer] Failed to send verification email:', err.message)
     );
 
@@ -165,21 +179,43 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// GET /verify-email?token=...
-router.get('/verify-email', async (req, res, next) => {
+// GET & POST /verify-email
+router.all('/verify-email', async (req, res, next) => {
   try {
-    const { token } = req.query;
-    if (!token) {
-      return res.status(400).json({ message: 'Verification token is required' });
+    const otp = req.body?.otp || req.query?.token || req.query?.otp;
+    if (!otp) {
+      return res.status(400).json({ message: 'Verification OTP code is required' });
     }
 
-    const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: new Date() },
-    });
+    let decodedUserId;
+    try {
+      const authCookie = req.cookies?.token;
+      if (authCookie) {
+        const decoded = jwt.verify(authCookie, jwtSecret);
+        decodedUserId = decoded.userId;
+      }
+    } catch (err) {
+      // Ignore token decoding failure, fallback to matching OTP globally
+    }
+
+    let user;
+    if (decodedUserId) {
+      user = await User.findOne({
+        _id: decodedUserId,
+        emailVerificationToken: otp.toString().trim(),
+        emailVerificationExpires: { $gt: new Date() },
+      });
+    }
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification token' });
+      user = await User.findOne({
+        emailVerificationToken: otp.toString().trim(),
+        emailVerificationExpires: { $gt: new Date() },
+      });
+    }
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired OTP code' });
     }
 
     user.emailVerified = true;
@@ -201,15 +237,16 @@ router.post('/resend-verification', requireAuth, async (req, res, next) => {
       return res.status(400).json({ message: 'Email is already verified' });
     }
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    user.emailVerificationToken = verificationToken;
-    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.emailVerificationToken = otpCode;
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    const verifyLink = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(user.email, verifyLink);
+    console.log(`[OTP] Resent verification code for ${user.email}: ${otpCode}`);
+    writeOtpDebug(user.email, otpCode);
+    await sendVerificationEmail(user.email, otpCode);
 
-    return res.json({ message: 'Verification email resent' });
+    return res.json({ message: 'Verification OTP code resent' });
   } catch (error) {
     return next(error);
   }
@@ -236,6 +273,19 @@ router.post('/login', async (req, res, next) => {
 
     setTokenCookie(res, req, token);
     res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+
+    // If user is unverified, generate and send a fresh OTP so they can verify immediately
+    if (!user.emailVerified) {
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      user.emailVerificationToken = otpCode;
+      user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+      console.log(`[OTP] Login verification code for ${user.email}: ${otpCode}`);
+      writeOtpDebug(user.email, otpCode);
+      sendVerificationEmail(user.email, otpCode).catch((err) =>
+        console.error('[Mailer] Failed to send verification email:', err.message)
+      );
+    }
 
     return res.json({
       token,

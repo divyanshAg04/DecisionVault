@@ -13,6 +13,8 @@ const noteSchema = new mongoose.Schema(
   {
     body: { type: String, required: true, trim: true },
     source: { type: String, trim: true },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    authorName: { type: String }
   },
   { timestamps: true },
 );
@@ -25,6 +27,19 @@ const shortlistSchema = new mongoose.Schema(
     notes: [noteSchema],
     pros: [{ type: String, trim: true }],
     cons: [{ type: String, trim: true }],
+    proConContributors: [
+      {
+        item: { type: String, required: true },
+        addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        addedByName: { type: String }
+      }
+    ],
+    collaborators: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        role: { type: String, enum: ['viewer', 'editor'], default: 'viewer' }
+      }
+    ],
     confidence: { type: Number, min: 0, max: 100, default: 50 },
     status: {
       type: String,

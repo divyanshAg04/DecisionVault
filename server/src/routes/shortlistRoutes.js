@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { requireAuth, requireVerifiedEmail } from '../middleware/auth.js';
 import { College } from '../models/College.js';
 import { Shortlist } from '../models/Shortlist.js';
+import { Invitation } from '../models/Invitation.js';
+import { User } from '../models/User.js';
 import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
@@ -57,10 +59,54 @@ router.use((req, res, next) => {
   return next();
 });
 
-// GET all shortlists
-router.get('/', async (req, res, next) => {
+async function getWorkspaceCollaborators(ownerId) {
+  const invites = await Invitation.find({ sender: ownerId, status: 'accepted' });
+  const collaborators = [];
+  for (const invite of invites) {
+    const u = await User.findOne({ email: invite.inviteeEmail }).select('_id');
+    if (u) {
+      collaborators.push({ user: u._id, role: invite.role });
+    }
+  }
+  return collaborators;
+}
+
+async function checkWorkspaceAccess(req, res, next) {
   try {
-    const shortlists = await Shortlist.find({ user: req.user._id })
+    const targetUserId = req.query.userId || req.body.userId;
+
+    if (targetUserId && targetUserId !== req.user._id.toString()) {
+      const invitation = await Invitation.findOne({
+        sender: targetUserId,
+        inviteeEmail: req.user.email.toLowerCase(),
+        status: 'accepted',
+      });
+
+      if (!invitation) {
+        return res.status(403).json({ message: 'Access to this workspace is unauthorized' });
+      }
+
+      if (req.method !== 'GET' && invitation.role === 'viewer') {
+        return res.status(403).json({ message: 'You have read-only access to this workspace' });
+      }
+
+      req.workspaceOwnerId = invitation.sender;
+      req.workspaceRole = invitation.role;
+    } else {
+      req.workspaceOwnerId = req.user._id;
+      req.workspaceRole = 'owner';
+    }
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// GET all shortlists
+router.get('/', checkWorkspaceAccess, async (req, res, next) => {
+  try {
+    const shortlists = await Shortlist.find({ user: req.workspaceOwnerId })
       .populate('college')
       .sort({ updatedAt: -1 });
     return res.json({ shortlists });
@@ -69,13 +115,119 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET /export
+router.get('/export', checkWorkspaceAccess, async (req, res, next) => {
+  try {
+    const format = req.query.format || 'json';
+    const shortlists = await Shortlist.find({ user: req.workspaceOwnerId })
+      .populate('college')
+      .sort({ updatedAt: -1 });
+
+    if (format === 'csv') {
+      const fields = [
+        'collegeName',
+        'shortName',
+        'branch',
+        'fees',
+        'avgPackage',
+        'medianPackage',
+        'placementRate',
+        'confidence',
+        'status',
+        'pros',
+        'cons',
+        'notes',
+      ];
+
+      const rows = shortlists.map(sl => {
+        const notesStr = sl.notes.map(n => `[${n.authorName || 'User'}]: ${n.body}`).join(' | ');
+        return {
+          collegeName: sl.college?.name || '',
+          shortName: sl.college?.shortName || '',
+          branch: sl.college?.branch || '',
+          fees: sl.college?.fees || 0,
+          avgPackage: sl.college?.avgPackage || 0,
+          medianPackage: sl.college?.medianPackage || 0,
+          placementRate: sl.college?.placementRate || 0,
+          confidence: sl.confidence,
+          status: sl.status,
+          pros: sl.pros.join(' | '),
+          cons: sl.cons.join(' | '),
+          notes: notesStr,
+        };
+      });
+
+      // Custom robust CSV converter
+      let csvContent = fields.join(',') + '\r\n';
+      for (const row of rows) {
+        const line = fields.map(field => {
+          let val = row[field];
+          if (val === undefined || val === null) {
+            val = '';
+          } else {
+            val = String(val).replace(/"/g, '""');
+            if (val.includes(',') || val.includes('\n') || val.includes('\r')) {
+              val = `"${val}"`;
+            }
+          }
+          return val;
+        }).join(',');
+        csvContent += line + '\r\n';
+      }
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=shortlists-${req.workspaceOwnerId}.csv`);
+      return res.send(csvContent);
+    }
+
+    // Default to JSON
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=shortlists-${req.workspaceOwnerId}.json`);
+    return res.json({ shortlists });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 // POST create/update shortlist
-router.post('/', async (req, res, next) => {
+router.post('/', checkWorkspaceAccess, async (req, res, next) => {
   try {
     const input = shortlistSchema.parse(req.body);
+
+    const existing = await Shortlist.findOne({ user: req.workspaceOwnerId, college: input.college });
+    const oldPros = existing ? existing.pros : [];
+    const oldCons = existing ? existing.cons : [];
+
+    const addedPros = input.pros.filter(p => !oldPros.includes(p));
+    const addedCons = input.cons.filter(c => !oldCons.includes(c));
+
+    let contributorUpdates = existing ? existing.proConContributors : [];
+
+    for (const item of [...addedPros, ...addedCons]) {
+      if (!contributorUpdates.some(c => c.item === item)) {
+        contributorUpdates.push({
+          item,
+          addedBy: req.user._id,
+          addedByName: req.user.name,
+        });
+      }
+    }
+
+    contributorUpdates = contributorUpdates.filter(c =>
+      input.pros.includes(c.item) || input.cons.includes(c.item)
+    );
+
+    const activeCollaborators = await getWorkspaceCollaborators(req.workspaceOwnerId);
+
     const shortlist = await Shortlist.findOneAndUpdate(
-      { user: req.user._id, college: input.college },
-      { ...input, user: req.user._id, status: 'shortlisted' },
+      { user: req.workspaceOwnerId, college: input.college },
+      {
+        ...input,
+        user: req.workspaceOwnerId,
+        status: 'shortlisted',
+        proConContributors: contributorUpdates,
+        $set: { collaborators: activeCollaborators }
+      },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     ).populate('college');
 
@@ -85,7 +237,6 @@ router.post('/', async (req, res, next) => {
       `Shortlisted college: ${shortlist.college?.name || 'Unknown'} (${shortlist.college?.shortName || 'Unknown'})`,
     );
 
-    // Log research links agar add kiye hain
     if (input.researchLinks && input.researchLinks.length > 0) {
       await logActivity(
         req.user._id,
@@ -94,7 +245,6 @@ router.post('/', async (req, res, next) => {
       );
     }
 
-    // Log priority update agar priorities hain
     if (input.priorities && input.priorities.length > 0) {
       await logActivity(
         req.user._id,
@@ -109,7 +259,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.post('/prediction', async (req, res, next) => {
+router.post('/prediction', checkWorkspaceAccess, async (req, res, next) => {
   try {
     const input = predictionShortlistSchema.parse(req.body);
     const shortCode = input.institute
@@ -168,15 +318,18 @@ router.post('/prediction', async (req, res, next) => {
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
+    const activeCollaborators = await getWorkspaceCollaborators(req.workspaceOwnerId);
+
     const shortlist = await Shortlist.findOneAndUpdate(
-      { user: req.user._id, college: college._id },
+      { user: req.workspaceOwnerId, college: college._id },
       {
-        user: req.user._id,
+        user: req.workspaceOwnerId,
         college: college._id,
         confidence: Math.round(input.probability),
         pros: college.pros,
         cons: college.cons,
         status: 'shortlisted',
+        $set: { collaborators: activeCollaborators }
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     ).populate('college');
@@ -194,12 +347,18 @@ router.post('/prediction', async (req, res, next) => {
 });
 
 // POST add note
-router.post('/:id/notes', async (req, res, next) => {
+router.post('/:id/notes', checkWorkspaceAccess, async (req, res, next) => {
   try {
     const input = noteSchema.parse(req.body);
+    const noteData = {
+      ...input,
+      author: req.user._id,
+      authorName: req.user.name,
+    };
+
     const shortlist = await Shortlist.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
-      { $push: { notes: input } },
+      { _id: req.params.id, user: req.workspaceOwnerId },
+      { $push: { notes: noteData } },
       { new: true },
     ).populate('college');
 
@@ -219,11 +378,11 @@ router.post('/:id/notes', async (req, res, next) => {
   }
 });
 
-// DELETE note — NEW
-router.delete('/:id/notes/:noteId', async (req, res, next) => {
+// DELETE note
+router.delete('/:id/notes/:noteId', checkWorkspaceAccess, async (req, res, next) => {
   try {
     const shortlist = await Shortlist.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
+      { _id: req.params.id, user: req.workspaceOwnerId },
       { $pull: { notes: { _id: req.params.noteId } } },
       { new: true },
     ).populate('college');
@@ -245,7 +404,7 @@ router.delete('/:id/notes/:noteId', async (req, res, next) => {
 });
 
 // PATCH update status
-router.patch('/:id/status', async (req, res, next) => {
+router.patch('/:id/status', checkWorkspaceAccess, async (req, res, next) => {
   try {
     const { status } = z
       .object({
@@ -254,7 +413,7 @@ router.patch('/:id/status', async (req, res, next) => {
       .parse(req.body);
 
     const shortlist = await Shortlist.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
+      { _id: req.params.id, user: req.workspaceOwnerId },
       { status },
       { new: true },
     ).populate('college');
@@ -276,11 +435,11 @@ router.patch('/:id/status', async (req, res, next) => {
 });
 
 // DELETE shortlist item
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', checkWorkspaceAccess, async (req, res, next) => {
   try {
     const deleted = await Shortlist.findOneAndDelete({
       _id: req.params.id,
-      user: req.user._id,
+      user: req.workspaceOwnerId,
     }).populate('college');
 
     if (!deleted) {

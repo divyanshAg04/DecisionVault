@@ -1,10 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import { getCached } from '../src/utils/cache.js';
 import './setup.js';
+
+vi.mock('../src/utils/geminiClient.js', () => ({
+  callGemini: vi.fn().mockResolvedValue({
+    answer: "Mocked Gemini counselor answer",
+    pros: ["Mocked pro"],
+    cons: ["Mocked con"],
+    confidence: 85
+  }),
+}));
 
 describe('AI Routes Rate Limiting and Caching', () => {
   const jwtSecret = process.env.JWT_SECRET || 'test-secret';

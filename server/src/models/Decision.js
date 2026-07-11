@@ -3,6 +3,12 @@ import mongoose from 'mongoose';
 const decisionSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    collaborators: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        role: { type: String, enum: ['viewer', 'editor'], default: 'viewer' }
+      }
+    ],
     selectedCollege: { type: mongoose.Schema.Types.ObjectId, ref: 'College' },
     selectedCollegeSnapshot: {
       name: { type: String, trim: true },
