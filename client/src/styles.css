@@ -1043,6 +1043,7 @@ a {
 .workspace {
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 26px 26px 42px;
   scroll-behavior: smooth;
 }

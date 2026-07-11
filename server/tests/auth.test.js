@@ -66,14 +66,32 @@ describe('Auth Routes', () => {
   });
 
   it('should reject login with incorrect credentials', async () => {
+    const hash = await bcrypt.hash('password123', 12);
+    await User.create({
+      name: 'Wrong Password User',
+      email: 'wrongpass@example.com',
+      passwordHash: hash,
+    });
+
     const res = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'nonexistent@example.com',
+        email: 'wrongpass@example.com',
         password: 'wrongpassword',
       });
     expect(res.status).toBe(401);
     expect(res.body.message).toContain('Invalid credentials');
+  });
+
+  it('should reject login if email does not exist', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'nonexistent@example.com',
+        password: 'anypassword',
+      });
+    expect(res.status).toBe(401);
+    expect(res.body.message).toContain('mail not exist');
   });
 
   it('should process base64 scorecard upload, save local URL, and run OCR auto-fill', async () => {

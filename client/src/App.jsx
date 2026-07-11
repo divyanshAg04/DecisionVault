@@ -1594,7 +1594,7 @@ function App() {
     if (!currentUser) return;
     const timer = setTimeout(() => {
       runAdmissionMl(admissionProfile);
-    }, 450);
+    }, 0);
 
     return () => clearTimeout(timer);
   }, [
@@ -3575,7 +3575,7 @@ function App() {
 
       <main className="appShell">
         <aside className="sidebar">
-          <button className="brandBlock brandButton" type="button" onClick={handleLogout}>
+          <button className="brandBlock brandButton" type="button" onClick={() => setAppStage('journey')}>
             <div className="brandMark">
               <GraduationCap size={21} />
             </div>
