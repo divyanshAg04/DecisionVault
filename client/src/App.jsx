@@ -3645,39 +3645,7 @@ function App() {
             </div>
 
             {/* Right: Action buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <select
-                value={workspaceUserId}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === '') {
-                    handleWorkspaceChange('', 'owner');
-                  } else {
-                    const selectedSpace = sharedWorkspaces.find(s => s.owner._id === val);
-                    handleWorkspaceChange(val, selectedSpace?.role || 'viewer');
-                  }
-                }}
-                style={{
-                  padding: '5px 10px',
-                  fontSize: '0.75rem',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  background: '#1e293b',
-                  color: '#ffffff',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  outline: 'none'
-                }}
-                aria-label="Select workspace"
-              >
-                <option value="" style={{ background: '#1e293b', color: '#ffffff' }}>📁 Personal Workspace</option>
-                {sharedWorkspaces.map(s => (
-                  <option key={s.owner._id} value={s.owner._id} style={{ background: '#1e293b', color: '#ffffff' }}>
-                    👥 {s.owner.name}'s Workspace ({s.role})
-                  </option>
-                ))}
-              </select>
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
               <button 
                 type="button" 
                 onClick={() => setShowAboutModal(true)}
