@@ -78,7 +78,8 @@ export async function sendVerificationEmail(to, otp) {
     `;
 
   if (process.env.BREVO_API_KEY) {
-    console.log(`[Mailer] Sending verification email via Brevo HTTP API to ${to}...`);
+    const keyPreview = process.env.BREVO_API_KEY.slice(0, 15) + '...';
+    console.log(`[Mailer] Sending verification email via Brevo HTTP API to ${to}... (key: ${keyPreview})`);
     try {
       const senderEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@decisionvault.dev';
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
