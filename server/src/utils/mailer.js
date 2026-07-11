@@ -13,14 +13,28 @@ async function getTransporter() {
   if (_transporter) return _transporter;
 
   if (process.env.SMTP_HOST) {
+    let host = process.env.SMTP_HOST;
+    try {
+      const ips = await dns.promises.resolve4(host);
+      if (ips && ips.length > 0) {
+        console.log(`[Mailer] Resolved ${host} to IPv4: ${ips[0]}`);
+        host = ips[0];
+      }
+    } catch (dnsErr) {
+      console.warn(`[Mailer] DNS IPv4 resolution failed for ${process.env.SMTP_HOST}:`, dnsErr.message);
+    }
+
     // Production/staging: use configured SMTP credentials
     _transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: Number(process.env.SMTP_PORT) === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
+      },
+      tls: {
+        servername: process.env.SMTP_HOST,
       },
     });
   } else {
