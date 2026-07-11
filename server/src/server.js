@@ -10,14 +10,18 @@ const port = process.env.PORT || 5000;
 
 connectDb(process.env.MONGO_URI)
   .then(() => {
-    try {
-      trainModels();
-      verifySMTP();
-    } catch (err) {
-      console.error('Failed to initialize background processes on startup:', err);
-    }
     app.listen(port, () => {
       console.log(`DecisionVault API running on http://localhost:${port}`);
+      
+      // Run background processes without blocking startup
+      setImmediate(() => {
+        try {
+          trainModels();
+          verifySMTP();
+        } catch (err) {
+          console.error('Failed to initialize background processes:', err);
+        }
+      });
     });
   })
   .catch((error) => {
