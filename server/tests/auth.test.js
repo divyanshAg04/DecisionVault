@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import './setup.js';
+
+vi.mock('../src/utils/mailer.js', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue(true),
+  sendCollaborationInviteEmail: vi.fn().mockResolvedValue(true),
+}));
 
 describe('Auth Routes', () => {
   const jwtSecret = process.env.JWT_SECRET || 'test-secret';

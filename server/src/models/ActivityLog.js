@@ -5,7 +5,7 @@ const activityLogSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     action: {
       type: String,
-      enum: ['shortlist_add', 'shortlist_remove', 'priority_update', 'note_add', 'link_add', 'decision_confirm', 'reflection_add'],
+      enum: ['shortlist_add', 'shortlist_remove', 'priority_update', 'note_add', 'link_add', 'decision_confirm', 'reflection_add', 'collaborator_invite', 'collaborator_accept', 'collaborator_revoke'],
       required: true,
     },
     details: { type: String, required: true },

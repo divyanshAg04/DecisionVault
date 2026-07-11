@@ -17,3 +17,8 @@ server/.venv/
 server/uploads/
 server/models/
 server/public/uploads/
+otp_debug.txt
+server/otp_debug.txt
+invite_debug.txt
+server/invite_debug.txt
+.github/workflows/

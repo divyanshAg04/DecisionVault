@@ -57,7 +57,14 @@ import {
   deleteAccount,
   deleteShortlistNote,
   predictAdmission,
-  predictPlacement
+  predictPlacement,
+  inviteCollaborator,
+  getInvitations,
+  respondToInvitation,
+  getSharedWorkspaces,
+  removeShare,
+  resendVerification,
+  verifyEmail
 } from './lib/api';
 
 const formatFee = (value) => Number.isFinite(value) && value > 0
@@ -396,6 +403,17 @@ function App() {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4000);
   };
 
+  // Collaboration and Workspace Switcher state
+  const [sharedWorkspaces, setSharedWorkspaces] = useState([]);
+  const [workspaceUserId, setWorkspaceUserId] = useState('');
+  const [workspaceRole, setWorkspaceRole] = useState('owner');
+  const [invitations, setInvitations] = useState({ sent: [], received: [] });
+  const [showCollabModal, setShowCollabModal] = useState(false);
+  const [collabEmail, setCollabEmail] = useState('');
+  const [collabRole, setCollabRole] = useState('viewer');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpVerifying, setOtpVerifying] = useState(false);
+
   // ML Predictor Panel states
   const [jeeRank, setJeeRank] = useState('');
   const [jeeCategory, setJeeCategory] = useState('OPEN');
@@ -526,7 +544,7 @@ function App() {
         confidence: aiResult.confidence,
         priorities,
         researchLinks: selectedCollege.customLinks || [],
-      });
+      }, workspaceUserId);
       setCatalog((current) =>
         current.map((c) => (c.id === selectedCollege.id ? { ...c, pros: shortlist.pros, cons: shortlist.cons, confidence: shortlist.confidence } : c))
       );
@@ -541,24 +559,99 @@ function App() {
     }
   };
 
-  const refreshActivities = async () => {
+  const refreshActivities = async (targetOwnerId = workspaceUserId) => {
     try {
-      const data = await getActivities();
+      const data = await getActivities(targetOwnerId);
       setActivities(data.activities || []);
     } catch (err) {
       console.error('Failed to reload activities timeline:', err);
     }
   };
 
-  const loadUserData = async () => {
+  const loadCollaborationData = async () => {
+    try {
+      const [workspacesData, invitesData] = await Promise.all([
+        getSharedWorkspaces(),
+        getInvitations(),
+      ]);
+      setSharedWorkspaces(workspacesData.shares || []);
+      setInvitations(invitesData || { sent: [], received: [] });
+    } catch (err) {
+      console.error('Failed to load collaboration data:', err);
+    }
+  };
+
+  const handleWorkspaceChange = async (userId, role = 'owner') => {
+    setWorkspaceUserId(userId);
+    setWorkspaceRole(role);
+    await loadUserData(userId);
+  };
+
+  const handleInviteCollaborator = async (e) => {
+    e.preventDefault();
+    if (!collabEmail.trim()) return;
+    try {
+      setIsLoading(true);
+      await inviteCollaborator(collabEmail.trim(), collabRole);
+      setCollabEmail('');
+      await loadCollaborationData();
+      showToast(`Collaboration invitation sent to ${collabEmail}!`, 'success');
+    } catch (err) {
+      showToast(getFriendlyError(err, 'Failed to send invitation.'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRespondInvitation = async (inviteId, accept) => {
+    try {
+      setIsLoading(true);
+      await respondToInvitation(inviteId, accept);
+      await loadCollaborationData();
+      if (accept) {
+        showToast('Workspace invitation accepted! You can now switch workspaces.', 'success');
+      } else {
+        showToast('Invitation declined.', 'info');
+      }
+    } catch (err) {
+      showToast(getFriendlyError(err, 'Failed to respond to invitation.'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveCollaboratorShare = async (shareId) => {
+    if (!window.confirm('Are you sure you want to revoke this collaborator share?')) return;
+    try {
+      setIsLoading(true);
+      await removeShare(shareId);
+      if (workspaceUserId) {
+        setWorkspaceUserId('');
+        setWorkspaceRole('owner');
+        await loadUserData('');
+      } else {
+        await loadCollaborationData();
+      }
+      showToast('Collaboration revoked.', 'success');
+    } catch (err) {
+      showToast(getFriendlyError(err, 'Failed to revoke collaboration.'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadUserData = async (targetOwnerId = workspaceUserId) => {
     try {
       setIsLoading(true);
       const [collegesData, shortlistsData, decisionsData, activitiesData] = await Promise.all([
         getColleges(),
-        getShortlists(),
-        getDecisions(),
-        getActivities(),
+        getShortlists(targetOwnerId),
+        getDecisions(targetOwnerId),
+        getActivities(targetOwnerId),
       ]);
+      
+      // Load collaboration workspaces and invites in parallel
+      loadCollaborationData();
 
       const shortlists = shortlistsData.shortlists || [];
       const dbColleges = collegesData.colleges || [];
@@ -584,6 +677,8 @@ function App() {
           cons: sl && sl.cons?.length ? sl.cons : (fallback?.cons || c.cons || []),
           notes: sl && sl.notes?.length ? sl.notes.map((n) => n.body) : (fallback?.notes || []),
           rawNotes: sl ? sl.notes : [],
+          proConContributors: sl ? (sl.proConContributors || []) : [],
+          collaborators: sl ? (sl.collaborators || []) : [],
           customLinks: sl?.researchLinks || [],
           researchLinks: [...(sl?.researchLinks || []), ...(fallback?.researchLinks || c.researchLinks || [])],
           status: sl ? sl.status : 'search',
@@ -644,6 +739,10 @@ function App() {
       getMe()
         .then(({ user }) => {
           setCurrentUser(user);
+          if (!user.emailVerified) {
+            setAppStage('verify-otp');
+            return;
+          }
           if (user.journey) {
             setAdmissionProfile({
               journey: user.journey || 'Entrance result ready',
@@ -678,27 +777,7 @@ function App() {
         .then((res) => {
           showToast('Email verified successfully! Welcome to DecisionVault.', 'success');
           sessionStorage.setItem('dv-session-active', 'true');
-          setCurrentUser(res.user);
-          if (res.user.journey) {
-            setAdmissionProfile({
-              journey: res.user.journey,
-              exam: res.user.exam,
-              scoreType: res.user.scoreType,
-              score: res.user.score,
-              category: res.user.category,
-              homeState: res.user.homeState,
-              preferredBranches: res.user.preferredBranches,
-              stream: res.user.stream || '',
-              budget: res.user.budget || '',
-              targetExam: res.user.targetExam || '',
-              fileName: res.user.scorecardName || '',
-              scorecardBase64: res.user.scorecardBase64 || '',
-            });
-            loadUserData();
-            setAppStage('dashboard');
-          } else {
-            setAppStage('journey');
-          }
+          handleVerificationSuccess(res.user);
         })
         .catch((err) => {
           showToast(err?.message || 'Verification link invalid or expired.', 'error');
@@ -714,7 +793,7 @@ function App() {
 
   // Sync priorities to shortlist in DB (debounced)
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.emailVerified || workspaceRole === 'viewer') return;
     const timer = setTimeout(async () => {
       try {
         const promises = catalog
@@ -726,7 +805,7 @@ function App() {
               cons: c.cons,
               priorities: priorities,
               researchLinks: c.customLinks || [],
-            }),
+            }, workspaceUserId),
           );
         await Promise.all(promises);
       } catch (err) {
@@ -737,9 +816,8 @@ function App() {
     return () => clearTimeout(timer);
   }, [priorities, shortlistedIds, currentUser]);
 
-  const handleLoginSuccess = (user) => {
+  const handleVerificationSuccess = (user) => {
     setCurrentUser(user);
-    sessionStorage.setItem('dv-session-active', 'true');
     if (user.journey) {
       setAdmissionProfile({
         journey: user.journey,
@@ -760,6 +838,16 @@ function App() {
     } else {
       setAppStage('journey');
     }
+  };
+
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    sessionStorage.setItem('dv-session-active', 'true');
+    if (!user.emailVerified) {
+      setAppStage('verify-otp');
+      return;
+    }
+    handleVerificationSuccess(user);
   };
 
   const handleLogout = async () => {
@@ -894,7 +982,7 @@ function App() {
         confidence: selectedCollege.confidence,
         priorities,
         researchLinks: selectedCollege.customLinks || [],
-      });
+      }, workspaceUserId);
       setCatalog((current) =>
         current.map((c) => (c.id === selectedCollege.id ? { ...c, pros: shortlist.pros } : c))
       );
@@ -915,7 +1003,7 @@ function App() {
         confidence: selectedCollege.confidence,
         priorities,
         researchLinks: selectedCollege.customLinks || [],
-      });
+      }, workspaceUserId);
       setCatalog(c => c.map(col => col.id === selectedCollege.id ? { ...col, pros: shortlist.pros } : col));
       showToast('Pro removed.', 'success');
     } catch (err) {
@@ -934,7 +1022,7 @@ function App() {
         confidence: selectedCollege.confidence,
         priorities,
         researchLinks: selectedCollege.customLinks || [],
-      });
+      }, workspaceUserId);
       setCatalog((current) =>
         current.map((c) => (c.id === selectedCollege.id ? { ...c, cons: shortlist.cons } : c))
       );
@@ -955,7 +1043,7 @@ function App() {
         confidence: selectedCollege.confidence,
         priorities,
         researchLinks: selectedCollege.customLinks || [],
-      });
+      }, workspaceUserId);
       setCatalog(c => c.map(col => col.id === selectedCollege.id ? { ...col, cons: shortlist.cons } : col));
       showToast('Con removed.', 'success');
     } catch (err) {
@@ -967,7 +1055,7 @@ function App() {
     e.preventDefault();
     if (!newNote.trim() || !selectedCollege.shortlistId) return;
     try {
-      const { shortlist } = await addShortlistNote(selectedCollege.shortlistId, newNote.trim(), 'User research note');
+      const { shortlist } = await addShortlistNote(selectedCollege.shortlistId, newNote.trim(), 'User research note', workspaceUserId);
       setCatalog((current) =>
         current.map((c) =>
           c.id === selectedCollege.id
@@ -986,9 +1074,9 @@ function App() {
   const handleDeleteNote = async (noteId) => {
     if (!selectedCollege.shortlistId) return;
     try {
-      await deleteShortlistNote(selectedCollege.shortlistId, noteId);
+      await deleteShortlistNote(selectedCollege.shortlistId, noteId, workspaceUserId);
       // Refresh shortlist data for this college
-      const updated = await getShortlists(); // fetch fresh data
+      const updated = await getShortlists(workspaceUserId); // fetch fresh data
       // Find updated shortlist for this college
       const updatedShortlist = updated.shortlists.find(s => s._id === selectedCollege.shortlistId);
       if (updatedShortlist) {
@@ -1018,7 +1106,7 @@ function App() {
         confidence: selectedCollege.confidence,
         priorities,
         researchLinks: updatedCustom,
-      });
+      }, workspaceUserId);
       setCatalog((current) =>
         current.map((c) => {
           if (c.id === selectedCollege.id) {
@@ -1070,7 +1158,8 @@ function App() {
           ? [`Selected from cutoff dataset for rank ${admissionProfile.score}: ${selectedCol.branch}, closing rank ${selectedCol.mlAdmission?.closingRank}, admission signal ${selectedCol.mlAdmission?.probability}%.`]
           : [`Selected during onboarding based on fit score of ${selectedCol.score}% against family priorities.`],
         reviewDate,
-        decisionSnapshot
+        decisionSnapshot,
+        workspaceUserId
       );
 
       setConfirmedDecisionId(decision._id);
@@ -1101,10 +1190,10 @@ function App() {
           openingRank: college.mlAdmission?.openingRank || 0,
           closingRank: college.mlAdmission?.closingRank || 0,
           probability: college.mlAdmission?.probability || 0,
-        });
+        }, workspaceUserId);
 
         // Refresh user data so that local state has this college in catalogs/shortlists
-        await loadUserData();
+        await loadUserData(workspaceUserId);
 
         // Find the new API ID by fetching raw info
         const meData = await getMe();
@@ -1138,10 +1227,11 @@ function App() {
         college.mlAdmission?.probability || college.confidence || 90,
         [`Locked directly from recommended Best Fit: ${college.branch}, fit signal ${college.mlAdmission?.probability || college.score}%`],
         reviewDate,
-        decisionSnapshot
+        decisionSnapshot,
+        workspaceUserId
       );
 
-      await loadUserData();
+      await loadUserData(workspaceUserId);
       setDecisionId(college.id);
       setConfirmedDecisionId(decision._id);
       setHasConfirmedDecision(true);
@@ -1169,7 +1259,8 @@ function App() {
         placementAccurate,
         chooseAgain,
         surprise,
-        regret
+        regret,
+        workspaceUserId
       );
       setReflectionData(reflection);
       setHasReflected(true);
@@ -1333,7 +1424,7 @@ function App() {
       setIsLoading(true);
       if (isShortlisted) {
         if (college.shortlistId) {
-          await deleteShortlist(college.shortlistId);
+          await deleteShortlist(college.shortlistId, workspaceUserId);
         }
         setShortlistedIds((current) => {
           const next = current.filter((item) => item !== id);
@@ -1348,7 +1439,7 @@ function App() {
             cons: college.cons || [],
             priorities: priorities,
             researchLinks: college.customLinks || [],
-          });
+          }, workspaceUserId);
           setCatalog((current) => current.map((c) => (c.id === id ? { ...c, shortlistId: shortlist._id } : c)));
         }
         setShortlistedIds((current) => [...current, id]);
@@ -1419,8 +1510,8 @@ function App() {
         openingRank: college.mlAdmission.openingRank || 0,
         closingRank: college.mlAdmission.closingRank || 0,
         probability: college.mlAdmission.probability || 0,
-      });
-      await loadUserData();
+      }, workspaceUserId);
+      await loadUserData(workspaceUserId);
       showToast(`Saved ${college.shortName || college.name} prediction to shortlist.`, 'success');
     } catch (err) {
       showToast(getFriendlyError(err, 'Failed to save prediction.'), 'error');
@@ -1428,6 +1519,36 @@ function App() {
       setIsLoading(false);
     }
   }
+
+  const handleExportData = async (type, format) => {
+    try {
+      setIsLoading(true);
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000/api');
+      const url = `${apiBase}/${type}/export?format=${format}${workspaceUserId ? `&userId=${workspaceUserId}` : ''}`;
+      
+      const response = await fetch(url, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Export failed. Please check your session.');
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `${type}-export.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} data exported successfully as ${format.toUpperCase()}`, 'success');
+    } catch (err) {
+      showToast(getFriendlyError(err, 'Failed to export data.'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   async function runAdmissionMl(profile = admissionProfile) {
     const rank = getRankFromProfile(profile);
@@ -1502,6 +1623,142 @@ function App() {
         onHome={() => setAppStage('landing')}
         onLoginSuccess={handleLoginSuccess}
       />
+    );
+  }
+
+  if (appStage === 'verify-otp') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-app)',
+        padding: '20px',
+        fontFamily: 'system-ui, sans-serif'
+      }}>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '16px',
+          padding: '40px 32px',
+          width: '100%',
+          maxWidth: '440px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          textAlign: 'center'
+        }}>
+          <h2 style={{ color: '#6c5ce7', margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 'bold' }}>DecisionVault</h2>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>Verify Your Email</h3>
+          
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 24px 0' }}>
+            We've sent a 6-digit OTP code to <strong style={{ color: 'var(--text-primary)' }}>{currentUser?.email}</strong>.<br />
+            Enter the code below to complete your registration.
+          </p>
+
+          <input
+            type="text"
+            maxLength={6}
+            placeholder="0 0 0 0 0 0"
+            value={otpInput}
+            onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '1.6rem',
+              textAlign: 'center',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-app)',
+              color: 'var(--text-primary)',
+              fontWeight: 'bold',
+              letterSpacing: '8px',
+              margin: '0 0 20px 0'
+            }}
+          />
+
+          <button
+            type="button"
+            disabled={otpVerifying || otpInput.length !== 6}
+            onClick={async () => {
+              setOtpVerifying(true);
+              try {
+                const res = await verifyEmail(otpInput);
+                showToast('Email verified successfully! Welcome to DecisionVault.', 'success');
+                handleVerificationSuccess(res.user);
+              } catch (err) {
+                showToast(getFriendlyError(err, 'Verification failed. Please check the code.'), 'error');
+              } finally {
+                setOtpVerifying(false);
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '0.95rem',
+              fontWeight: 'bold',
+              color: '#fff',
+              background: '#6c5ce7',
+              border: 'none',
+              borderRadius: '#6c5ce7',
+              cursor: 'pointer',
+              opacity: (otpVerifying || otpInput.length !== 6) ? 0.6 : 1,
+              transition: 'background 0.2s',
+              margin: '0 0 16px 0'
+            }}
+          >
+            {otpVerifying ? 'Verifying...' : 'Verify Code'}
+          </button>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.target.disabled = true;
+                const originalText = e.target.innerText;
+                e.target.innerText = 'Sending...';
+                try {
+                  await resendVerification();
+                  showToast('Verification OTP code resent! Check your inbox.', 'success');
+                  e.target.innerText = 'Sent!';
+                  setTimeout(() => {
+                    e.target.disabled = false;
+                    e.target.innerText = originalText;
+                  }, 5000);
+                } catch (err) {
+                  showToast(getFriendlyError(err, 'Failed to resend verification email.'), 'error');
+                  e.target.disabled = false;
+                  e.target.innerText = originalText;
+                }
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#e67e22',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                padding: '4px 0'
+              }}
+            >
+              Resend OTP
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                padding: '4px 0'
+              }}
+            >
+              Logout & Exit
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -2472,31 +2729,45 @@ function App() {
               </h4>
               <div style={{ flex: 1 }}>
                 {selectedCollege.pros?.length > 0 ? (
-                  selectedCollege.pros.map((pro, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
-                      <span>• {pro}</span>
-                      <button 
-                        onClick={() => handleRemovePro(pro)} 
-                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))
+                  selectedCollege.pros.map((pro, index) => {
+                    const contrib = selectedCollege.proConContributors?.find(c => c.item === pro);
+                    return (
+                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
+                        <span>
+                          • {pro}
+                          {contrib && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: '6px', fontStyle: 'italic' }}>
+                              (added by {contrib.addedByName})
+                            </span>
+                          )}
+                        </span>
+                        {workspaceRole !== 'viewer' && (
+                          <button 
+                            onClick={() => handleDeletePro(pro)} 
+                            style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
                   <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No pros listed.</p>
                 )}
               </div>
-              <form onSubmit={handleAddPro} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                <input
-                  value={newPro}
-                  onChange={(e) => setNewPro(e.target.value)}
-                  placeholder="Add pro..."
-                  style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
-                  required
-                />
-                <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
-              </form>
+              {workspaceRole !== 'viewer' && (
+                <form onSubmit={handleAddPro} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                  <input
+                    value={newPro}
+                    onChange={(e) => setNewPro(e.target.value)}
+                    placeholder="Add pro..."
+                    style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
+                    required
+                  />
+                  <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
+                </form>
+              )}
             </div>
             
             <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column' }}>
@@ -2505,31 +2776,45 @@ function App() {
               </h4>
               <div style={{ flex: 1 }}>
                 {selectedCollege.cons?.length > 0 ? (
-                  selectedCollege.cons.map((con, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
-                      <span>• {con}</span>
-                      <button 
-                        onClick={() => handleRemoveCon(con)} 
-                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))
+                  selectedCollege.cons.map((con, index) => {
+                    const contrib = selectedCollege.proConContributors?.find(c => c.item === con);
+                    return (
+                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
+                        <span>
+                          • {con}
+                          {contrib && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: '6px', fontStyle: 'italic' }}>
+                              (added by {contrib.addedByName})
+                            </span>
+                          )}
+                        </span>
+                        {workspaceRole !== 'viewer' && (
+                          <button 
+                            onClick={() => handleDeleteCon(con)} 
+                            style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
                   <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No cons listed.</p>
                 )}
               </div>
-              <form onSubmit={handleAddCon} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                <input
-                  value={newCon}
-                  onChange={(e) => setNewCon(e.target.value)}
-                  placeholder="Add con..."
-                  style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
-                  required
-                />
-                <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
-              </form>
+              {workspaceRole !== 'viewer' && (
+                <form onSubmit={handleAddCon} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                  <input
+                    value={newCon}
+                    onChange={(e) => setNewCon(e.target.value)}
+                    placeholder="Add con..."
+                    style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
+                    required
+                  />
+                  <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
+                </form>
+              )}
             </div>
           </div>
         </div>
@@ -2747,13 +3032,22 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                 {selectedCollege.rawNotes.map((note) => (
                   <div key={note._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: '0.82rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '6px', borderLeft: '3px solid var(--text-secondary)', color: 'var(--text-primary)' }}>
-                    <div style={{ flex: 1 }}>{note.body}</div>
-                    <button 
-                      onClick={() => handleDeleteNote(note._id)} 
-                      style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', marginLeft: '8px', padding: '2px' }}
-                    >
-                      Delete
-                    </button>
+                    <div style={{ flex: 1 }}>
+                      <div>{note.body}</div>
+                      {note.authorName && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
+                          Added by {note.authorName}
+                        </div>
+                      )}
+                    </div>
+                    {workspaceRole !== 'viewer' && (
+                      <button 
+                        onClick={() => handleDeleteNote(note._id)} 
+                        style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', marginLeft: '8px', padding: '2px' }}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2763,19 +3057,21 @@ function App() {
               </p>
             )}
 
-            <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Write a personal research note..."
-                rows={2}
-                style={{ padding: '8px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)', resize: 'vertical' }}
-                required
-              />
-              <button type="submit" className="primaryAction" style={{ width: 'auto', alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.78rem' }}>
-                Save Note
-              </button>
-            </form>
+            {workspaceRole !== 'viewer' && (
+              <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Write a personal research note..."
+                  rows={2}
+                  style={{ padding: '8px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)', resize: 'vertical' }}
+                  required
+                />
+                <button type="submit" className="primaryAction" style={{ width: 'auto', alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.78rem' }}>
+                  Save Note
+                </button>
+              </form>
+            )}
           </div>
 
           {/* Decision Drift History Timeline */}
@@ -3340,6 +3636,58 @@ function App() {
 
               {/* Row 2: Action buttons */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <select
+                  value={workspaceUserId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      handleWorkspaceChange('', 'owner');
+                    } else {
+                      const selectedSpace = sharedWorkspaces.find(s => s.owner._id === val);
+                      handleWorkspaceChange(val, selectedSpace?.role || 'viewer');
+                    }
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '0.75rem',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                  aria-label="Select workspace"
+                >
+                  <option value="">📁 Personal Workspace</option>
+                  {sharedWorkspaces.map(s => (
+                    <option key={s.owner._id} value={s.owner._id}>
+                      👥 {s.owner.name}'s Workspace ({s.role})
+                    </option>
+                  ))}
+                </select>
+
+                <button 
+                  type="button" 
+                  onClick={() => setShowCollabModal(true)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    borderColor: '#3498db', 
+                    color: '#3498db', 
+                    background: 'rgba(52, 152, 219, 0.05)', 
+                    fontWeight: 'bold',
+                    border: '1px solid rgba(52, 152, 219, 0.25)',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  👥 Collaborate
+                </button>
+
                 <button 
                   type="button" 
                   onClick={() => setShowAboutModal(true)}
@@ -3364,10 +3712,36 @@ function App() {
                   className="logoutButton light" 
                   type="button" 
                   onClick={() => window.print()}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--border-color)', color: 'var(--text-primary)', background: 'var(--bg-card)', fontWeight: 'bold', padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--border-color)', color: 'var(--text-primary)', background: 'var(--bg-card)', fontWeight: 'bold', padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}
                 >
-                  <FileText size={14} /> Export Report
+                  🖨️ Print PDF
                 </button>
+                <select
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'csv-shortlist') handleExportData('shortlists', 'csv');
+                    else if (val === 'csv-decisions') handleExportData('decisions', 'csv');
+                    else if (val === 'json-shortlist') handleExportData('shortlists', 'json');
+                    e.target.value = '';
+                  }}
+                  style={{
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)',
+                    background: 'var(--bg-card)',
+                    fontWeight: 'bold',
+                    padding: '4px 10px',
+                    fontSize: '0.75rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="">💾 Export Data</option>
+                  <option value="csv-shortlist">📊 CSV Shortlist</option>
+                  <option value="csv-decisions">🏆 CSV Decisions</option>
+                  <option value="json-shortlist">JSON Shortlist</option>
+                </select>
                 <button 
                   type="button" 
                   className="themeToggle" 
@@ -3395,11 +3769,10 @@ function App() {
               background: 'rgba(230, 126, 34, 0.08)',
               border: '1px solid rgba(230, 126, 34, 0.3)',
               borderRadius: '8px',
-              padding: '12px 18px',
+              padding: '16px 20px',
               margin: '0 24px 20px 24px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              flexDirection: 'column',
               gap: '12px',
               fontSize: '0.85rem',
               color: 'var(--text-primary)',
@@ -3411,36 +3784,93 @@ function App() {
                   <strong>Verify your email:</strong> Your email address is unverified. Please verify your email to unlock all features (adding shortlists, notes, counselor Q&A, decisions).
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={async (e) => {
-                  e.target.disabled = true;
-                  const originalText = e.target.innerText;
-                  e.target.innerText = 'Sending...';
-                  try {
-                    await resendVerification();
-                    showToast('Verification email sent! Check your inbox.', 'success');
-                    e.target.innerText = 'Sent!';
-                  } catch (err) {
-                    showToast(getFriendlyError(err, 'Failed to resend verification email.'), 'error');
-                    e.target.disabled = false;
-                    e.target.innerText = originalText;
-                  }
-                }}
-                style={{
-                  background: '#e67e22',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '6px 12px',
-                  fontSize: '0.78rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                Resend Email
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="Enter 6-digit OTP"
+                    value={otpInput}
+                    onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.82rem',
+                      borderRadius: '4px',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-app)',
+                      color: 'var(--text-primary)',
+                      width: '140px',
+                      textAlign: 'center',
+                      letterSpacing: '2px',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={otpVerifying || otpInput.length !== 6}
+                    onClick={async () => {
+                      setOtpVerifying(true);
+                      try {
+                        const res = await verifyEmail(otpInput);
+                        showToast('Email verified successfully! Welcome to DecisionVault.', 'success');
+                        setCurrentUser(res.user);
+                      } catch (err) {
+                        showToast(getFriendlyError(err, 'Verification failed. Please check the code.'), 'error');
+                      } finally {
+                        setOtpVerifying(false);
+                      }
+                    }}
+                    style={{
+                      background: '#6c5ce7',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      opacity: (otpVerifying || otpInput.length !== 6) ? 0.6 : 1
+                    }}
+                  >
+                    {otpVerifying ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.target.disabled = true;
+                    const originalText = e.target.innerText;
+                    e.target.innerText = 'Sending...';
+                    try {
+                      await resendVerification();
+                      showToast('Verification OTP code sent! Check your inbox.', 'success');
+                      e.target.innerText = 'Sent!';
+                      setTimeout(() => {
+                        e.target.disabled = false;
+                        e.target.innerText = originalText;
+                      }, 5000);
+                    } catch (err) {
+                      showToast(getFriendlyError(err, 'Failed to resend verification email.'), 'error');
+                      e.target.disabled = false;
+                      e.target.innerText = originalText;
+                    }
+                  }}
+                  style={{
+                    background: 'transparent',
+                    color: '#e67e22',
+                    border: '1px solid #e67e22',
+                    borderRadius: '4px',
+                    padding: '5px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Resend OTP
+                </button>
+              </div>
             </div>
           )}
 
@@ -3785,6 +4215,205 @@ function App() {
               style={{ width: '100%', marginTop: '20px', minHeight: '38px' }}
             >
               Get Started
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Glassmorphic Collaboration & Workspace Modal */}
+      {showCollabModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '16px',
+            width: '650px',
+            maxWidth: '90%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            padding: '30px',
+            position: 'relative',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+            color: 'var(--text-primary)',
+            textAlign: 'left'
+          }}>
+            <button 
+              onClick={() => setShowCollabModal(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ background: '#3498db', color: '#fff', borderRadius: '8px', padding: '6px', display: 'flex' }}>
+                <Building2 size={24} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Workspace Collaboration</h3>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Share with Mentors, Counselors & Parents</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Form to invite collaborator */}
+              <div style={{ background: 'var(--bg-app)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Invite a Collaborator</h4>
+                <form onSubmit={handleInviteCollaborator} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <input
+                    type="email"
+                    placeholder="Enter collaborator email..."
+                    value={collabEmail}
+                    onChange={(e) => setCollabEmail(e.target.value)}
+                    style={{ flex: 2, minWidth: '200px', padding: '8px 12px', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                    required
+                  />
+                  <select
+                    value={collabRole}
+                    onChange={(e) => setCollabRole(e.target.value)}
+                    style={{ flex: 1, minWidth: '100px', padding: '8px 12px', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 'bold' }}
+                  >
+                    <option value="viewer">Viewer (Read-only)</option>
+                    <option value="editor">Editor (Collaborate)</option>
+                  </select>
+                  <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '8px 16px', fontSize: '0.82rem' }}>
+                    Send Invite
+                  </button>
+                </form>
+              </div>
+
+              {/* Sent Invitations & Active Collaborators */}
+              <div>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Sent Invitations & Collaborators</h4>
+                {invitations.sent?.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {invitations.sent.map((inv) => (
+                      <div key={inv._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.82rem' }}>
+                        <div>
+                          <strong>{inv.inviteeEmail}</strong> 
+                          <span style={{ fontSize: '0.72rem', marginLeft: '8px', padding: '2px 6px', borderRadius: '4px', background: '#e1f5fe', color: '#0288d1', fontWeight: 'bold' }}>
+                            {inv.role}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            color: inv.status === 'accepted' ? '#27ae60' : (inv.status === 'declined' ? '#c0392b' : '#f39c12'), 
+                            fontWeight: 'bold',
+                            textTransform: 'capitalize' 
+                          }}>
+                            {inv.status}
+                          </span>
+                          <button 
+                            onClick={() => handleRemoveCollaboratorShare(inv._id)}
+                            style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem' }}
+                          >
+                            Revoke
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No invitations sent yet.</p>
+                )}
+              </div>
+
+              {/* Received Invitations */}
+              <div>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Pending Incoming Invites</h4>
+                {invitations.received?.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {invitations.received.map((inv) => (
+                      <div key={inv._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.82rem' }}>
+                        <div>
+                          <strong>{inv.sender.name}</strong> ({inv.sender.email}) invited you to collaborate as <strong style={{ textTransform: 'capitalize' }}>{inv.role}</strong>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button 
+                            onClick={() => handleRespondInvitation(inv._id, true)}
+                            className="primaryAction" 
+                            style={{ width: 'auto', padding: '4px 10px', fontSize: '0.75rem', background: '#27ae60' }}
+                          >
+                            Accept
+                          </button>
+                          <button 
+                            onClick={() => handleRespondInvitation(inv._id, false)}
+                            style={{ padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: '#c0392b', color: '#fff', cursor: 'pointer' }}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No pending incoming invites.</p>
+                )}
+              </div>
+
+              {/* Active Shared Workspaces */}
+              <div>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Access to Shared Workspaces</h4>
+                {sharedWorkspaces?.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {sharedWorkspaces.map((share) => (
+                      <div key={share.inviteId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.82rem' }}>
+                        <div>
+                          <strong>{share.owner.name}</strong>'s workspace ({share.role})
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => handleWorkspaceChange(share.owner._id, share.role)}
+                            className="primaryAction"
+                            style={{ width: 'auto', padding: '4px 10px', fontSize: '0.75rem' }}
+                          >
+                            Switch To
+                          </button>
+                          <button 
+                            onClick={() => handleRemoveCollaboratorShare(share.inviteId)}
+                            style={{ padding: '4px 10px', fontSize: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'none', color: '#e11d48', cursor: 'pointer' }}
+                          >
+                            Leave
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No shared workspaces available.</p>
+                )}
+              </div>
+
+            </div>
+            
+            <button 
+              onClick={() => setShowCollabModal(false)}
+              className="primaryAction"
+              style={{ width: '100%', marginTop: '20px', minHeight: '38px' }}
+            >
+              Close
             </button>
           </div>
         </div>
