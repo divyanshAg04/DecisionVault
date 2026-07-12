@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileText,
   GraduationCap,
+  HelpCircle,
   Info,
   Link2,
   Lock,
