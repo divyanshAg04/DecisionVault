@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GraduationCap, Upload, ShieldAlert, HelpCircle, Search, Check, ChevronDown } from 'lucide-react';
 import { INDIAN_STATES, ENGINEERING_BRANCHES, BUDGET_RANGES } from '../data/constants';
+import { colleges } from '../data/colleges';
 
 const EXAM_TOOLTIPS = {
   'JEE Main': 'Used for admission into NITs, IIITs, GFTIs and qualification for JEE Advanced.',
@@ -443,6 +444,37 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
     updateAdmissionProfile('preferredBranches', next.join(', '));
   };
 
+  const getEstimatedEligibleColleges = () => {
+    const scoreVal = parseFloat(admissionProfile.score);
+    if (isNaN(scoreVal) || scoreVal <= 0) return [];
+
+    const type = admissionProfile.scoreType || 'Rank';
+    let targetRank = 999999;
+
+    if (type === 'Rank') {
+      targetRank = scoreVal;
+    } else if (type === 'Percentile') {
+      targetRank = Math.round((100 - scoreVal) * 12000);
+    } else if (type === 'Score') {
+      const estimatedPercentile = Math.min(100, Math.max(0, (scoreVal / 300) * 100));
+      targetRank = Math.round((100 - estimatedPercentile) * 12000);
+    }
+
+    const eligible = colleges
+      .filter(c => {
+        if (targetRank <= 15000) {
+          return ['IIT Delhi', 'IIT Roorkee', 'IIIT Hyderabad', 'NIT Trichy', 'IIT Madras', 'IIT Kanpur'].includes(c.shortName || c.name);
+        }
+        if (targetRank <= 40000) {
+          return ['NIT Surathkal', 'NIT Warangal', 'MNNIT', 'IIIT Bangalore', 'BITS Goa', 'COEP'].includes(c.shortName || c.name);
+        }
+        return ['VIT', 'TIET', 'BIT Mesra', 'VJTI', 'COEP', 'Jadavpur University'].includes(c.shortName || c.name);
+      })
+      .slice(0, 4);
+
+    return eligible;
+  };
+
   const getScoreLabel = () => {
     const type = admissionProfile.scoreType || 'Rank';
     if (type === 'Percentile') return 'Enter Percentile';
@@ -619,6 +651,29 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
               step="any"
             />
           </label>
+
+          {getEstimatedEligibleColleges().length > 0 && (
+            <div style={{
+              gridColumn: '1 / -1',
+              marginTop: '10px',
+              padding: '12px 16px',
+              background: 'rgba(31, 138, 76, 0.05)',
+              border: '1px dashed rgba(31, 138, 76, 0.3)',
+              borderRadius: '8px',
+              marginBottom: '10px'
+            }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#1f8a4c', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                🎯 Estimated Eligible Colleges
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px' }}>
+                {getEstimatedEligibleColleges().map(c => (
+                  <div key={c.id || c.name} style={{ fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#1f8a4c', fontWeight: 'bold' }}>✓</span> {c.name} ({c.shortName})
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <label>
             Category <span style={{ color: '#ff4d4f' }}>*</span>
