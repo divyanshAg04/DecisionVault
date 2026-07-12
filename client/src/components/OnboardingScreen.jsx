@@ -209,8 +209,10 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             </select>
           </label>
 
-          <label style={{ position: 'relative' }}>
-            Home State <span style={{ color: '#ff4d4f' }}>*</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Home State <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
             <div
               onClick={() => setHomeStateDropdownOpen(!homeStateDropdownOpen)}
               style={{
@@ -288,7 +290,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
                 ))}
               </div>
             )}
-          </label>
+          </div>
 
           <label>
             Budget range <span style={{ color: '#ff4d4f' }}>*</span>
@@ -304,8 +306,10 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             </select>
           </label>
 
-          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+          <div className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -365,7 +369,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
                 )}
               </div>
             </div>
-          </label>
+          </div>
 
           <label className="wideField">
             Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
@@ -631,8 +635,10 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
             </select>
           </label>
 
-          <label style={{ position: 'relative' }}>
-            Home State <span style={{ color: '#ff4d4f' }}>*</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Home State <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
             <div
               onClick={() => setHomeStateDropdownOpen(!homeStateDropdownOpen)}
               style={{
@@ -710,12 +716,14 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
                 ))}
               </div>
             )}
-          </label>
+          </div>
 
           <div style={{ minHeight: '1px' }}></div> {/* Grid Spacer */}
 
-          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+          <div className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -775,7 +783,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
                 )}
               </div>
             </div>
-          </label>
+          </div>
 
           <label className="wideField">
             Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>

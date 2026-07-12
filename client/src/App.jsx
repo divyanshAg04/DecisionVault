@@ -2240,8 +2240,8 @@ function App() {
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, position: 'relative' }}>
-                    Home State <span style={{ color: '#ff4d4f' }}>*</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, position: 'relative' }}>
+                    <span>Home State <span style={{ color: '#ff4d4f' }}>*</span></span>
                     <div
                       onClick={() => setEditHomeStateDropdownOpen(!editHomeStateDropdownOpen)}
                       style={{
@@ -2318,7 +2318,7 @@ function App() {
                         ))}
                       </div>
                     )}
-                  </label>
+                  </div>
 
                   <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
                     Budget Range <span style={{ color: '#ff4d4f' }}>*</span>
@@ -2405,8 +2405,8 @@ function App() {
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, position: 'relative' }}>
-                    Home State <span style={{ color: '#ff4d4f' }}>*</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, position: 'relative' }}>
+                    <span>Home State <span style={{ color: '#ff4d4f' }}>*</span></span>
                     <div
                       onClick={() => setEditHomeStateDropdownOpen(!editHomeStateDropdownOpen)}
                       style={{
@@ -2483,14 +2483,14 @@ function App() {
                         ))}
                       </div>
                     )}
-                  </label>
+                  </div>
 
                   <div style={{ minHeight: '1px' }}></div>
                 </>
               )}
 
-              <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Preferred College States (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+              <div className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                <span>Preferred College States (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span></span>
                 <div style={{
                   display: 'flex',
                   flexWrap: 'wrap',
@@ -2567,7 +2567,7 @@ function App() {
                     );
                   })()}
                 </div>
-              </label>
+              </div>
 
               <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
                 Preferred Branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
