@@ -24,7 +24,8 @@ const decisionSchema = z.object({
       probability: z.number().optional(),
       source: z.string().optional(),
     })
-    .optional(),
+    .optional()
+    .nullable(),
   finalScore: z.number().min(0).max(100),
   confidence: z.number().min(0).max(100),
   reasons: z.array(z.string()).min(1),
