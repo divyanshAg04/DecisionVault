@@ -1,4 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000/api');
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (!import.meta.env.PROD) {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    return `http://${hostname}:5000/api`;
+  }
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const API_CONFIG_ERROR = import.meta.env.PROD && !import.meta.env.VITE_API_URL
   ? 'API URL is not configured. Set VITE_API_URL to your deployed API endpoint.'
   : '';

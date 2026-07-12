@@ -191,7 +191,7 @@ router.all('/verify-email', async (req, res, next) => {
     try {
       const authCookie = req.cookies?.token;
       if (authCookie) {
-        const decoded = jwt.verify(authCookie, jwtSecret);
+        const decoded = jwt.verify(authCookie, process.env.JWT_SECRET || 'test-secret');
         decodedUserId = decoded.userId;
       }
     } catch (err) {
