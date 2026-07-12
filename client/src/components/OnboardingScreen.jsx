@@ -309,11 +309,18 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
     updateAdmissionProfile('preferredBranches', next.join(', '));
   };
 
+  const getScoreLabel = () => {
+    const type = admissionProfile.scoreType || 'Rank';
+    if (type === 'Percentile') return 'Enter Percentile';
+    if (type === 'Score') return 'Enter Raw Score';
+    return 'Enter CRL Rank';
+  };
+
   const getScorePlaceholder = () => {
     const type = admissionProfile.scoreType || 'Rank';
-    if (type === 'Percentile') return 'Example: 98.76';
-    if (type === 'Score') return 'Example: 120 (Marks)';
-    return 'Example: 8900 (CRL Rank)';
+    if (type === 'Percentile') return 'e.g. 98.73';
+    if (type === 'Score') return 'e.g. 180';
+    return 'e.g. 8900';
   };
 
   const handleSubmit = (e) => {
@@ -420,28 +427,54 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
             </select>
           </label>
 
-          <label>
-            Score type <span style={{ color: '#ff4d4f' }}>*</span>
-            <select
-              value={admissionProfile.scoreType}
-              onChange={(event) => {
-                updateAdmissionProfile('scoreType', event.target.value);
-                // Clear score on type change to avoid format confusion
-                updateAdmissionProfile('score', '');
-              }}
-            >
-              <option>Rank</option>
-              <option>Percentile</option>
-              <option>Score</option>
-            </select>
-          </label>
+          <div className="wideField" style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              How would you like to enter your {admissionProfile.exam || 'JEE Main'} result? <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '4px' }}>
+              {[
+                { value: 'Rank', label: 'Rank (Recommended)' },
+                { value: 'Percentile', label: 'Percentile' },
+                { value: 'Score', label: 'Raw Score' }
+              ].map((opt) => (
+                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '0.85rem' }}>
+                  <input
+                    type="radio"
+                    name="scoreTypeRadio"
+                    value={opt.value}
+                    checked={(admissionProfile.scoreType || 'Rank') === opt.value}
+                    onChange={() => {
+                      updateAdmissionProfile('scoreType', opt.value);
+                      updateAdmissionProfile('score', '');
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
 
           <label>
-            Rank / score <span style={{ color: '#ff4d4f' }}>*</span>
+            {getScoreLabel()} <span style={{ color: '#ff4d4f' }}>*</span>
             <input
-              value={admissionProfile.score}
-              onChange={(event) => updateAdmissionProfile('score', event.target.value)}
+              value={admissionProfile.score || ''}
+              onChange={(event) => {
+                const val = event.target.value;
+                const type = admissionProfile.scoreType || 'Rank';
+                if (type === 'Percentile') {
+                  if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+                    updateAdmissionProfile('score', val);
+                  }
+                } else {
+                  updateAdmissionProfile('score', val);
+                }
+              }}
               placeholder={getScorePlaceholder()}
+              type={admissionProfile.scoreType === 'Percentile' || admissionProfile.scoreType === 'Score' ? 'number' : 'text'}
+              min="0"
+              max={admissionProfile.scoreType === 'Percentile' ? "100" : undefined}
+              step="any"
             />
           </label>
 
