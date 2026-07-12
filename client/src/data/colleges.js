@@ -20,7 +20,7 @@ export const colleges = [
     research: 6.8,
     roi: 9.4,
     confidence: 84,
-    tags: ['coding culture', 'high ROI', 'small campus'],
+    tags: ['coding culture', 'high Return on Investment (ROI)', 'small campus'],
     pros: ['Strong coding culture', 'High average package', 'Fast-growing alumni network'],
     cons: ['Compact campus', 'Limited extracurricular diversity', 'Competitive workload'],
     notes: [
@@ -122,7 +122,7 @@ export const colleges = [
     roi: 8.5,
     confidence: 72,
     tags: ['NIT tag', 'Delhi', 'growing campus'],
-    pros: ['NIT brand', 'Good ROI', 'Delhi NCR exposure'],
+    pros: ['NIT brand', 'Good Return on Investment (ROI)', 'Delhi NCR exposure'],
     cons: ['Newer reputation than top NITs', 'Infrastructure still growing', 'Smaller alumni base'],
     notes: [
       'NIT tag is valuable. Need to compare branch-specific placement and campus maturity.',
@@ -169,7 +169,7 @@ export const colleges = [
 
 export const defaultPriorities = [
   { key: 'avgPackage', label: 'Placements', weight: 5 },
-  { key: 'roi', label: 'ROI', weight: 5 },
+  { key: 'roi', label: 'Return on Investment (ROI)', weight: 5 },
   { key: 'fees', label: 'Fees', weight: 3 },
   { key: 'campusLife', label: 'Campus Life', weight: 3 },
   { key: 'research', label: 'Research', weight: 2 },
