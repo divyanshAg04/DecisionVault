@@ -1570,27 +1570,17 @@ function App() {
           if (p.key === 'fees') return { ...p, weight: 1 };
           if (p.key === 'campusLife') return { ...p, weight: 3 };
           if (p.key === 'research') return { ...p, weight: 2 };
-          if (p.key === 'distanceKm') return { ...p, weight: 2 };
         } else if (presetName === 'budget') {
           if (p.key === 'fees' || p.key === 'roi') return { ...p, weight: 5 };
           if (p.key === 'avgPackage') return { ...p, weight: 2 };
           if (p.key === 'campusLife') return { ...p, weight: 2 };
           if (p.key === 'research') return { ...p, weight: 1 };
-          if (p.key === 'distanceKm') return { ...p, weight: 3 };
-        } else if (presetName === 'location') {
-          if (p.key === 'distanceKm') return { ...p, weight: 5 };
-          if (p.key === 'fees') return { ...p, weight: 3 };
-          if (p.key === 'roi') return { ...p, weight: 3 };
-          if (p.key === 'avgPackage') return { ...p, weight: 4 };
-          if (p.key === 'campusLife') return { ...p, weight: 3 };
-          if (p.key === 'research') return { ...p, weight: 2 };
         } else if (presetName === 'campus') {
           if (p.key === 'campusLife') return { ...p, weight: 5 };
           if (p.key === 'research') return { ...p, weight: 4 };
           if (p.key === 'avgPackage') return { ...p, weight: 4 };
           if (p.key === 'fees') return { ...p, weight: 2 };
           if (p.key === 'roi') return { ...p, weight: 3 };
-          if (p.key === 'distanceKm') return { ...p, weight: 2 };
         }
         return p;
       });
@@ -2755,7 +2745,6 @@ function App() {
                 <CompareRow label="Avg Package" values={shortlisted.map((college) => formatPackage(college.avgPackage))} />
                 <CompareRow label="Placement" values={shortlisted.map((college) => `${college.placementRate}%`)} />
                 <CompareRow label="Hostel" values={shortlisted.map((college) => (college.hostel ? 'Yes' : 'No'))} />
-                <CompareRow label="Distance" values={shortlisted.map((college) => `${college.distanceKm} km`)} />
                 <CompareRow label="Campus Life" values={shortlisted.map((college) => college.campusLife.toFixed(1))} />
                 <CompareRow label="Research" values={shortlisted.map((college) => college.research.toFixed(1))} />
               </tbody>
@@ -2774,7 +2763,6 @@ function App() {
             const c2 = shortlisted[1];
             const diffPackage = c1.avgPackage - c2.avgPackage;
             const diffFees = c1.fees - c2.fees;
-            const diffDistance = c1.distanceKm - c2.distanceKm;
             const diffCampus = c1.campusLife - c2.campusLife;
             return (
               <div className="tradeOffCard" style={{ margin: '15px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', padding: '15px', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text-primary)', textAlign: 'left' }}>
@@ -2789,7 +2777,6 @@ function App() {
                   <li><strong>Fit Margin</strong>: <strong>{c1.shortName}</strong> is rated <strong>+{c1.score - c2.score}%</strong> higher in total priority alignment.</li>
                   <li><strong>Placement & Earnings</strong>: {diffPackage > 0 ? <span>Gains an estimated average salary increase of <strong style={{ color: '#1f8a4c' }}>+{diffPackage.toFixed(1)} LPA</strong>.</span> : <span>Sacrifices an estimated <strong style={{ color: '#b42318' }}>{Math.abs(diffPackage).toFixed(1)} LPA</strong> in average salary.</span>}</li>
                   <li><strong>Academic Cost</strong>: {diffFees > 0 ? <span>Increases total expense by <strong style={{ color: '#b42318' }}>{formatFee(diffFees)}</strong>.</span> : <span>Saves you <strong style={{ color: '#1f8a4c' }}>{formatFee(Math.abs(diffFees))}</strong> in total fees.</span>}</li>
-                  <li><strong>Location Fit</strong>: {diffDistance > 0 ? <span>Places you <strong style={{ color: '#b42318' }}>{diffDistance} km</strong> further from home.</span> : <span>Places you <strong style={{ color: '#1f8a4c' }}>{Math.abs(diffDistance)} km</strong> closer to home.</span>}</li>
                   <li><strong>Campus Experience</strong>: {diffCampus > 0 ? <span>Features a higher campus satisfaction rating (<strong style={{ color: '#1f8a4c' }}>+{diffCampus.toFixed(1)}/10</strong>).</span> : <span>Features a slightly lower campus satisfaction rating (<strong style={{ color: '#b42318' }}>-{Math.abs(diffCampus).toFixed(1)}/10</strong>).</span>}</li>
                 </ul>
               </div>
@@ -2874,9 +2861,6 @@ function App() {
           </button>
           <button type="button" onClick={() => applyPreset('budget')} className="textButton" style={{ fontSize: '0.75rem', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
             🪙 Budget & Return on Investment (ROI)
-          </button>
-          <button type="button" onClick={() => applyPreset('location')} className="textButton" style={{ fontSize: '0.75rem', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
-            📍 Near Home
           </button>
           <button type="button" onClick={() => applyPreset('campus')} className="textButton" style={{ fontSize: '0.75rem', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
             🏫 Campus Life
@@ -3253,10 +3237,6 @@ function App() {
               <div>
                 <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location</span>
                 <strong>{selectedCollege.city}, {selectedCollege.state}</strong>
-              </div>
-              <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance from home</span>
-                <strong>{selectedCollege.distanceKm ? `${selectedCollege.distanceKm} km` : 'Dataset only'}</strong>
               </div>
             </div>
           </div>
@@ -4713,7 +4693,7 @@ function App() {
                   <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
                     <strong>⚖️ Priority Decision Matrix</strong>
                     <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      Drag sliders to weight factors like Placements, Tuition Budget, Campus Ratings, and Distance to see which options offer the highest blended fit.
+                      Drag sliders to weight factors like Placements, Tuition Budget, and Campus Ratings to see which options offer the highest blended fit.
                     </span>
                   </div>
                   <div style={{ background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #6c5ce7' }}>
