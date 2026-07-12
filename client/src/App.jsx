@@ -1909,6 +1909,14 @@ function App() {
         </p>
         <form onSubmit={handleSaveProfile} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 24px', maxWidth: '800px' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+            Admissions Path / Track
+            <select value={editProfile.journey || 'Entrance result ready'} onChange={e => setEditProfile(p => ({ ...p, journey: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+              <option value="Entrance result ready">Entrance Result Ready (Rank-Based)</option>
+              <option value="Class 12 planning">Class 12 Planning (Board %-Based)</option>
+            </select>
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
             Target Exam
             <input value={editProfile.exam || ''} onChange={e => setEditProfile(p => ({ ...p, exam: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
           </label>
