@@ -2251,21 +2251,51 @@ function App() {
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                    Score Type <span style={{ color: '#ff4d4f' }}>*</span>
-                    <select value={editProfile.scoreType || 'Rank'} onChange={e => setEditProfile(p => ({ ...p, scoreType: e.target.value, score: '' }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-                      <option>Rank</option>
-                      <option>Percentile</option>
-                      <option>Score</option>
-                    </select>
-                  </label>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      How would you like to enter your {editProfile.exam || 'JEE Main'} result? <span style={{ color: '#ff4d4f' }}>*</span>
+                    </span>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '4px' }}>
+                      {[
+                        { value: 'Rank', label: 'Rank (Recommended)' },
+                        { value: 'Percentile', label: 'Percentile' },
+                        { value: 'Score', label: 'Raw Score' }
+                      ].map((opt) => (
+                        <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                          <input
+                            type="radio"
+                            name="editScoreTypeRadio"
+                            value={opt.value}
+                            checked={(editProfile.scoreType || 'Rank') === opt.value}
+                            onChange={() => setEditProfile(p => ({ ...p, scoreType: opt.value, score: '' }))}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          {opt.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
                   <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                    Rank / Score <span style={{ color: '#ff4d4f' }}>*</span>
+                    {editProfile.scoreType === 'Percentile' ? 'Enter Percentile' : (editProfile.scoreType === 'Score' ? 'Enter Raw Score' : 'Enter CRL Rank')} <span style={{ color: '#ff4d4f' }}>*</span>
                     <input
                       value={editProfile.score || ''}
-                      onChange={e => setEditProfile(p => ({ ...p, score: e.target.value }))}
-                      placeholder={editProfile.scoreType === 'Percentile' ? 'Example: 98.76' : (editProfile.scoreType === 'Score' ? 'Example: 120 (Marks)' : 'Example: 8900 (CRL Rank)')}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const type = editProfile.scoreType || 'Rank';
+                        if (type === 'Percentile') {
+                          if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+                            setEditProfile(p => ({ ...p, score: val }));
+                          }
+                        } else {
+                          setEditProfile(p => ({ ...p, score: val }));
+                        }
+                      }}
+                      placeholder={editProfile.scoreType === 'Percentile' ? 'e.g. 98.73' : (editProfile.scoreType === 'Score' ? 'e.g. 180' : 'e.g. 8900')}
+                      type={editProfile.scoreType === 'Percentile' || editProfile.scoreType === 'Score' ? 'number' : 'text'}
+                      min="0"
+                      max={editProfile.scoreType === 'Percentile' ? "100" : undefined}
+                      step="any"
                       style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                     />
                   </label>
