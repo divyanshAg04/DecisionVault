@@ -1523,7 +1523,7 @@ function App() {
   const handleExportData = async (type, format) => {
     try {
       setIsLoading(true);
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000/api');
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : `http://${window.location.hostname}:5000/api`);
       const url = `${apiBase}/${type}/export?format=${format}${workspaceUserId ? `&userId=${workspaceUserId}` : ''}`;
       
       const response = await fetch(url, {
