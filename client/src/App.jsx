@@ -370,6 +370,8 @@ function App() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  const [profileEditTab, setProfileEditTab] = useState('details');
+  const [profileValidationError, setProfileValidationError] = useState('');
   const [newPro, setNewPro] = useState('');
   const [newCon, setNewCon] = useState('');
   const [newNote, setNewNote] = useState('');
@@ -455,6 +457,33 @@ function App() {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+    const isClass12 = editProfile.journey === 'Class 12 planning';
+    const missing = [];
+
+    if (isClass12) {
+      if (!editProfile.stream) missing.push('Stream');
+      if (!editProfile.score || !String(editProfile.score).trim()) missing.push('Board percentage');
+      if (!editProfile.targetExam) missing.push('Target exam');
+      if (!editProfile.category) missing.push('Category');
+      if (!editProfile.homeState) missing.push('Home state');
+      if (!editProfile.preferredBranches || !editProfile.preferredBranches.trim()) missing.push('Preferred branches');
+      if (!editProfile.preferredStates || !editProfile.preferredStates.trim()) missing.push('Preferred college states');
+    } else {
+      if (!editProfile.exam) missing.push('Exam');
+      if (!editProfile.scoreType) missing.push('Score type');
+      if (!editProfile.score || !String(editProfile.score).trim()) missing.push('Rank / score');
+      if (!editProfile.category) missing.push('Category');
+      if (!editProfile.homeState) missing.push('Home state');
+      if (!editProfile.preferredBranches || !editProfile.preferredBranches.trim()) missing.push('Preferred branches');
+      if (!editProfile.preferredStates || !editProfile.preferredStates.trim()) missing.push('Preferred college states');
+    }
+
+    if (missing.length > 0) {
+      setProfileValidationError(`You missed some mandatory fields: ${missing.join(', ')}.`);
+      return;
+    }
+    setProfileValidationError('');
+
     try {
       setIsLoading(true);
       const { user, ocrExtracted } = await updateProfile({
@@ -1460,7 +1489,6 @@ function App() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
-    { id: 'onboarding', label: 'Onboarding', icon: <Pencil size={18} /> },
     { id: 'search', label: 'College Discovery', icon: <Search size={18} /> },
     { id: 'matrix', label: 'What-If Simulation', icon: <SlidersHorizontal size={18} /> },
     { id: 'vault', label: 'College Vault & AI', icon: <BookOpenCheck size={18} /> },
@@ -1958,168 +1986,404 @@ function App() {
     }
   };
 
-  const renderOnboardingPanel = () => (
-    <section className="panel" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
-      <div className="panelHeader">
-        <div>
-          <p className="eyebrow">Onboarding & Profile</p>
-          <h3>Manage Your Admissions Profile</h3>
+  const renderOnboardingPanel = () => {
+    const isClass12 = editProfile.journey === 'Class 12 planning';
+    const pathLabel = editProfile.journey === 'Class 12 planning'
+      ? 'Class 12 Planning (Board %-Based)'
+      : 'Entrance Result Ready (Rank-Based)';
+
+    return (
+      <section className="panel" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
+        <div className="panelHeader">
+          <div>
+            <p className="eyebrow">Onboarding & Profile</p>
+            <h3>Manage Your Admissions Profile</h3>
+          </div>
         </div>
-      </div>
-      <div style={{ padding: '24px' }}>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-          Keep your rank, categories, state of eligibility, and branch preferences updated. The fit scoring engine updates immediately.
-        </p>
-        <form onSubmit={handleSaveProfile} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 24px', maxWidth: '800px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Admissions Path / Track
-            <select value={editProfile.journey || 'Entrance result ready'} onChange={e => setEditProfile(p => ({ ...p, journey: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-              <option value="Entrance result ready">Entrance Result Ready (Rank-Based)</option>
-              <option value="Class 12 planning">Class 12 Planning (Board %-Based)</option>
-            </select>
-          </label>
+        <div style={{ padding: '24px' }}>
+          
+          {/* Current Path Indicator */}
+          <div style={{ marginBottom: '24px', background: 'var(--bg-app)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#6c5ce7', fontWeight: 800, letterSpacing: '0.05em' }}>Current Admissions Track</span>
+            <h2 style={{ margin: '4px 0 0 0', fontSize: '1.8rem', fontWeight: '800', color: 'var(--text-primary)' }}>
+              {pathLabel}
+            </h2>
+          </div>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Target Exam
-            <input value={editProfile.exam || ''} onChange={e => setEditProfile(p => ({ ...p, exam: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Score Type
-            <select value={editProfile.scoreType || 'Rank'} onChange={e => setEditProfile(p => ({ ...p, scoreType: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-              <option>Rank</option>
-              <option>Percentile</option>
-              <option>Board %</option>
-            </select>
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Your Score / Rank
-            <input value={editProfile.score || ''} onChange={e => setEditProfile(p => ({ ...p, score: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Category (Reservation)
-            <select value={editProfile.category || 'General'} onChange={e => setEditProfile(p => ({ ...p, category: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-              <option>General</option>
-              <option>OBC-NCL</option>
-              <option>EWS</option>
-              <option>SC</option>
-              <option>ST</option>
-              <option>PwD</option>
-            </select>
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Home State (Eligibility)
-            <select
-              value={editProfile.homeState || ''}
-              onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))}
-              style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}
+          {/* Tab Switcher */}
+          <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px', paddingBottom: '12px' }}>
+            <button 
+              type="button" 
+              onClick={() => { setProfileEditTab('details'); setProfileValidationError(''); }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '20px',
+                border: 'none',
+                background: profileEditTab === 'details' ? '#6c5ce7' : 'transparent',
+                color: profileEditTab === 'details' ? '#fff' : 'var(--text-secondary)',
+                fontWeight: 'bold',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
             >
-              <option value="">-- Select State --</option>
-              {INDIAN_STATES.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Preferred College States (Select more than 1)
-            <div style={{
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              padding: '10px',
-              height: '130px',
-              overflowY: 'auto',
-              background: 'var(--bg-app)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
-            }}>
-              {INDIAN_STATES.map(state => {
-                const selectedStates = editProfile.preferredStates
-                  ? editProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
-                  : [];
-                return (
-                  <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedStates.includes(state)}
-                      onChange={(e) => {
-                        let next;
-                        if (e.target.checked) {
-                          next = [...selectedStates, state];
-                        } else {
-                          next = selectedStates.filter(x => x !== state);
-                        }
-                        setEditProfile(p => ({ ...p, preferredStates: next.join(', ') }));
-                      }}
-                      style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                    />
-                    {state}
-                  </label>
-                );
-              })}
-            </div>
-          </label>
-
-          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Preferred Branches (Select more than 1)
-            <div style={{
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              padding: '10px',
-              height: '130px',
-              overflowY: 'auto',
-              background: 'var(--bg-app)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
-            }}>
-              {ENGINEERING_BRANCHES.map(branch => {
-                const selectedBranches = editProfile.preferredBranches
-                  ? editProfile.preferredBranches.split(',').map(x => x.trim()).filter(Boolean)
-                  : [];
-                return (
-                  <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedBranches.includes(branch)}
-                      onChange={(e) => {
-                        let next;
-                        if (e.target.checked) {
-                          next = [...selectedBranches, branch];
-                        } else {
-                          next = selectedBranches.filter(x => x !== branch);
-                        }
-                        setEditProfile(p => ({ ...p, preferredBranches: next.join(', ') }));
-                      }}
-                      style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                    />
-                    {branch}
-                  </label>
-                );
-              })}
-            </div>
-          </label>
-
-          <div style={{ gridColumn: '1 / -1', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '16px', background: 'var(--bg-app)' }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
-              <strong>Upload Scorecard (Optional OCR Autofill)</strong>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Images (.png, .jpg) are parsed automatically.</span>
-              <input type="file" accept="image/*" onChange={handleEditFileUpload} style={{ fontSize: '0.85rem' }} />
-              {editProfile.fileName && <small style={{ color: '#27ae60', marginTop: '6px', fontWeight: 'bold' }}>Attached scorecard: {editProfile.fileName}</small>}
-            </label>
+              Edit Profile Details
+            </button>
+            <button 
+              type="button" 
+              onClick={() => { setProfileEditTab('path'); setProfileValidationError(''); }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '20px',
+                border: 'none',
+                background: profileEditTab === 'path' ? '#6c5ce7' : 'transparent',
+                color: profileEditTab === 'path' ? '#fff' : 'var(--text-secondary)',
+                fontWeight: 'bold',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Switch Admissions Path / Track
+            </button>
           </div>
 
-          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px', marginTop: '10px' }}>
-            <button type="submit" className="primaryAction" style={{ margin: 0, width: 'auto', padding: '0 24px' }}>Save Profile Changes</button>
-          </div>
-        </form>
-      </div>
-    </section>
-  );
+          {profileValidationError && (
+            <div style={{
+              marginBottom: '16px',
+              padding: '12px 16px',
+              background: '#fff2f0',
+              border: '1px solid #ffccc7',
+              borderRadius: '8px',
+              color: '#ff4d4f',
+              fontSize: '0.88rem',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <ShieldCheck size={16} style={{ color: '#ff4d4f' }} />
+              <span>{profileValidationError}</span>
+            </div>
+          )}
+
+          {profileEditTab === 'path' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '800px', padding: '10px 0' }}>
+              <button 
+                type="button" 
+                onClick={async () => {
+                  setEditProfile(p => ({ 
+                    ...p, 
+                    journey: 'Class 12 planning',
+                    exam: 'Class 12',
+                    scoreType: 'Board %',
+                    score: '86',
+                    category: 'General',
+                    homeState: 'Uttar Pradesh',
+                    preferredBranches: 'Computer Science, Computer Science and Engineering',
+                    preferredStates: 'Delhi',
+                    stream: 'PCM',
+                    budget: 'Up to INR 8L total',
+                    targetExam: 'JEE Main'
+                  }));
+                  showToast('Switched to Class 12 Planning track! Make sure to save changes.', 'info');
+                }}
+                style={{
+                  border: `2px solid ${editProfile.journey === 'Class 12 planning' ? '#6c5ce7' : 'var(--border-color)'}`,
+                  background: 'var(--bg-card)',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  boxShadow: editProfile.journey === 'Class 12 planning' ? '0 4px 12px rgba(108,92,231,0.15)' : 'none'
+                }}
+              >
+                <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '8px', background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}>
+                  <GraduationCap size={18} />
+                </span>
+                <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Class 12 Planning</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Plan based on board percentage before entrance results arrive.</p>
+                {editProfile.journey === 'Class 12 planning' && <span style={{ marginTop: '8px', color: '#27ae60', fontSize: '0.8rem', fontWeight: 'bold' }}>✓ Selected (Click Save changes to lock)</span>}
+              </button>
+
+              <button 
+                type="button" 
+                onClick={async () => {
+                  setEditProfile(p => ({ 
+                    ...p, 
+                    journey: 'Entrance result ready',
+                    exam: 'JEE Main',
+                    scoreType: 'Rank',
+                    score: '8900',
+                    category: 'General',
+                    homeState: 'Uttar Pradesh',
+                    preferredBranches: 'Computer Science, Computer Science and Engineering',
+                    preferredStates: 'Delhi',
+                    stream: '',
+                    budget: '',
+                    targetExam: ''
+                  }));
+                  showToast('Switched to Entrance Result track! Make sure to save changes.', 'info');
+                }}
+                style={{
+                  border: `2px solid ${editProfile.journey === 'Entrance result ready' ? '#6c5ce7' : 'var(--border-color)'}`,
+                  background: 'var(--bg-card)',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  boxShadow: editProfile.journey === 'Entrance result ready' ? '0 4px 12px rgba(108,92,231,0.15)' : 'none'
+                }}
+              >
+                <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '8px', background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}>
+                  <Upload size={18} />
+                </span>
+                <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Entrance Result Ready</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Explore colleges based on your rank or score in JEE, CUET, NEET, etc.</p>
+                {editProfile.journey === 'Entrance result ready' && <span style={{ marginTop: '8px', color: '#27ae60', fontSize: '0.8rem', fontWeight: 'bold' }}>✓ Selected (Click Save changes to lock)</span>}
+              </button>
+
+              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button type="button" onClick={handleSaveProfile} className="primaryAction" style={{ margin: 0, width: 'auto', padding: '0 24px' }}>Save Path Change</button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSaveProfile} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 24px', maxWidth: '800px' }}>
+              {isClass12 ? (
+                <>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Stream <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.stream || 'PCM'} onChange={e => setEditProfile(p => ({ ...p, stream: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                      <option>PCM</option>
+                      <option>PCB</option>
+                      <option>Commerce</option>
+                      <option>Humanities</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Board Percentage <span style={{ color: '#ff4d4f' }}>*</span>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input
+                        value={editProfile.score || ''}
+                        onChange={e => setEditProfile(p => ({ ...p, score: e.target.value }))}
+                        placeholder="Example: 86"
+                        style={{ width: '100%', padding: '10px 32px 10px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                      />
+                      <span style={{ position: 'absolute', right: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>%</span>
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Target Exam <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.targetExam || 'JEE Main'} onChange={e => setEditProfile(p => ({ ...p, targetExam: e.target.value, exam: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                      <option>JEE Main</option>
+                      <option>CUET</option>
+                      <option>NEET</option>
+                      <option>State CET</option>
+                      <option>Not decided</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Category <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.category || 'General'} onChange={e => setEditProfile(p => ({ ...p, category: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                      <option>General</option>
+                      <option>OBC-NCL</option>
+                      <option>EWS</option>
+                      <option>SC</option>
+                      <option>ST</option>
+                      <option>PwD</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Home State <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.homeState || ''} onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                      <option value="">-- Select State --</option>
+                      {INDIAN_STATES.map(state => (
+                        <option key={state} value={state}>{state}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Budget Range <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.budget || ''} onChange={e => setEditProfile(p => ({ ...p, budget: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                      <option value="">-- Select Budget --</option>
+                      {['Under 2 Lakhs', '2-3 Lakhs', '4-5 Lakhs', '6-8 Lakhs', '8-12 Lakhs', 'Above 12 Lakhs', 'No Budget Constraint'].map(range => (
+                        <option key={range} value={range}>{range}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Exam <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.exam || 'JEE Main'} onChange={e => setEditProfile(p => ({ ...p, exam: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                      <option>JEE Main</option>
+                      <option>JEE Advanced</option>
+                      <option>CUET</option>
+                      <option>NEET</option>
+                      <option>GATE</option>
+                      <option>CAT</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Score Type <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.scoreType || 'Rank'} onChange={e => setEditProfile(p => ({ ...p, scoreType: e.target.value, score: '' }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                      <option>Rank</option>
+                      <option>Percentile</option>
+                      <option>Score</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Rank / Score <span style={{ color: '#ff4d4f' }}>*</span>
+                    <input
+                      value={editProfile.score || ''}
+                      onChange={e => setEditProfile(p => ({ ...p, score: e.target.value }))}
+                      placeholder={editProfile.scoreType === 'Percentile' ? 'Example: 98.76' : (editProfile.scoreType === 'Score' ? 'Example: 120 (Marks)' : 'Example: 8900 (CRL Rank)')}
+                      style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                    />
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Category <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.category || 'General'} onChange={e => setEditProfile(p => ({ ...p, category: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                      <option>General</option>
+                      <option>OBC-NCL</option>
+                      <option>EWS</option>
+                      <option>SC</option>
+                      <option>ST</option>
+                      <option>PwD</option>
+                    </select>
+                  </label>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Home State <span style={{ color: '#ff4d4f' }}>*</span>
+                    <select value={editProfile.homeState || ''} onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                      <option value="">-- Select State --</option>
+                      {INDIAN_STATES.map(state => (
+                        <option key={state} value={state}>{state}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div style={{ minHeight: '1px' }}></div>
+                </>
+              )}
+
+              <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                Preferred College States (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+                <div style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  height: '130px',
+                  overflowY: 'auto',
+                  background: 'var(--bg-app)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  {INDIAN_STATES.map(state => {
+                    const selectedStates = editProfile.preferredStates
+                      ? editProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
+                      : [];
+                    return (
+                      <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal', color: 'var(--text-primary)' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedStates.includes(state)}
+                          onChange={(e) => {
+                            let next;
+                            if (e.target.checked) {
+                              next = [...selectedStates, state];
+                            } else {
+                              next = selectedStates.filter(x => x !== state);
+                            }
+                            setEditProfile(p => ({ ...p, preferredStates: next.join(', ') }));
+                          }}
+                          style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                        />
+                        {state}
+                      </label>
+                    );
+                  })}
+                </div>
+              </label>
+
+              <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                Preferred Branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+                <div style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  height: '130px',
+                  overflowY: 'auto',
+                  background: 'var(--bg-app)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  {ENGINEERING_BRANCHES.map(branch => {
+                    const selectedBranches = editProfile.preferredBranches
+                      ? editProfile.preferredBranches.split(',').map(x => x.trim()).filter(Boolean)
+                      : [];
+                    return (
+                      <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal', color: 'var(--text-primary)' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedBranches.includes(branch)}
+                          onChange={(e) => {
+                            let next;
+                            if (e.target.checked) {
+                              next = [...selectedBranches, branch];
+                            } else {
+                              next = selectedBranches.filter(x => x !== branch);
+                            }
+                            setEditProfile(p => ({ ...p, preferredBranches: next.join(', ') }));
+                          }}
+                          style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                        />
+                        {branch}
+                      </label>
+                    );
+                  })}
+                </div>
+              </label>
+
+              {!isClass12 && (
+                <div style={{ gridColumn: '1 / -1', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '16px', background: 'var(--bg-app)' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                    <strong>Upload Scorecard (Optional OCR Autofill)</strong>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Images (.png, .jpg) are parsed automatically.</span>
+                    <input type="file" accept="image/*" onChange={handleEditFileUpload} style={{ fontSize: '0.85rem' }} />
+                    {editProfile.fileName && <small style={{ color: '#27ae60', marginTop: '6px', fontWeight: 'bold' }}>Attached scorecard: {editProfile.fileName}</small>}
+                  </label>
+                </div>
+              )}
+
+              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button type="submit" className="primaryAction" style={{ margin: 0, width: 'auto', padding: '0 24px' }}>Save Profile Changes</button>
+              </div>
+            </form>
+          )}
+        </div>
+      </section>
+    );
+  };
 
   const renderSearchPanel = () => (
     <section className="panel" id="search" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
@@ -2587,7 +2851,7 @@ function App() {
             💼 Placements First
           </button>
           <button type="button" onClick={() => applyPreset('budget')} className="textButton" style={{ fontSize: '0.75rem', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
-            🪙 Budget & ROI
+            🪙 Budget & Return on Investment (ROI)
           </button>
           <button type="button" onClick={() => applyPreset('location')} className="textButton" style={{ fontSize: '0.75rem', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
             📍 Near Home
@@ -2600,7 +2864,7 @@ function App() {
 
       <div style={{ display: 'grid', gridTemplateColumns: vaultColleges.length > 0 ? '1.1fr 0.9fr' : '1fr', gap: '24px', padding: '18px', borderTop: '1px dashed var(--border-color)', marginTop: '10px' }}>
         
-        {/* Left Column: Interactive SVG ROI Value Chart */}
+        {/* Left Column: Interactive SVG Return on Investment (ROI) Value Chart */}
         {vaultColleges.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
@@ -2643,7 +2907,7 @@ function App() {
 
                   {/* Quadrant Guide Labels */}
                   <text x="380" y="26" fill="rgba(108, 92, 231, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">💎 High return</text>
-                  <text x="55" y="26" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite ROI</text>
+                  <text x="55" y="26" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite Return on Investment (ROI)</text>
                   <text x="380" y="165" fill="rgba(230, 126, 34, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">⚠️ Premium Fees</text>
 
                   {/* Data points */}
@@ -2821,7 +3085,7 @@ function App() {
           <div className="notesBlock" style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
             <strong>No shortlist data yet</strong>
             <p style={{ margin: '6px 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Add colleges to your shortlist/Vault on the Discovery page to populate the ROI value scatter matrix comparison.
+              Add colleges to your shortlist/Vault on the Discovery page to populate the Return on Investment (ROI) value scatter matrix comparison.
             </p>
           </div>
         )}
@@ -3003,97 +3267,61 @@ function App() {
           {/* Card 3: Pros & Cons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column' }}>
-              <h4 style={{ color: '#27ae60', margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                ✅ Pros
+              <h4 style={{ color: '#27ae60', margin: '0 0 12px 0', fontSize: '1.05rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', fontWeight: 'bold' }}>
+                ✅ Key Pros
               </h4>
-              <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                 {selectedCollege.pros?.length > 0 ? (
-                  selectedCollege.pros.map((pro, index) => {
-                    const contrib = selectedCollege.proConContributors?.find(c => c.item === pro);
-                    return (
-                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
-                        <span>
-                          • {pro}
-                          {contrib && (
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: '6px', fontStyle: 'italic' }}>
-                              (added by {contrib.addedByName})
-                            </span>
-                          )}
-                        </span>
-                        {workspaceRole !== 'viewer' && (
-                          <button 
-                            onClick={() => handleDeletePro(pro)} 
-                            style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })
+                  selectedCollege.pros.map((pro, index) => (
+                    <div key={index} style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      gap: '10px', 
+                      fontSize: '0.85rem', 
+                      padding: '10px 12px',
+                      background: 'rgba(39, 174, 96, 0.05)',
+                      borderLeft: '4px solid #27ae60',
+                      borderRadius: '6px',
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.4
+                    }}>
+                      <span style={{ color: '#27ae60', fontWeight: 'bold', fontSize: '1rem', lineHeight: 1 }}>✓</span>
+                      <span>{pro}</span>
+                    </div>
+                  ))
                 ) : (
                   <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No pros listed.</p>
                 )}
               </div>
-              {workspaceRole !== 'viewer' && (
-                <form onSubmit={handleAddPro} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                  <input
-                    value={newPro}
-                    onChange={(e) => setNewPro(e.target.value)}
-                    placeholder="Add pro..."
-                    style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
-                    required
-                  />
-                  <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
-                </form>
-              )}
             </div>
             
             <div className="decisionList" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column' }}>
-              <h4 style={{ color: '#c0392b', margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                ❌ Cons
+              <h4 style={{ color: '#c0392b', margin: '0 0 12px 0', fontSize: '1.05rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', fontWeight: 'bold' }}>
+                ❌ Key Cons
               </h4>
-              <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                 {selectedCollege.cons?.length > 0 ? (
-                  selectedCollege.cons.map((con, index) => {
-                    const contrib = selectedCollege.proConContributors?.find(c => c.item === con);
-                    return (
-                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', margin: '6px 0', color: 'var(--text-primary)' }}>
-                        <span>
-                          • {con}
-                          {contrib && (
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: '6px', fontStyle: 'italic' }}>
-                              (added by {contrib.addedByName})
-                            </span>
-                          )}
-                        </span>
-                        {workspaceRole !== 'viewer' && (
-                          <button 
-                            onClick={() => handleDeleteCon(con)} 
-                            style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })
+                  selectedCollege.cons.map((con, index) => (
+                    <div key={index} style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      gap: '10px', 
+                      fontSize: '0.85rem', 
+                      padding: '10px 12px',
+                      background: 'rgba(192, 57, 43, 0.05)',
+                      borderLeft: '4px solid #c0392b',
+                      borderRadius: '6px',
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.4
+                    }}>
+                      <span style={{ color: '#c0392b', fontWeight: 'bold', fontSize: '1rem', lineHeight: 1 }}>✗</span>
+                      <span>{con}</span>
+                    </div>
+                  ))
                 ) : (
                   <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No cons listed.</p>
                 )}
               </div>
-              {workspaceRole !== 'viewer' && (
-                <form onSubmit={handleAddCon} style={{ display: 'flex', gap: '6px', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                  <input
-                    value={newCon}
-                    onChange={(e) => setNewCon(e.target.value)}
-                    placeholder="Add con..."
-                    style={{ flex: 1, padding: '6px 8px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-app)', color: 'var(--text-primary)' }}
-                    required
-                  />
-                  <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}>Add</button>
-                </form>
-              )}
             </div>
           </div>
 
@@ -3268,10 +3496,10 @@ function App() {
             )}
           </div>
 
-          {/* Placement & ROI Analytics */}
+          {/* Placement & Return on Investment (ROI) Analytics */}
           <div className="notesBlock" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '0 0 16px 0', fontSize: '1rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-              📈 Placement & ROI Analytics
+              📈 Placement & Return on Investment (ROI) Analytics
             </h4>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -3316,25 +3544,25 @@ function App() {
                 </div>
               </div>
 
-              {/* ROI & Cost-Benefit Ratio Tag */}
+              {/* Return on Investment (ROI) & Cost-Benefit Ratio Tag */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-app)', padding: '10px 12px', borderRadius: '6px', fontSize: '0.82rem' }}>
                 <div>
-                  <span style={{ color: 'var(--text-secondary)' }}>ROI Score:</span>{' '}
+                  <span style={{ color: 'var(--text-secondary)' }}>Return on Investment (ROI) Score:</span>{' '}
                   <strong>{selectedCollege.roi ? `${selectedCollege.roi}/10` : 'N/A'}</strong>
                 </div>
                 {selectedCollege.avgPackage && selectedCollege.fees ? (() => {
                   const feeInLakhs = selectedCollege.fees / 100000;
                   const ratio = feeInLakhs > 0 ? (selectedCollege.avgPackage / feeInLakhs) : 999;
-                  let badgeText = '⚖️ Balanced ROI';
+                  let badgeText = '⚖️ Balanced Return on Investment (ROI)';
                   let badgeBg = 'rgba(120, 120, 120, 0.12)';
                   let badgeColor = 'var(--text-secondary)';
 
                   if (ratio >= 15) {
-                    badgeText = '🔥 Elite ROI Ratio';
+                    badgeText = '🔥 Elite Return on Investment (ROI) Ratio';
                     badgeBg = 'rgba(39, 174, 96, 0.12)';
                     badgeColor = '#27ae60';
                   } else if (ratio >= 6) {
-                    badgeText = '✅ High ROI Ratio';
+                    badgeText = '✅ High Return on Investment (ROI) Ratio';
                     badgeBg = 'rgba(39, 174, 96, 0.12)';
                     badgeColor = '#27ae60';
                   } else if (ratio < 2.5) {
@@ -3443,7 +3671,7 @@ function App() {
               <div>
                 <strong style={{ fontSize: '1.1rem', display: 'block' }}>{confirmedCollege.name}</strong>
                 <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  {confirmedCollege.branch ? `${confirmedCollege.branch} — ` : ''}Best balance of ROI, placement signal, coding culture, and practical fit.
+                  {confirmedCollege.branch ? `${confirmedCollege.branch} — ` : ''}Best balance of Return on Investment (ROI), placement signal, coding culture, and practical fit.
                 </p>
               </div>
             </div>

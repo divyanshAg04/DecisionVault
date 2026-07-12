@@ -37,7 +37,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
       risk: 'High cutoff trend (10.2L fee), small campus size',
       roi: '9.4',
       confidence: '84',
-      badge: '🔥 Elite ROI Match'
+      badge: '🔥 Elite Return on Investment (ROI) Match'
     },
     bits: {
       name: 'BITS Pilani (EE)',
@@ -70,7 +70,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
     {
       icon: <SlidersHorizontal size={20} />,
       title: 'Personal scoring',
-      text: 'Weight priorities such as ROI, placements, campus life, distance, fees, and research.',
+      text: 'Weight priorities such as Return on Investment (ROI), placements, campus life, distance, fees, and research.',
     },
     {
       icon: <BookOpenCheck size={20} />,
@@ -327,7 +327,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
 
               {/* Axis labels */}
               {[
-                { label: 'ROI', j: 0 }, { label: 'Placements', j: 1 },
+                { label: 'Return on Investment (ROI)', j: 0 }, { label: 'Placements', j: 1 },
                 { label: 'Campus', j: 2 }, { label: 'Fees', j: 3 }, { label: 'Network', j: 4 },
               ].map(({ label, j }) => {
                 const a = (j * 72 - 90) * Math.PI / 180;
@@ -356,7 +356,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
             background: 'rgba(108,92,231,0.05)'
           }}>
             {[
-              { label: 'ROI Score', sub: 'Weighted fit', value: activeDemo.roi, color: '#a78bfa' },
+              { label: 'Return on Investment (ROI) Score', sub: 'Weighted fit', value: activeDemo.roi, color: '#a78bfa' },
               { label: 'Confidence', sub: 'Evidence strength', value: activeDemo.confidence, color: '#4ade80' }
             ].map(({ label, sub, value, color }) => (
               <div key={label} style={{
@@ -418,7 +418,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
         </div>
         <div>
           <h4 style={{ margin: 0, fontSize: '1.8rem', color: '#6c5ce7', fontWeight: '800' }}>Double SVG</h4>
-          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ROI & Placements Charting</p>
+          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment (ROI) & Placements Charting</p>
         </div>
       </section>
 
@@ -431,7 +431,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
           <article>
             <span>01</span>
             <strong>Reason for shortlist</strong>
-            <p>“Good ROI, strong coding culture, acceptable distance from home.”</p>
+            <p>“Good Return on Investment (ROI), strong coding culture, acceptable distance from home.”</p>
           </article>
           <article>
             <span>02</span>
@@ -441,7 +441,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
           <article>
             <span>03</span>
             <strong>Priority score</strong>
-            <p>Weighted scores update when the student changes fees, distance, ROI, or campus-life priority.</p>
+            <p>Weighted scores update when the student changes fees, distance, Return on Investment (ROI), or campus-life priority.</p>
           </article>
           <article>
             <span>04</span>
@@ -474,9 +474,9 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
             },
             {
               step: '02',
-              icon: <Target size={22} />,
+              icon: <SlidersHorizontal size={22} />,
               title: 'Weigh Sliders',
-              text: 'Drag MCDA priority sliders to custom-weight ROI, fees, placements, and campus-life.',
+              text: 'Drag MCDA priority sliders to custom-weight Return on Investment (ROI), fees, placements, and campus-life.',
               color: '#3498db',
               bgLight: 'rgba(52, 152, 219, 0.06)'
             },
@@ -666,7 +666,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
               Create a decision workspace for your admission profile.
             </h3>
             <p style={{ color: 'rgba(255, 255, 255, 0.65)', fontSize: '1.05rem', margin: '12px 0 0 0', maxWidth: '580px', lineHeight: '1.6' }}>
-              Stop guessing. Organize your shortlists, analyze fee-to-placement ROIs, consult Gemini, and make the most optimal choice for your engineering path.
+              Stop guessing. Organize your shortlists, analyze fee-to-placement Return on Investment (ROI) ratios, consult Gemini, and make the most optimal choice for your engineering path.
             </p>
           </div>
 
