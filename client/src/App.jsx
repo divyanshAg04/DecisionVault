@@ -2186,20 +2186,21 @@ function App() {
                     }}
                     style={{
                       border: `2px solid ${isSelected ? '#6c5ce7' : 'var(--border-color)'}`,
-                      minHeight: '360px',
+                      minHeight: '230px',
+                      padding: '20px',
                       background: 'var(--bg-card)',
                       boxShadow: isSelected ? '0 12px 30px rgba(108, 92, 231, 0.12)' : 'none',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '4px'
+                      gap: '2px'
                     }}
                   >
                     <span>
                       {opt.icon}
                     </span>
-                    <strong style={{ fontSize: '1.45rem', marginTop: '24px' }}>{opt.label}</strong>
-                    <p style={{ flexGrow: 1, marginTop: '12px' }}>{opt.desc}</p>
-                    <small style={{ marginTop: '48px', color: isSelected ? '#6c5ce7' : 'var(--text-secondary)' }}>
+                    <strong style={{ fontSize: '1.15rem', marginTop: '12px' }}>{opt.label}</strong>
+                    <p style={{ flexGrow: 1, marginTop: '6px', fontSize: '0.8rem', lineHeight: 1.45 }}>{opt.desc}</p>
+                    <small style={{ marginTop: '16px', color: isSelected ? '#6c5ce7' : 'var(--text-secondary)' }}>
                       {isSelected ? '✓ Selected' : opt.badge}
                     </small>
                   </button>
