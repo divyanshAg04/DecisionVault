@@ -100,6 +100,7 @@ def predict(payload: dict[str, Any]) -> dict[str, Any]:
         "modelSource": "python-sklearn",
         "classifierModel": bundle.get("classifier_name"),
         "regressorModel": bundle.get("regressor_name"),
+        "dataDisclaimer": "Trained on synthetic data; illustrative only, not a real placement guarantee",
     }
 
 

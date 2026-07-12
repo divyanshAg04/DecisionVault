@@ -28,9 +28,7 @@ export const colleges = [
       'Hostel and mess reviews are mixed, but academic momentum is strong.',
     ],
     researchLinks: [
-      { label: 'Official admissions page', type: 'Official', url: 'https://iiitl.ac.in/' },
-      { label: 'Placement report review', type: 'Placement PDF', url: 'https://iiitl.ac.in/' },
-      { label: 'Campus experience video', type: 'YouTube', url: 'https://youtube.com/' },
+      { label: 'Official website', type: 'Official', url: 'https://iiitl.ac.in/' }
     ],
   },
   {
@@ -62,9 +60,7 @@ export const colleges = [
       'Need to verify branch-wise placement numbers, not only overall package data.',
     ],
     researchLinks: [
-      { label: 'Official website', type: 'Official', url: 'https://dtu.ac.in/' },
-      { label: 'Placement cell', type: 'Placement PDF', url: 'https://dtu.ac.in/' },
-      { label: 'Student life review', type: 'YouTube', url: 'https://youtube.com/' },
+      { label: 'Official website', type: 'Official', url: 'https://dtu.ac.in/' }
     ],
   },
   {
@@ -96,8 +92,7 @@ export const colleges = [
       'Compare carefully with DTU for branch, commute, and college culture.',
     ],
     researchLinks: [
-      { label: 'Official website', type: 'Official', url: 'https://nsut.ac.in/' },
-      { label: 'Placement stats', type: 'Placement PDF', url: 'https://nsut.ac.in/' },
+      { label: 'Official website', type: 'Official', url: 'https://nsut.ac.in/' }
     ],
   },
   {
@@ -128,8 +123,7 @@ export const colleges = [
       'NIT tag is valuable. Need to compare branch-specific placement and campus maturity.',
     ],
     researchLinks: [
-      { label: 'Official website', type: 'Official', url: 'https://nitdelhi.ac.in/' },
-      { label: 'Admissions brochure', type: 'Official', url: 'https://nitdelhi.ac.in/' },
+      { label: 'Official website', type: 'Official', url: 'https://nitdelhi.ac.in/' }
     ],
   },
   {
@@ -161,8 +155,7 @@ export const colleges = [
       'Good option if budget and location are major priorities.',
     ],
     researchLinks: [
-      { label: 'Official website', type: 'Official', url: 'https://amu.ac.in/' },
-      { label: 'Engineering faculty page', type: 'Official', url: 'https://amu.ac.in/' },
+      { label: 'Official website', type: 'Official', url: 'https://amu.ac.in/' }
     ],
   },
 ];

@@ -11,6 +11,8 @@ const cutoffSchema = new mongoose.Schema(
     closingRank: { type: Number, required: true, index: true },
     round: { type: Number, required: true, index: true },
     year: { type: Number, required: true, index: true },
+    source: { type: String, trim: true },
+    lastVerifiedAt: { type: Date },
   },
   { timestamps: true }
 );

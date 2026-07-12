@@ -92,6 +92,26 @@ app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 app.use('/api', limiter);
 
+// CSRF double-submit-cookie validation middleware
+const CSRF_EXEMPT_PATHS = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
+const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+app.use('/api', (req, res, next) => {
+  if (!CSRF_METHODS.has(req.method)) return next();
+
+  const fullPath = req.baseUrl + req.path;
+  if (CSRF_EXEMPT_PATHS.some(exempt => fullPath === exempt)) return next();
+
+  const cookieToken = req.cookies?.csrfToken;
+  const headerToken = req.headers['x-csrf-token'];
+
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    return res.status(403).json({ message: 'CSRF token missing or invalid' });
+  }
+
+  return next();
+});
+
 app.get('/api/health', async (req, res) => {
   const dbState = mongoose.connection.readyState;
   const states = {

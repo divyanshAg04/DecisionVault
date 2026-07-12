@@ -911,13 +911,18 @@ async function seed() {
   }
 
   const createdColleges = await Promise.all(
-    colleges.map((college) =>
-      College.findOneAndUpdate(
+    colleges.map((college) => {
+      const backfilledCollege = {
+        ...college,
+        source: 'demo/placeholder',
+        lastVerifiedAt: new Date(),
+      };
+      return College.findOneAndUpdate(
         { shortName: college.shortName },
-        { $set: college },
+        { $set: backfilledCollege },
         { upsert: true, new: true, setDefaultsOnInsert: true },
-      ),
-    ),
+      );
+    }),
   );
 
   const passwordHash = await bcrypt.hash('Password123', 12);

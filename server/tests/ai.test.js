@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import { getCached } from '../src/utils/cache.js';
+import { TEST_CSRF_TOKEN, makeTestCookies } from './csrfHelper.js';
 import './setup.js';
 
 vi.mock('../src/utils/geminiClient.js', () => ({
@@ -34,7 +35,8 @@ describe('AI Routes Rate Limiting and Caching', () => {
     for (let i = 0; i < 5; i++) {
       const res = await request(app)
         .post('/api/ai/ask')
-        .set('Cookie', cookieA)
+        .set('Cookie', makeTestCookies(cookieA))
+        .set('X-CSRF-Token', TEST_CSRF_TOKEN)
         .send({}); // Invalid body triggers validation
       expect(res.status).toBe(400);
     }
@@ -42,7 +44,8 @@ describe('AI Routes Rate Limiting and Caching', () => {
     // User A's 6th request should be rate-limited (429)
     const resA6 = await request(app)
       .post('/api/ai/ask')
-      .set('Cookie', cookieA)
+      .set('Cookie', makeTestCookies(cookieA))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({});
     expect(resA6.status).toBe(429);
     expect(resA6.body.message).toContain('rate limit exceeded');
@@ -50,7 +53,8 @@ describe('AI Routes Rate Limiting and Caching', () => {
     // User B should still be allowed to make requests (should be 400, not 429)
     const resB = await request(app)
       .post('/api/ai/ask')
-      .set('Cookie', cookieB)
+      .set('Cookie', makeTestCookies(cookieB))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({});
     expect(resB.status).toBe(400);
   });
@@ -62,7 +66,8 @@ describe('AI Routes Rate Limiting and Caching', () => {
     // First Q&A request
     const res1 = await request(app)
       .post('/api/ai/ask')
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({ question: 'How is the hostel mess here?' });
 
     expect(res1.status).toBe(200);
@@ -77,7 +82,8 @@ describe('AI Routes Rate Limiting and Caching', () => {
     // Second Q&A request should hit cache (we make it and expect 200)
     const res2 = await request(app)
       .post('/api/ai/ask')
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({ question: 'How is the hostel mess here?' });
 
     expect(res2.status).toBe(200);

@@ -5,6 +5,7 @@ import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import { College } from '../src/models/College.js';
 import { Shortlist } from '../src/models/Shortlist.js';
+import { TEST_CSRF_TOKEN, makeTestCookies } from './csrfHelper.js';
 import './setup.js';
 
 describe('Shortlist Routes Scoping & CRUD', () => {
@@ -45,7 +46,8 @@ describe('Shortlist Routes Scoping & CRUD', () => {
     // 1. Create/Add to Shortlist
     const addRes = await request(app)
       .post('/api/shortlists')
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({
         college: college._id.toString(),
         confidence: 80,
@@ -70,7 +72,8 @@ describe('Shortlist Routes Scoping & CRUD', () => {
     // 3. Update shortlist status
     const statusRes = await request(app)
       .patch(`/api/shortlists/${shortlistId}/status`)
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({ status: 'researching' });
 
     expect(statusRes.status).toBe(200);
@@ -79,7 +82,8 @@ describe('Shortlist Routes Scoping & CRUD', () => {
     // 4. Add a note
     const noteRes = await request(app)
       .post(`/api/shortlists/${shortlistId}/notes`)
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({ body: 'Seems promising', source: 'Web' });
 
     expect(noteRes.status).toBe(200);
@@ -89,7 +93,8 @@ describe('Shortlist Routes Scoping & CRUD', () => {
     // 5. Delete shortlist item
     const delRes = await request(app)
       .delete(`/api/shortlists/${shortlistId}`)
-      .set('Cookie', authCookie);
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN);
     expect(delRes.status).toBe(204);
   });
 
@@ -133,21 +138,24 @@ describe('Shortlist Routes Scoping & CRUD', () => {
     // 1. User B tries to update User A's shortlist status -> expect 404
     const statusRes = await request(app)
       .patch(`/api/shortlists/${shortlistA._id}/status`)
-      .set('Cookie', cookieB)
+      .set('Cookie', makeTestCookies(cookieB))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({ status: 'rejected' });
     expect(statusRes.status).toBe(404);
 
     // 2. User B tries to add a note to User A's shortlist -> expect 404
     const noteRes = await request(app)
       .post(`/api/shortlists/${shortlistA._id}/notes`)
-      .set('Cookie', cookieB)
+      .set('Cookie', makeTestCookies(cookieB))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({ body: 'Hijacked note' });
     expect(noteRes.status).toBe(404);
 
     // 3. User B tries to delete User A's shortlist -> expect 404
     const delRes = await request(app)
       .delete(`/api/shortlists/${shortlistA._id}`)
-      .set('Cookie', cookieB);
+      .set('Cookie', makeTestCookies(cookieB))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN);
     expect(delRes.status).toBe(404);
 
     // Verify Shortlist item still exists untouched

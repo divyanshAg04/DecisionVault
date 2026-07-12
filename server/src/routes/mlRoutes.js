@@ -149,11 +149,11 @@ router.post('/predict-admission', async (req, res, next) => {
 });
 
 // 2. Predict placement probability and expected salary package via ML models
-router.post('/predict-placement', (req, res, next) => {
+router.post('/predict-placement', async (req, res, next) => {
   try {
     const input = placementSchema.parse(req.body);
 
-    const result = predictPlacementAndPackage({
+    const result = await predictPlacementAndPackage({
       gender: input.gender,
       age: input.age,
       degree: input.degree,

@@ -3,6 +3,7 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
+import { TEST_CSRF_TOKEN, makeTestCookies } from './csrfHelper.js';
 import './setup.js';
 
 describe('ML Prediction Routes', () => {
@@ -19,7 +20,8 @@ describe('ML Prediction Routes', () => {
 
     const res = await request(app)
       .post('/api/ml/predict-placement')
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({
         gender: 'Male',
         age: 21,
@@ -40,6 +42,13 @@ describe('ML Prediction Routes', () => {
     expect(res.body.expectedPackageLpa).toBeDefined();
     expect(res.body.expectedPackageMin).toBeDefined();
     expect(res.body.expectedPackageMax).toBeDefined();
+    expect(res.body.dataDisclaimer).toBe('Trained on synthetic data; illustrative only, not a real placement guarantee');
+    
+    expect(['python-sklearn', 'js-fallback', 'untrained']).toContain(res.body.modelSource);
+    if (res.body.modelSource === 'js-fallback') {
+      expect(res.body.isFallback).toBe(true);
+      expect(res.body.confidence).toBe('low');
+    }
     
     // Check range is not degenerate if student is predicted to be placed
     if (res.body.placedProbability >= 0.35 && res.body.status !== 'Model not trained') {
