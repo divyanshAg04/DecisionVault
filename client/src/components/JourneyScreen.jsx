@@ -1,11 +1,11 @@
 import React from 'react';
-import { GraduationCap, Upload } from 'lucide-react';
+import { GraduationCap, Upload, ArrowLeft } from 'lucide-react';
 
-export default function JourneyScreen({ onHome, onClass12, onEntrance }) {
+export default function JourneyScreen({ onClass12, onEntrance, onBack }) {
   return (
     <main className="journeyShell">
       <header className="landingNav">
-        <button className="brandBlock brandButton" type="button" onClick={onHome}>
+        <div className="brandBlock brandButton" style={{ cursor: 'default' }}>
           <div className="brandMark">
             <GraduationCap size={21} />
           </div>
@@ -13,8 +13,19 @@ export default function JourneyScreen({ onHome, onClass12, onEntrance }) {
             <p className="eyebrow">DecisionVault</p>
             <h1>CollegeVault</h1>
           </div>
-        </button>
+        </div>
       </header>
+
+      <div style={{ padding: '20px 34px 0 34px' }}>
+        <button 
+          className="textButton" 
+          type="button" 
+          onClick={onBack} 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: 'none', background: 'transparent', padding: '8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s', fontWeight: 'bold' }}
+        >
+          <ArrowLeft size={16} /> Back to Login
+        </button>
+      </div>
 
       <section className="journeyContent">
         <div>
