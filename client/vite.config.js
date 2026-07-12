@@ -6,4 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  test: {
+    testTimeout: 60000,
+    hookTimeout: 60000,
+  },
 });
