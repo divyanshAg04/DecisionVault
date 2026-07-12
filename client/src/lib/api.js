@@ -14,10 +14,23 @@ const API_CONFIG_ERROR = import.meta.env.PROD && !import.meta.env.VITE_API_URL
   ? 'API URL is not configured. Set VITE_API_URL to your deployed API endpoint.'
   : '';
 
-function getHeaders() {
-  return {
+let inMemoryCsrfToken = '';
+
+function getCsrfToken() {
+  return inMemoryCsrfToken;
+}
+
+function getHeaders(method) {
+  const headers = {
     'Content-Type': 'application/json',
   };
+  if (method && method !== 'GET' && method !== 'HEAD') {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+  return headers;
 }
 
 async function request(url, options = {}) {
@@ -25,7 +38,7 @@ async function request(url, options = {}) {
     throw new Error(API_CONFIG_ERROR);
   }
 
-  const headers = getHeaders();
+  const headers = getHeaders(options.method);
   const config = {
     ...options,
     credentials: 'include',
@@ -45,6 +58,11 @@ async function request(url, options = {}) {
           credentials: 'include',
         });
         if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          if (refreshData && refreshData.csrfToken) {
+            inMemoryCsrfToken = refreshData.csrfToken;
+          }
+          config.headers['X-CSRF-Token'] = inMemoryCsrfToken;
           response = await fetch(`${API_BASE_URL}${url}`, config);
         }
       } catch (refreshErr) {
@@ -65,6 +83,10 @@ async function request(url, options = {}) {
   const data = contentType.includes('application/json')
     ? await response.json()
     : { message: await response.text() };
+
+  if (data && data.csrfToken) {
+    inMemoryCsrfToken = data.csrfToken;
+  }
 
   if (!response.ok) {
     throw new Error(data.message || 'Something went wrong');

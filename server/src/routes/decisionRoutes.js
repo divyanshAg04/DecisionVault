@@ -167,6 +167,69 @@ router.get('/export', checkWorkspaceAccess, async (req, res, next) => {
   }
 });
 
+// GET /:id/export
+router.get('/:id/export', checkWorkspaceAccess, async (req, res, next) => {
+  try {
+    const format = req.query.format || 'json';
+    const decision = await Decision.findOne({ _id: req.params.id, user: req.workspaceOwnerId }).populate('selectedCollege');
+
+    if (!decision) {
+      return res.status(404).json({ message: 'Decision not found' });
+    }
+
+    if (format === 'csv') {
+      const fields = [
+        'collegeName',
+        'shortName',
+        'program',
+        'finalScore',
+        'confidence',
+        'reasons',
+        'decisionDate',
+        'reviewDueAt',
+      ];
+
+      const row = {
+        collegeName: decision.selectedCollege?.name || decision.selectedCollegeSnapshot?.name || '',
+        shortName: decision.selectedCollege?.shortName || decision.selectedCollegeSnapshot?.shortName || '',
+        program: decision.selectedCollege?.branch || decision.selectedCollegeSnapshot?.program || '',
+        finalScore: decision.finalScore,
+        confidence: decision.confidence,
+        reasons: decision.reasons.join(' | '),
+        decisionDate: decision.decisionDate ? decision.decisionDate.toISOString() : '',
+        reviewDueAt: decision.reviewDueAt ? decision.reviewDueAt.toISOString() : '',
+      };
+
+      // Custom robust CSV converter
+      let csvContent = fields.join(',') + '\r\n';
+      const line = fields.map(field => {
+        let val = row[field];
+        if (val === undefined || val === null) {
+          val = '';
+        } else {
+          val = String(val).replace(/"/g, '""');
+          if (val.includes(',') || val.includes('\n') || val.includes('\r')) {
+            val = `"${val}"`;
+          }
+        }
+        return val;
+      }).join(',');
+      csvContent += line + '\r\n';
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=decision-${req.params.id}.csv`);
+      return res.send(csvContent);
+    }
+
+    // Default JSON response
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=decision-${req.params.id}.json`);
+    return res.json({ decision });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 // POST save decision
 router.post('/', checkWorkspaceAccess, async (req, res, next) => {
   try {

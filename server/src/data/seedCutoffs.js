@@ -78,7 +78,9 @@ async function runSeeder() {
         openingRank,
         closingRank,
         round,
-        year
+        year,
+        source: 'JoSAA/CSAB',
+        lastVerifiedAt: new Date()
       });
     }
     

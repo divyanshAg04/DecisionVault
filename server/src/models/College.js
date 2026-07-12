@@ -48,6 +48,8 @@ const collegeSchema = new mongoose.Schema(
       source: { type: String, trim: true },
     },
     admissionChannel: { type: String, trim: true },
+    source: { type: String, trim: true },
+    lastVerifiedAt: { type: Date },
   },
   { timestamps: true },
 );

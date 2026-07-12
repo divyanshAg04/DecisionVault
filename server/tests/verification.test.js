@@ -23,15 +23,18 @@ describe('Email Verification Actions Restrictions', () => {
     const cookies = regRes.headers['set-cookie'] || [];
     const tokenCookie = cookies.find((c) => c.startsWith('token='));
     const token = tokenCookie?.split(';')[0]?.split('=')[1];
-    return { token, cookieHeader: `token=${token}` };
+    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken='));
+    const csrfToken = csrfCookie?.split(';')[0]?.split('=')[1];
+    return { token, cookieHeader: `token=${token}; csrfToken=${csrfToken}`, csrfToken };
   };
 
   it('should block unverified user from adding a shortlist item', async () => {
-    const { cookieHeader } = await registerAndGetCookie('unverified@example.com', false);
+    const { cookieHeader, csrfToken } = await registerAndGetCookie('unverified@example.com', false);
 
     const res = await request(app)
       .post('/api/shortlists')
       .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
       .send({ college: '6a476c85ba8bd60d1168ef4e' }); // arbitrary ID
 
     expect(res.status).toBe(403);
@@ -39,11 +42,12 @@ describe('Email Verification Actions Restrictions', () => {
   });
 
   it('should allow verified user to add a shortlist item', async () => {
-    const { cookieHeader } = await registerAndGetCookie('verified@example.com', true);
+    const { cookieHeader, csrfToken } = await registerAndGetCookie('verified@example.com', true);
 
     const res = await request(app)
       .post('/api/shortlists')
       .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
       .send({ college: '6a476da431bd810922a521fc' }); // valid dummy ID or arbitrary
 
     // Status will be either 201 (if item/college exists/created) or 404 (if college not found), 
@@ -52,11 +56,12 @@ describe('Email Verification Actions Restrictions', () => {
   });
 
   it('should block unverified user from asking AI counselor', async () => {
-    const { cookieHeader } = await registerAndGetCookie('unverified_ai@example.com', false);
+    const { cookieHeader, csrfToken } = await registerAndGetCookie('unverified_ai@example.com', false);
 
     const res = await request(app)
       .post('/api/ai/ask')
       .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
       .send({ question: 'Should I choose CS at IIT?' });
 
     expect(res.status).toBe(403);
@@ -64,7 +69,7 @@ describe('Email Verification Actions Restrictions', () => {
   });
 
   it('should generate a 6-digit OTP on registration and verify it via POST /verify-email', async () => {
-    const { cookieHeader } = await registerAndGetCookie('otp_test@example.com', false);
+    const { cookieHeader, csrfToken } = await registerAndGetCookie('otp_test@example.com', false);
 
     // Fetch the user's OTP from the database
     const user = await User.findOne({ email: 'otp_test@example.com' });
@@ -77,6 +82,7 @@ describe('Email Verification Actions Restrictions', () => {
     const verifyRes = await request(app)
       .post('/api/auth/verify-email')
       .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
       .send({ otp: user.emailVerificationToken });
 
     expect(verifyRes.status).toBe(200);
@@ -90,12 +96,13 @@ describe('Email Verification Actions Restrictions', () => {
   });
 
   it('should reject an invalid or expired OTP code', async () => {
-    const { cookieHeader } = await registerAndGetCookie('otp_bad@example.com', false);
+    const { cookieHeader, csrfToken } = await registerAndGetCookie('otp_bad@example.com', false);
 
     // Submit a wrong OTP
     const verifyRes = await request(app)
       .post('/api/auth/verify-email')
       .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
       .send({ otp: '000000' });
 
     expect(verifyRes.status).toBe(400);
@@ -107,14 +114,15 @@ describe('Email Verification Actions Restrictions', () => {
   });
 
   it('should resend a new OTP code via POST /resend-verification', async () => {
-    const { cookieHeader } = await registerAndGetCookie('otp_resend@example.com', false);
+    const { cookieHeader, csrfToken } = await registerAndGetCookie('otp_resend@example.com', false);
 
     const userBefore = await User.findOne({ email: 'otp_resend@example.com' });
     const oldOtp = userBefore.emailVerificationToken;
 
     const resendRes = await request(app)
       .post('/api/auth/resend-verification')
-      .set('Cookie', cookieHeader);
+      .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken);
 
     expect(resendRes.status).toBe(200);
     expect(resendRes.body.message).toContain('resent');
@@ -127,6 +135,7 @@ describe('Email Verification Actions Restrictions', () => {
     const verifyRes = await request(app)
       .post('/api/auth/verify-email')
       .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
       .send({ otp: userAfter.emailVerificationToken });
 
     expect(verifyRes.status).toBe(200);

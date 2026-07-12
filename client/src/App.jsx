@@ -891,6 +891,55 @@ function App() {
         });
     };
 
+    const restoreSession = async () => {
+      try {
+        const res = await getMe();
+        if (res && res.user) {
+          sessionStorage.setItem('dv-session-active', 'true');
+          setCurrentUser(res.user);
+          if (!res.user.emailVerified) {
+            setAppStage('verify-otp');
+            return;
+          }
+          if (res.user.journey) {
+            setAdmissionProfile({
+              journey: res.user.journey || 'Entrance result ready',
+              exam: res.user.exam || 'JEE Main',
+              scoreType: res.user.scoreType || 'Rank',
+              score: res.user.score || '8900',
+              category: res.user.category || 'General',
+              homeState: res.user.homeState || '',
+              preferredBranches: res.user.preferredBranches || '',
+              preferredStates: res.user.preferredStates || '',
+              stream: res.user.stream || '',
+              budget: res.user.budget || '',
+              targetExam: res.user.targetExam || '',
+              fileName: res.user.scorecardName || '',
+              scorecardBase64: res.user.scorecardBase64 || '',
+            });
+            loadUserData();
+            const savedStage = sessionStorage.getItem('dv-app-stage');
+            if (savedStage && savedStage !== 'landing') {
+              setAppStage(savedStage);
+            } else {
+              setAppStage('dashboard');
+            }
+          } else {
+            const savedStage = sessionStorage.getItem('dv-app-stage');
+            if (savedStage && savedStage !== 'landing') {
+              setAppStage(savedStage);
+            } else {
+              setAppStage('journey');
+            }
+          }
+        } else {
+          checkSession();
+        }
+      } catch (err) {
+        checkSession();
+      }
+    };
+
     if (verifyToken) {
       window.history.replaceState({}, document.title, window.location.pathname);
       setIsLoading(true);
@@ -902,13 +951,13 @@ function App() {
         })
         .catch((err) => {
           showToast(err?.message || 'Verification link invalid or expired.', 'error');
-          checkSession();
+          restoreSession();
         })
         .finally(() => {
           setIsLoading(false);
         });
     } else {
-      checkSession();
+      restoreSession();
     }
   }, []);
 

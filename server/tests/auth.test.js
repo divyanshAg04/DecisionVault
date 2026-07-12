@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
+import { TEST_CSRF_TOKEN, makeTestCookies } from './csrfHelper.js';
 import './setup.js';
 
 vi.mock('../src/utils/mailer.js', () => ({
@@ -100,7 +101,8 @@ describe('Auth Routes', () => {
 
     const res = await request(app)
       .patch('/api/auth/profile')
-      .set('Cookie', authCookie)
+      .set('Cookie', makeTestCookies(authCookie))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
       .send({
         scorecardBase64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
         scorecardName: 'test_scorecard.png'

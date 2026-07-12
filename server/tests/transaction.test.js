@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import { Shortlist } from '../src/models/Shortlist.js';
+import { TEST_CSRF_TOKEN, makeTestCookies } from './csrfHelper.js';
 import './setup.js';
 
 describe('Account Deletion Transaction', () => {
@@ -32,7 +33,8 @@ describe('Account Deletion Transaction', () => {
 
     const res = await request(app)
       .delete('/api/auth/account')
-      .set('Cookie', makeAuthCookie(user._id));
+      .set('Cookie', makeTestCookies(makeAuthCookie(user._id)))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN);
 
     // The request should fail with 500
     expect(res.status).toBe(500);
@@ -60,7 +62,8 @@ describe('Account Deletion Transaction', () => {
 
     const res = await request(app)
       .delete('/api/auth/account')
-      .set('Cookie', makeAuthCookie(user._id));
+      .set('Cookie', makeTestCookies(makeAuthCookie(user._id)))
+      .set('X-CSRF-Token', TEST_CSRF_TOKEN);
 
     expect(res.status).toBe(200);
 

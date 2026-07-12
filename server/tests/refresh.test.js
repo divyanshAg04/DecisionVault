@@ -74,9 +74,14 @@ describe('Refresh Token Rotation', () => {
   it('should revoke refresh token on logout', async () => {
     const { cookies, refreshToken } = await registerAndLogin('rtlogout@example.com');
 
+    // Extract CSRF token from register cookies
+    const csrfCookie = cookies.find(c => c.startsWith('csrfToken='));
+    const csrfToken = csrfCookie?.split(';')[0]?.split('=')[1];
+
     await request(app)
       .post('/api/auth/logout')
-      .set('Cookie', cookies.join('; '));
+      .set('Cookie', cookies.join('; '))
+      .set('X-CSRF-Token', csrfToken);
 
     const stored = await RefreshToken.findOne({ token: refreshToken });
     expect(stored.revoked).toBe(true);

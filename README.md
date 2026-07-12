@@ -388,6 +388,7 @@ The full interactive spec is also available at [`/api/docs`](https://collegevaul
 | DELETE | `/api/shortlists/:id` | Remove a shortlist entry |
 | GET | `/api/decisions` | List locked decisions |
 | GET | `/api/decisions/export` | Export decisions as CSV/JSON |
+| GET | `/api/decisions/:id/export` | Export a single decision as CSV/JSON |
 | POST | `/api/decisions` | Lock in a final decision |
 | POST | `/api/decisions/reflections` | Record a post-admission reflection |
 | GET | `/api/activities` | Audit timeline (last 50 events) |

@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { fileURLToPath } from 'url';
+
+const execFileAsync = promisify(execFile);
 
 // Encoders and Scalers cached in memory
 let placementModel = null;
@@ -60,38 +63,37 @@ function resolvePythonBin() {
   return 'python';
 }
 
-function tryPythonPrediction(studentProfile) {
+async function tryPythonPrediction(studentProfile) {
   if (!fs.existsSync(pythonPredictorPath) || !fs.existsSync(pythonModelBundlePath)) {
     return null;
   }
 
   const pythonBin = resolvePythonBin();
-  const result = spawnSync(
-    pythonBin,
-    [pythonPredictorPath, JSON.stringify(studentProfile)],
-    {
-      cwd: serverDir,
-      encoding: 'utf-8',
-      timeout: 10000,
-      windowsHide: true,
-    },
-  );
-
-  if (result.error || result.status !== 0 || !result.stdout) {
-    const reason = result.error?.message || result.stderr || result.stdout || 'unknown Python prediction error';
-    console.warn(`[ML Predictor] Python model unavailable, using JS fallback: ${reason}`);
-    return null;
-  }
-
   try {
-    const parsed = JSON.parse(result.stdout.trim());
+    const { stdout, stderr } = await execFileAsync(
+      pythonBin,
+      [pythonPredictorPath, JSON.stringify(studentProfile)],
+      {
+        cwd: serverDir,
+        timeout: 10000,
+        windowsHide: true,
+      }
+    );
+
+    if (!stdout) {
+      console.warn(`[ML Predictor] Python model output is empty`);
+      return null;
+    }
+
+    const parsed = JSON.parse(stdout.trim());
     if (parsed.status === 'Success') {
       return parsed;
     }
     console.warn(`[ML Predictor] Python model returned non-success status: ${parsed.message || parsed.status}`);
     return null;
-  } catch (err) {
-    console.warn(`[ML Predictor] Failed to parse Python prediction output: ${err.message}`);
+  } catch (error) {
+    const reason = error.message || error.stderr || 'unknown Python prediction error';
+    console.warn(`[ML Predictor] Python model unavailable, using JS fallback: ${reason}`);
     return null;
   }
 }
@@ -304,8 +306,8 @@ export function trainModels() {
 }
 
 // Inference function
-export function predictPlacementAndPackage(studentProfile) {
-  const pythonPrediction = tryPythonPrediction(studentProfile);
+export async function predictPlacementAndPackage(studentProfile) {
+  const pythonPrediction = await tryPythonPrediction(studentProfile);
   if (pythonPrediction) {
     return pythonPrediction;
   }
@@ -317,6 +319,8 @@ export function predictPlacementAndPackage(studentProfile) {
       expectedPackageMin: 0.0,
       expectedPackageMax: 0.0,
       status: 'Model not trained',
+      modelSource: 'untrained',
+      dataDisclaimer: 'Trained on synthetic data; illustrative only, not a real placement guarantee',
     };
   }
 
@@ -374,6 +378,10 @@ export function predictPlacementAndPackage(studentProfile) {
     expectedPackageLpa: Math.round(expectedPackageLpa * 100) / 100,
     expectedPackageMin,
     expectedPackageMax,
-    status: 'Success'
+    status: 'Success',
+    modelSource: 'js-fallback',
+    isFallback: true,
+    confidence: 'low',
+    dataDisclaimer: 'Trained on synthetic data; illustrative only, not a real placement guarantee',
   };
 }

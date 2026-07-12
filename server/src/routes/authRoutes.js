@@ -66,6 +66,23 @@ const COOKIE_OPTS = (req) => ({
   ...(req?.hostname !== 'localhost' ? { domain: req?.hostname } : {}),
 });
 
+const CSRF_COOKIE_OPTS = (req) => ({
+  httpOnly: false,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  ...(req?.hostname !== 'localhost' ? { domain: req?.hostname } : {}),
+});
+
+function generateCsrfToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function setCsrfCookie(res, req) {
+  const csrfToken = generateCsrfToken();
+  res.cookie('csrfToken', csrfToken, { ...CSRF_COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+  return csrfToken;
+}
+
 function signToken(userId) {
   // Short-lived access token (15 min)
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'test-secret', { expiresIn: '15m' });
@@ -106,8 +123,9 @@ router.post('/refresh', async (req, res, next) => {
 
     res.cookie('token', accessToken, { ...COOKIE_OPTS(req), maxAge: 15 * 60 * 1000 });
     res.cookie('refreshToken', newRefreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+    const csrfToken = setCsrfCookie(res, req);
 
-    return res.json({ message: 'Token refreshed successfully' });
+    return res.json({ message: 'Token refreshed successfully', csrfToken });
   } catch (error) {
     return next(error);
   }
@@ -164,6 +182,7 @@ router.post('/register', async (req, res, next) => {
 
     setTokenCookie(res, req, token);
     res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+    const csrfToken = setCsrfCookie(res, req);
 
     // Send verification email (non-blocking)
     console.log(`[OTP] Verification code for ${user.email}: ${otpCode}`);
@@ -175,6 +194,7 @@ router.post('/register', async (req, res, next) => {
     return res.status(201).json({
       token,
       user: serializeUser(user),
+      csrfToken,
     });
   } catch (error) {
     return next(error);
@@ -275,6 +295,7 @@ router.post('/login', async (req, res, next) => {
 
     setTokenCookie(res, req, token);
     res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS(req), maxAge: 30 * 24 * 60 * 60 * 1000 });
+    const csrfToken = setCsrfCookie(res, req);
 
     // If user is unverified, generate and send a fresh OTP so they can verify immediately
     if (!user.emailVerified) {
@@ -292,6 +313,7 @@ router.post('/login', async (req, res, next) => {
     return res.json({
       token,
       user: serializeUser(user),
+      csrfToken,
     });
   } catch (error) {
     return next(error);
@@ -307,6 +329,7 @@ router.post('/logout', async (req, res, next) => {
     }
     res.clearCookie('token', COOKIE_OPTS(req));
     res.clearCookie('refreshToken', COOKIE_OPTS(req));
+    res.clearCookie('csrfToken', CSRF_COOKIE_OPTS(req));
     return res.json({ message: 'Logged out successfully' });
   } catch (error) {
     return next(error);
@@ -315,7 +338,7 @@ router.post('/logout', async (req, res, next) => {
 
 // GET PROFILE
 router.get('/me', requireAuth, (req, res) => {
-  return res.json({ user: serializeUser(req.user) });
+  return res.json({ user: serializeUser(req.user), csrfToken: req.cookies?.csrfToken });
 });
 
 // UPDATE PROFILE
@@ -398,6 +421,7 @@ router.delete('/account', requireAuth, async (req, res, next) => {
     // Clear all auth cookies
     res.clearCookie('token', COOKIE_OPTS(req));
     res.clearCookie('refreshToken', COOKIE_OPTS(req));
+    res.clearCookie('csrfToken', CSRF_COOKIE_OPTS(req));
 
     return res.json({ message: 'Account and all associated data deleted successfully' });
   } catch (error) {
