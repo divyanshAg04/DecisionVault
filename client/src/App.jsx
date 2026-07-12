@@ -1796,31 +1796,10 @@ function App() {
             Enter the code below to complete your registration.
           </p>
 
-          <input
-            type="text"
-            maxLength={6}
-            placeholder="0 0 0 0 0 0"
-            value={otpInput}
-            onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '1.6rem',
-              textAlign: 'center',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-app)',
-              color: 'var(--text-primary)',
-              fontWeight: 'bold',
-              letterSpacing: '8px',
-              margin: '0 0 20px 0'
-            }}
-          />
-
-          <button
-            type="button"
-            disabled={otpVerifying || otpInput.length !== 6}
-            onClick={async () => {
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (otpVerifying || otpInput.length !== 6) return;
               setOtpVerifying(true);
               try {
                 const res = await verifyEmail(otpInput);
@@ -1832,23 +1811,49 @@ function App() {
                 setOtpVerifying(false);
               }
             }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '0.95rem',
-              fontWeight: 'bold',
-              color: '#fff',
-              background: '#6c5ce7',
-              border: 'none',
-              borderRadius: '#6c5ce7',
-              cursor: 'pointer',
-              opacity: (otpVerifying || otpInput.length !== 6) ? 0.6 : 1,
-              transition: 'background 0.2s',
-              margin: '0 0 16px 0'
-            }}
           >
-            {otpVerifying ? 'Verifying...' : 'Verify Code'}
-          </button>
+            <input
+              type="text"
+              maxLength={6}
+              placeholder="0 0 0 0 0 0"
+              value={otpInput}
+              onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '1.6rem',
+                textAlign: 'center',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-app)',
+                color: 'var(--text-primary)',
+                fontWeight: 'bold',
+                letterSpacing: '8px',
+                margin: '0 0 20px 0'
+              }}
+            />
+
+            <button
+              type="submit"
+              disabled={otpVerifying || otpInput.length !== 6}
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '0.95rem',
+                fontWeight: 'bold',
+                color: '#fff',
+                background: '#6c5ce7',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                opacity: (otpVerifying || otpInput.length !== 6) ? 0.6 : 1,
+                transition: 'background 0.2s',
+                margin: '0 0 16px 0'
+              }}
+            >
+              {otpVerifying ? 'Verifying...' : 'Verify Code'}
+            </button>
+          </form>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
             <button
