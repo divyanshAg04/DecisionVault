@@ -2125,96 +2125,68 @@ function App() {
           )}
 
           {profileEditTab === 'path' ? (
-            <div className="journeyGrid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', width: '100%', padding: '10px 0' }}>
+            <div className="journeyGrid" style={{ gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '800px', padding: '10px 0' }}>
               {[
                 {
-                  id: 'jee_main',
-                  label: 'JEE Main',
-                  journey: 'Entrance result ready',
-                  exam: 'JEE Main',
-                  examTrack: 'JEE',
-                  scoreType: 'Rank',
-                  score: '8900',
-                  icon: <Target size={22} />,
-                  desc: 'National level engineering admissions (NITs, IIITs, GFTIs).',
-                  badge: 'NITs / IIITs / GFTIs'
-                },
-                {
-                  id: 'jee_adv',
-                  label: 'JEE Advanced',
-                  journey: 'Entrance result ready',
-                  exam: 'JEE Advanced',
-                  examTrack: 'JEE',
-                  scoreType: 'Rank',
-                  score: '8900',
-                  icon: <Sparkles size={22} />,
-                  desc: 'Admissions into premium IITs (Indian Institutes of Technology).',
-                  badge: 'IITs'
-                },
-                {
-                  id: 'cuet',
-                  label: 'CUET',
-                  journey: 'Entrance result ready',
-                  exam: 'CUET',
-                  examTrack: 'CUET',
-                  scoreType: 'Percentile',
-                  score: '98.73',
+                  id: 'class_12',
+                  label: 'Class 12 just passed',
+                  journey: 'Class 12 planning',
                   icon: <GraduationCap size={22} />,
-                  desc: 'Central & State universities entrance channel.',
-                  badge: 'Central & State Universities'
+                  desc: 'Start with board score, stream, interests, budget, preferred branches, and target exams.',
+                  badge: 'Best for early college exploration'
                 },
                 {
-                  id: 'private_univ',
-                  label: 'Private Universities',
-                  journey: 'Class 12 planning',
-                  exam: 'Private Universities',
-                  examTrack: 'Other',
-                  scoreType: 'Board %',
-                  score: '86',
-                  icon: <Building2 size={22} />,
-                  desc: 'Direct or board percentage merit planning (VIT, BITS, SRM, Manipal).',
-                  badge: 'Board % / Merit Planning'
-                },
-                {
-                  id: 'mgmt_quota',
-                  label: 'Management Quota',
-                  journey: 'Class 12 planning',
-                  exam: 'Management Quota',
-                  examTrack: 'Other',
-                  scoreType: 'Board %',
-                  score: '86',
-                  icon: <Lock size={22} />,
-                  desc: 'Institution direct admission counselling channels.',
-                  badge: 'Direct Admission Quota'
+                  id: 'entrance',
+                  label: 'Entrance result ready',
+                  journey: 'Entrance result ready',
+                  icon: <Upload size={22} />,
+                  desc: 'Upload scorecard or enter rank, category, home state, and branch preference.',
+                  badge: 'Best after JEE, CUET, NEET, GATE, CAT'
                 }
               ].map(opt => {
-                const isSelected = editProfile.exam === opt.exam && editProfile.journey === opt.journey;
+                const isSelected = editProfile.journey === opt.journey;
                 return (
                   <button 
                     key={opt.id}
                     type="button" 
                     className="journeyCard"
                     onClick={() => {
-                      setEditProfile(p => ({ 
-                        ...p, 
-                        journey: opt.journey,
-                        exam: opt.exam,
-                        examTrack: opt.examTrack,
-                        scoreType: opt.scoreType,
-                        score: p.exam === opt.exam ? p.score : opt.score,
-                        category: p.category || 'General',
-                        homeState: p.homeState || 'Uttar Pradesh',
-                        preferredBranches: p.preferredBranches || 'Computer Science, Computer Science and Engineering',
-                        preferredStates: p.preferredStates || 'Delhi',
-                        stream: opt.journey === 'Class 12 planning' ? (p.stream || 'PCM') : '',
-                        budget: opt.journey === 'Class 12 planning' ? (p.budget || 'Up to INR 8L total') : '',
-                        targetExam: opt.journey === 'Class 12 planning' ? 'Not decided' : ''
-                      }));
-                      showToast(`Switched to ${opt.label} path! Make sure to save changes.`, 'info');
+                      if (opt.journey === 'Class 12 planning') {
+                        setEditProfile(p => ({ 
+                          ...p, 
+                          journey: 'Class 12 planning',
+                          exam: 'Class 12',
+                          scoreType: 'Board %',
+                          score: p.journey === 'Class 12 planning' ? p.score : '86',
+                          category: p.category || 'General',
+                          homeState: p.homeState || 'Uttar Pradesh',
+                          preferredBranches: p.preferredBranches || 'Computer Science, Computer Science and Engineering',
+                          preferredStates: p.preferredStates || 'Delhi',
+                          stream: p.stream || 'PCM',
+                          budget: p.budget || 'Up to INR 8L total',
+                          targetExam: p.targetExam || 'JEE Main'
+                        }));
+                      } else {
+                        setEditProfile(p => ({ 
+                          ...p, 
+                          journey: 'Entrance result ready',
+                          exam: p.journey === 'Entrance result ready' ? p.exam : 'JEE Main',
+                          scoreType: p.journey === 'Entrance result ready' ? p.scoreType : 'Rank',
+                          score: p.journey === 'Entrance result ready' ? p.score : '8900',
+                          category: p.category || 'General',
+                          homeState: p.homeState || 'Uttar Pradesh',
+                          preferredBranches: p.preferredBranches || 'Computer Science, Computer Science and Engineering',
+                          preferredStates: p.preferredStates || 'Delhi',
+                          stream: '',
+                          budget: '',
+                          targetExam: ''
+                        }));
+                      }
+                      showToast(`Switched to ${opt.label} track! Make sure to save changes.`, 'info');
                     }}
                     style={{
                       border: `2px solid ${isSelected ? '#6c5ce7' : 'var(--border-color)'}`,
-                      minHeight: '340px',
+                      minHeight: '360px',
                       background: 'var(--bg-card)',
                       boxShadow: isSelected ? '0 12px 30px rgba(108, 92, 231, 0.12)' : 'none',
                       display: 'flex',
@@ -2225,9 +2197,9 @@ function App() {
                     <span>
                       {opt.icon}
                     </span>
-                    <strong style={{ fontSize: '1.25rem', marginTop: '16px' }}>{opt.label}</strong>
-                    <p style={{ flexGrow: 1, marginTop: '8px' }}>{opt.desc}</p>
-                    <small style={{ marginTop: '24px', color: isSelected ? '#6c5ce7' : 'var(--text-secondary)' }}>
+                    <strong style={{ fontSize: '1.45rem', marginTop: '24px' }}>{opt.label}</strong>
+                    <p style={{ flexGrow: 1, marginTop: '12px' }}>{opt.desc}</p>
+                    <small style={{ marginTop: '48px', color: isSelected ? '#6c5ce7' : 'var(--text-secondary)' }}>
                       {isSelected ? '✓ Selected' : opt.badge}
                     </small>
                   </button>
