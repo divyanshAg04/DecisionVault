@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
   ClipboardList,
   FileText,
   GraduationCap,
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { colleges as fallbackColleges, defaultPriorities } from './data/colleges';
+import { INDIAN_STATES, ENGINEERING_BRANCHES } from './data/constants';
 
 // Custom Components
 import LandingPage from './components/LandingPage';
@@ -339,10 +341,11 @@ function App() {
     category: 'General',
     homeState: 'Uttar Pradesh',
     preferredBranches: 'Computer Science, Computer Engineering',
+    preferredStates: '',
     fileName: '',
     scorecardBase64: '',
   });
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeSection, setActiveSection] = useState(() => sessionStorage.getItem('dv-active-section') || 'dashboard');
 
   // Theme state and toggle
   const [theme, setTheme] = useState(() => localStorage.getItem('dv-theme') || 'light');
@@ -355,8 +358,8 @@ function App() {
   }, [theme]);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
-  const [stateFilter, setStateFilter] = useState('All');
-  const [branchFilter, setBranchFilter] = useState('All');
+  const [stateFilter, setStateFilter] = useState([]);
+  const [branchFilter, setBranchFilter] = useState([]);
   const [shortlistedIds, setShortlistedIds] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [priorities, setPriorities] = useState(defaultPriorities);
@@ -365,6 +368,8 @@ function App() {
   // Vault inputs state
   const [hoveredRoiCollege, setHoveredRoiCollege] = useState(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
   const [newPro, setNewPro] = useState('');
   const [newCon, setNewCon] = useState('');
   const [newNote, setNewNote] = useState('');
@@ -460,15 +465,26 @@ function App() {
         category: editProfile.category,
         homeState: editProfile.homeState,
         preferredBranches: editProfile.preferredBranches,
+        preferredStates: editProfile.preferredStates,
         scorecardName: editProfile.fileName || '',
         scorecardBase64: editProfile.scorecardBase64 || '',
       });
       if (ocrExtracted) {
-        setEditProfile(p => ({ ...p, score: ocrExtracted.score, scoreType: ocrExtracted.scoreType }));
         showToast(`OCR auto-filled: ${ocrExtracted.score} (${ocrExtracted.scoreType})`, 'success');
       }
       setCurrentUser(user);
-      setAdmissionProfile({ ...editProfile });
+      setAdmissionProfile({
+        journey: user.journey || 'Entrance result ready',
+        exam: user.exam || 'JEE Main',
+        scoreType: user.scoreType || 'Rank',
+        score: user.score || '8900',
+        category: user.category || 'General',
+        homeState: user.homeState || '',
+        preferredBranches: user.preferredBranches || '',
+        preferredStates: user.preferredStates || '',
+        fileName: user.scorecardName || '',
+        scorecardBase64: user.scorecardBase64 || '',
+      });
       setIsEditingProfile(false);
       showToast('Profile updated successfully!', 'success');
     } catch (err) {
@@ -731,8 +747,13 @@ function App() {
     
     const checkSession = () => {
       const isSessionActive = sessionStorage.getItem('dv-session-active') === 'true';
+      const savedStage = sessionStorage.getItem('dv-app-stage');
       if (!isSessionActive) {
-        setAppStage('landing');
+        if (savedStage === 'login' || savedStage === 'landing') {
+          setAppStage(savedStage);
+        } else {
+          setAppStage('landing');
+        }
         return;
       }
 
@@ -752,6 +773,7 @@ function App() {
               category: user.category || 'General',
               homeState: user.homeState || '',
               preferredBranches: user.preferredBranches || '',
+              preferredStates: user.preferredStates || '',
               stream: user.stream || '',
               budget: user.budget || '',
               targetExam: user.targetExam || '',
@@ -759,9 +781,17 @@ function App() {
               scorecardBase64: user.scorecardBase64 || '',
             });
             loadUserData();
-            setAppStage('dashboard');
+            if (savedStage && savedStage !== 'landing') {
+              setAppStage(savedStage);
+            } else {
+              setAppStage('dashboard');
+            }
           } else {
-            setAppStage('journey');
+            if (savedStage && savedStage !== 'landing') {
+              setAppStage(savedStage);
+            } else {
+              setAppStage('journey');
+            }
           }
         })
         .catch(() => {
@@ -790,6 +820,18 @@ function App() {
       checkSession();
     }
   }, []);
+
+  useEffect(() => {
+    if (appStage) {
+      sessionStorage.setItem('dv-app-stage', appStage);
+    }
+  }, [appStage]);
+
+  useEffect(() => {
+    if (activeSection) {
+      sessionStorage.setItem('dv-active-section', activeSection);
+    }
+  }, [activeSection]);
 
   // Sync priorities to shortlist in DB (debounced)
   useEffect(() => {
@@ -854,6 +896,8 @@ function App() {
     await logout();
     setCurrentUser(null);
     sessionStorage.removeItem('dv-session-active');
+    sessionStorage.removeItem('dv-app-stage');
+    sessionStorage.removeItem('dv-active-section');
     setAppStage('landing');
     setCatalog(fallbackColleges);
     setShortlistedIds([]);
@@ -871,6 +915,8 @@ function App() {
     await logout();
     setCurrentUser(null);
     sessionStorage.removeItem('dv-session-active');
+    sessionStorage.removeItem('dv-app-stage');
+    sessionStorage.removeItem('dv-active-section');
     setAppStage('login');
     setCatalog(fallbackColleges);
     setShortlistedIds([]);
@@ -1381,8 +1427,8 @@ function App() {
   const filteredColleges = scoredDiscoveryColleges.filter((college) => {
     const searchTarget = `${college.name} ${college.shortName} ${college.branch} ${college.state} ${college.tags.join(' ')}`.toLowerCase();
     const matchesQuery = searchTarget.includes(query.toLowerCase());
-    const matchesState = stateFilter === 'All' || college.state === stateFilter;
-    const matchesBranch = branchFilter === 'All' || college.branch === branchFilter;
+    const matchesState = stateFilter.length === 0 || stateFilter.includes(college.state);
+    const matchesBranch = branchFilter.length === 0 || branchFilter.includes(college.branch);
     const collegeType = getStandardizedType(college.type, college.name);
     const matchesType = typeFilter === 'All' || collegeType === typeFilter;
     return matchesQuery && matchesState && matchesBranch && matchesType;
@@ -1966,12 +2012,96 @@ function App() {
 
           <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
             Home State (Eligibility)
-            <input value={editProfile.homeState || ''} onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
+            <select
+              value={editProfile.homeState || ''}
+              onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))}
+              style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}
+            >
+              <option value="">-- Select State --</option>
+              {INDIAN_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </label>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-            Preferred Branches (Comma separated)
-            <input value={editProfile.preferredBranches || ''} onChange={e => setEditProfile(p => ({ ...p, preferredBranches: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
+          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+            Preferred College States (Select more than 1)
+            <div style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              height: '130px',
+              overflowY: 'auto',
+              background: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              {INDIAN_STATES.map(state => {
+                const selectedStates = editProfile.preferredStates
+                  ? editProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
+                  : [];
+                return (
+                  <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedStates.includes(state)}
+                      onChange={(e) => {
+                        let next;
+                        if (e.target.checked) {
+                          next = [...selectedStates, state];
+                        } else {
+                          next = selectedStates.filter(x => x !== state);
+                        }
+                        setEditProfile(p => ({ ...p, preferredStates: next.join(', ') }));
+                      }}
+                      style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                    />
+                    {state}
+                  </label>
+                );
+              })}
+            </div>
+          </label>
+
+          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+            Preferred Branches (Select more than 1)
+            <div style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              height: '130px',
+              overflowY: 'auto',
+              background: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              {ENGINEERING_BRANCHES.map(branch => {
+                const selectedBranches = editProfile.preferredBranches
+                  ? editProfile.preferredBranches.split(',').map(x => x.trim()).filter(Boolean)
+                  : [];
+                return (
+                  <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedBranches.includes(branch)}
+                      onChange={(e) => {
+                        let next;
+                        if (e.target.checked) {
+                          next = [...selectedBranches, branch];
+                        } else {
+                          next = selectedBranches.filter(x => x !== branch);
+                        }
+                        setEditProfile(p => ({ ...p, preferredBranches: next.join(', ') }));
+                      }}
+                      style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                    />
+                    {branch}
+                  </label>
+                );
+              })}
+            </div>
           </label>
 
           <div style={{ gridColumn: '1 / -1', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '16px', background: 'var(--bg-app)' }}>
@@ -2041,17 +2171,141 @@ function App() {
           ))}
         </select>
 
-        <select value={stateFilter} onChange={(event) => setStateFilter(event.target.value)}>
-          {states.map((state) => (
-            <option key={state} value={state}>{state === 'All' ? 'All States' : state}</option>
-          ))}
-        </select>
+        {/* Custom Multi-select State Filter */}
+        <div style={{ position: 'relative', width: '200px' }}>
+          <button 
+            type="button" 
+            onClick={() => {
+              setShowStateDropdown(!showStateDropdown);
+              setShowBranchDropdown(false);
+            }}
+            style={{ 
+              width: '100%', 
+              padding: '10px', 
+              borderRadius: '8px', 
+              border: '1px solid var(--border-color)', 
+              background: 'var(--bg-card)', 
+              color: 'var(--text-primary)', 
+              textAlign: 'left', 
+              fontSize: '0.85rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
+              {stateFilter.length === 0 ? 'All States' : `${stateFilter.length} Selected`}
+            </span>
+            <ChevronDown size={14} />
+          </button>
+          {showStateDropdown && (
+            <div style={{ 
+              position: 'absolute', 
+              top: '100%', 
+              left: 0, 
+              width: '100%', 
+              background: 'var(--bg-card)', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '8px', 
+              zIndex: 100, 
+              maxHeight: '200px', 
+              overflowY: 'auto', 
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              marginTop: '4px'
+            }}>
+              {states.filter(s => s !== 'All').map(state => (
+                <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal', color: 'var(--text-primary)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={stateFilter.includes(state)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setStateFilter([...stateFilter, state]);
+                      } else {
+                        setStateFilter(stateFilter.filter(x => x !== state));
+                      }
+                    }}
+                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                  />
+                  {state}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <select value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}>
-          {branches.map((branch) => (
-            <option key={branch} value={branch}>{branch === 'All' ? 'All Branches' : branch}</option>
-          ))}
-        </select>
+        {/* Custom Multi-select Branch Filter */}
+        <div style={{ position: 'relative', width: '200px' }}>
+          <button 
+            type="button" 
+            onClick={() => {
+              setShowBranchDropdown(!showBranchDropdown);
+              setShowStateDropdown(false);
+            }}
+            style={{ 
+              width: '100%', 
+              padding: '10px', 
+              borderRadius: '8px', 
+              border: '1px solid var(--border-color)', 
+              background: 'var(--bg-card)', 
+              color: 'var(--text-primary)', 
+              textAlign: 'left', 
+              fontSize: '0.85rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
+              {branchFilter.length === 0 ? 'All Branches' : `${branchFilter.length} Selected`}
+            </span>
+            <ChevronDown size={14} />
+          </button>
+          {showBranchDropdown && (
+            <div style={{ 
+              position: 'absolute', 
+              top: '100%', 
+              left: 0, 
+              width: '100%', 
+              background: 'var(--bg-card)', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '8px', 
+              zIndex: 100, 
+              maxHeight: '200px', 
+              overflowY: 'auto', 
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              marginTop: '4px'
+            }}>
+              {branches.filter(b => b !== 'All').map(branch => (
+                <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal', color: 'var(--text-primary)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={branchFilter.includes(branch)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setBranchFilter([...branchFilter, branch]);
+                      } else {
+                        setBranchFilter(branchFilter.filter(x => x !== branch));
+                      }
+                    }}
+                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                  />
+                  {branch}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="collegeList">
@@ -2066,8 +2320,8 @@ function App() {
               className="textButton"
               onClick={() => {
                 setQuery('');
-                setStateFilter('All');
-                setBranchFilter('All');
+                setStateFilter([]);
+                setBranchFilter([]);
                 setTypeFilter('All');
               }}
             >

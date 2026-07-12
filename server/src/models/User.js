@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
     category: { type: String, default: 'General' },
     homeState: { type: String, default: '' },
     preferredBranches: { type: String, default: '' },
+    preferredStates: { type: String, default: '' },
     stream: { type: String, default: '' },
     budget: { type: String, default: '' },
     targetExam: { type: String, default: '' },
