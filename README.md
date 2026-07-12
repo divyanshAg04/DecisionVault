@@ -274,7 +274,7 @@ SMTP_USER=
 SMTP_PASS=
 SMTP_FROM="DecisionVault" <noreply@decisionvault.dev>
 
-# Optional: AWS S3 for scorecard storage (leave blank to use local /public/uploads fallback)
+# Optional in development, but required for production; without them, uploaded evidence files will not persist across deploys (uses ephemeral local /public/uploads fallback)
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_S3_BUCKET=
@@ -430,6 +430,23 @@ cd client && npm test
 ```
 
 Server tests cover auth, refresh tokens, email verification, transactional account deletion, AI routes, ML routes, shortlists, and the logger.
+
+### 🎭 End-to-End (E2E) Tests
+
+We use Playwright to verify the core user journey (login, discovery search, shortlisting, adding research notes, prioritizations, and confirming decisions).
+
+To set up and run E2E tests locally:
+1. Install E2E dependencies and browser binaries:
+   ```bash
+   cd e2e
+   npm install
+   npx playwright install chromium
+   cd ..
+   ```
+2. Run the E2E test suite (which automatically seeds the database with demo data, boots the local dev server, runs the tests, and shuts down):
+   ```bash
+   npm run e2e
+   ```
 
 <br/>
 

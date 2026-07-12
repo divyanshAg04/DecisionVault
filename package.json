@@ -14,7 +14,8 @@
     "seed:all": "npm --prefix server run seed && npm --prefix server run seed:cutoffs",
     "train:ml": "npm --prefix server run train:ml",
     "build": "npm --prefix client run build",
-    "start": "npm --prefix server start"
+    "start": "npm --prefix server start",
+    "e2e": "npm --prefix e2e run test"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
