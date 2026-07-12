@@ -9,7 +9,7 @@ import { Decision } from '../models/Decision.js';
 import { Reflection } from '../models/Reflection.js';
 import { ActivityLog } from '../models/ActivityLog.js';
 import { parseScorecardText, extractScoreDetails } from '../utils/ocr.js';
-import { uploadScorecard } from '../utils/s3.js';
+import { uploadScorecard } from '../utils/cloudinary.js';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { RefreshToken } from '../models/RefreshToken.js';
@@ -85,7 +85,7 @@ function setCsrfCookie(res, req) {
 
 function signToken(userId) {
   // Short-lived access token (15 min)
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'test-secret', { expiresIn: '15m' });
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
 }
 
 async function issueRefreshToken(userId) {
@@ -213,7 +213,7 @@ router.all('/verify-email', async (req, res, next) => {
     try {
       const authCookie = req.cookies?.token;
       if (authCookie) {
-        const decoded = jwt.verify(authCookie, process.env.JWT_SECRET || 'test-secret');
+        const decoded = jwt.verify(authCookie, process.env.JWT_SECRET);
         decodedUserId = decoded.userId;
       }
     } catch (err) {

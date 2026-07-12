@@ -53,9 +53,14 @@ async function request(url, options = {}) {
     response = await fetch(`${API_BASE_URL}${url}`, config);
     if (response.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/register') && !url.includes('/auth/refresh') && !url.includes('/auth/logout')) {
       try {
+        const refreshHeaders = { 'Content-Type': 'application/json' };
+        if (inMemoryCsrfToken) {
+          refreshHeaders['X-CSRF-Token'] = inMemoryCsrfToken;
+        }
         const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
+          headers: refreshHeaders,
         });
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json();

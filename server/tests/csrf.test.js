@@ -86,6 +86,15 @@ describe('CSRF Protection', () => {
     expect(registerRes.status).not.toBe(403);
   });
 
+  it('should reject POST /api/auth/refresh without CSRF token with 403', async () => {
+    const res = await request(app)
+      .post('/api/auth/refresh')
+      .send();
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toContain('CSRF');
+  });
+
   it('should set csrfToken cookie and return csrfToken in response body on login', async () => {
     // Create a user first
     await User.create({
