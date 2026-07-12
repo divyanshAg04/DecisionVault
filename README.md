@@ -475,8 +475,9 @@ Ideas worth exploring next:
 - [x] Automated test suite (Vitest / Supertest / MongoMemoryReplSet)
 - [x] CSV/JSON export for shortlists and decisions
 - [ ] Wire up `/api/collaborators/*` routes to finish multi-user collaboration (model, mailer, and client UI already exist)
-- [ ] CI pipeline for lint, test, and build checks on every PR
+- [x] CI pipeline for lint, test, and build checks on every PR
 - [ ] Mobile-first PWA mode
+- [x] End-to-End (E2E) integration test suite (Playwright - configured under the `e2e/` directory)
 
 <br/>
 
