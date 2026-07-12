@@ -70,7 +70,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
     {
       icon: <SlidersHorizontal size={20} />,
       title: 'Personal scoring',
-      text: 'Weight priorities such as Return on Investment (ROI), placements, campus life, distance, fees, and research.',
+      text: 'Weight priorities such as Return on Investment (ROI), placements, campus life, fees, and research.',
     },
     {
       icon: <BookOpenCheck size={20} />,
@@ -124,7 +124,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
             A decision file for the most expensive choice after school.
           </h2>
           <p>
-            CollegeVault turns ranks, cutoffs, placement PDFs, senior advice, fees, distance, and family priorities into
+            CollegeVault turns ranks, cutoffs, placement PDFs, senior advice, fees, and family priorities into
             a single decision record that can be explained later.
           </p>
           <div className="heroActions">
@@ -431,7 +431,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
           <article>
             <span>01</span>
             <strong>Reason for shortlist</strong>
-            <p>“Good Return on Investment (ROI), strong coding culture, acceptable distance from home.”</p>
+            <p>“Good Return on Investment (ROI), strong coding culture, and ideal campus environment.”</p>
           </article>
           <article>
             <span>02</span>
@@ -441,7 +441,7 @@ export default function LandingPage({ onLogin, theme, toggleTheme }) {
           <article>
             <span>03</span>
             <strong>Priority score</strong>
-            <p>Weighted scores update when the student changes fees, distance, Return on Investment (ROI), or campus-life priority.</p>
+            <p>Weighted scores update when the student changes fees, Return on Investment (ROI), or campus-life priority.</p>
           </article>
           <article>
             <span>04</span>

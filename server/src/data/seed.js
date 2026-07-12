@@ -942,7 +942,6 @@ async function seed() {
     { key: 'fees', label: 'Fees', weight: 3 },
     { key: 'campusLife', label: 'Campus Life', weight: 3 },
     { key: 'research', label: 'Research', weight: 2 },
-    { key: 'distanceKm', label: 'Distance', weight: 4 },
   ];
 
   await Shortlist.insertMany(
