@@ -867,6 +867,23 @@ function App() {
     setActivities([]);
   };
 
+  const handleBackToLogin = async () => {
+    await logout();
+    setCurrentUser(null);
+    sessionStorage.removeItem('dv-session-active');
+    setAppStage('login');
+    setCatalog(fallbackColleges);
+    setShortlistedIds([]);
+    setSelectedId('');
+    setDecisionId('');
+    setAdmissionPredictions([]);
+    setHasConfirmedDecision(false);
+    setConfirmedDecisionId('');
+    setHasReflected(false);
+    setReflectionData(null);
+    setActivities([]);
+  };
+
   // New: Delete Account handler
   const handleDeleteAccount = async () => {
     if (!window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) return;
@@ -1765,7 +1782,7 @@ function App() {
   if (appStage === 'journey') {
     return (
       <JourneyScreen
-        onHome={() => setAppStage('landing')}
+        onBack={handleBackToLogin}
         onClass12={() => {
           if (admissionProfile.journey !== 'Class 12 planning') {
             setAdmissionProfile({
@@ -3586,7 +3603,7 @@ function App() {
 
       <main className="appShell">
         <aside className="sidebar">
-          <button className="brandBlock brandButton" type="button" onClick={() => setAppStage('journey')}>
+          <div className="brandBlock brandButton" style={{ cursor: 'default' }}>
             <div className="brandMark">
               <GraduationCap size={21} />
             </div>
@@ -3594,7 +3611,7 @@ function App() {
               <p className="eyebrow">DecisionVault</p>
               <h1>CollegeVault</h1>
             </div>
-          </button>
+          </div>
 
           <nav className="navStack" aria-label="Primary">
             {navItems.map((item) => (

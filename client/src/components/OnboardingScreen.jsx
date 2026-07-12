@@ -5,7 +5,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
   return (
     <main className="onboardingShell">
       <section className="onboardingIntro">
-        <button className="brandBlock brandButton" type="button" onClick={onHome}>
+        <div className="brandBlock brandButton" style={{ cursor: 'default' }}>
           <div className="brandMark">
             <GraduationCap size={21} />
           </div>
@@ -13,7 +13,7 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             <p className="eyebrow">DecisionVault</p>
             <h1>CollegeVault</h1>
           </div>
-        </button>
+        </div>
 
         <div>
           <p className="eyebrow">Class 12 planning</p>
@@ -134,7 +134,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
   return (
     <main className="onboardingShell">
       <section className="onboardingIntro">
-        <button className="brandBlock brandButton" type="button" onClick={onHome}>
+        <div className="brandBlock brandButton" style={{ cursor: 'default' }}>
           <div className="brandMark">
             <GraduationCap size={21} />
           </div>
@@ -142,7 +142,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
             <p className="eyebrow">DecisionVault</p>
             <h1>CollegeVault</h1>
           </div>
-        </button>
+        </div>
 
         <div>
           <p className="eyebrow">Admission profile</p>
