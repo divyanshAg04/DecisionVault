@@ -482,6 +482,19 @@ function App() {
       setProfileValidationError(`You missed some mandatory fields: ${missing.join(', ')}.`);
       return;
     }
+
+    if (isClass12) {
+      const pct = parseFloat(editProfile.score);
+      if (isNaN(pct) || pct > 100) {
+        setProfileValidationError('Board percentage cannot be greater than 100.');
+        return;
+      }
+      if (pct < 0) {
+        setProfileValidationError('Board percentage cannot be negative.');
+        return;
+      }
+    }
+
     setProfileValidationError('');
 
     try {
@@ -2174,8 +2187,17 @@ function App() {
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <input
                         value={editProfile.score || ''}
-                        onChange={e => setEditProfile(p => ({ ...p, score: e.target.value }))}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+                            setEditProfile(p => ({ ...p, score: val }));
+                          }
+                        }}
                         placeholder="Example: 86"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
                         style={{ width: '100%', padding: '10px 32px 10px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                       />
                       <span style={{ position: 'absolute', right: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>%</span>

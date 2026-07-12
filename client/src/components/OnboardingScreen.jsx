@@ -47,6 +47,17 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
       setValidationError(`You missed some mandatory fields: ${missing.join(', ')}.`);
       return;
     }
+
+    const scoreNum = parseFloat(admissionProfile.score);
+    if (isNaN(scoreNum) || scoreNum > 100) {
+      setValidationError('Board percentage cannot be greater than 100.');
+      return;
+    }
+    if (scoreNum < 0) {
+      setValidationError('Board percentage cannot be negative.');
+      return;
+    }
+
     setValidationError('');
     onContinue();
   };
@@ -124,12 +135,21 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           <label>
             Board percentage <span style={{ color: '#ff4d4f' }}>*</span>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <input
-                value={admissionProfile.score}
-                onChange={(event) => updateAdmissionProfile('score', event.target.value)}
-                placeholder="Example: 86"
-                style={{ width: '100%', paddingRight: '32px' }}
-              />
+            <input
+              value={admissionProfile.score}
+              onChange={(event) => {
+                const val = event.target.value;
+                if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+                  updateAdmissionProfile('score', val);
+                }
+              }}
+              placeholder="Example: 86"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              style={{ width: '100%', paddingRight: '32px' }}
+            />
               <span style={{ position: 'absolute', right: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>%</span>
             </div>
           </label>
