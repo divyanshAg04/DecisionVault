@@ -19,6 +19,7 @@ import shortlistRoutes from './routes/shortlistRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import mlRoutes from './routes/mlRoutes.js';
+import { s3Configured } from './utils/s3.js';
 
 dotenv.config();
 
@@ -128,6 +129,7 @@ app.get('/api/health', async (req, res) => {
     uptime: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
+    storage: s3Configured ? 's3' : 'local-ephemeral',
   });
 });
 

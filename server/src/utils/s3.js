@@ -2,14 +2,19 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { logger } from './logger.js';
 
 // Setup S3 Client if credentials are provided
-const s3Configured = !!(
+export const s3Configured = !!(
   process.env.AWS_ACCESS_KEY_ID && 
   process.env.AWS_SECRET_ACCESS_KEY && 
   process.env.AWS_S3_BUCKET && 
   process.env.AWS_REGION
 );
+
+if (!s3Configured) {
+  logger.warn('S3 not configured — uploads will use ephemeral local storage and WILL BE LOST on redeploy. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION to enable persistent storage.');
+}
 
 let s3Client = null;
 if (s3Configured) {

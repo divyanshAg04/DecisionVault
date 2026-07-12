@@ -939,6 +939,7 @@ async function seed() {
     category: 'General',
     homeState: 'Uttar Pradesh',
     preferredBranches: 'Computer Science, Computer Engineering',
+    emailVerified: true,
   });
 
   const prioritySet = [
