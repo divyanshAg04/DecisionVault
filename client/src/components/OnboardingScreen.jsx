@@ -20,6 +20,8 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
   const [homeStateDropdownOpen, setHomeStateDropdownOpen] = useState(false);
   const [prefStateSearch, setPrefStateSearch] = useState('');
   const [prefStateDropdownOpen, setPrefStateDropdownOpen] = useState(false);
+  const [prefBranchSearch, setPrefBranchSearch] = useState('');
+  const [prefBranchDropdownOpen, setPrefBranchDropdownOpen] = useState(false);
 
   const selectedStates = admissionProfile.preferredStates
     ? admissionProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
@@ -372,32 +374,70 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             </div>
           </div>
 
-          <label className="wideField">
-            Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+          <div className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
             <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              minHeight: '41px',
+              padding: '6px 10px',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
-              padding: '10px',
-              height: '130px',
-              overflowY: 'auto',
-              background: 'var(--bg-app)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
+              background: 'var(--bg-card)',
+              alignItems: 'center'
             }}>
-              {ENGINEERING_BRANCHES.map(branch => (
-                <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedBranches.includes(branch)}
-                    onChange={(e) => handleBranchCheckboxChange(branch, e.target.checked)}
-                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                  />
+              {selectedBranches.map(branch => (
+                <div key={branch} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.3)', color: '#6c5ce7', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                   {branch}
-                </label>
+                  <button type="button" onClick={() => handleBranchCheckboxChange(branch, false)} style={{ background: 'none', border: 'none', color: '#6c5ce7', cursor: 'pointer', padding: 0, fontSize: '0.88rem', display: 'flex', alignItems: 'center', marginLeft: '2px' }}>
+                    ✕
+                  </button>
+                </div>
               ))}
+              
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button
+                  type="button"
+                  onClick={() => setPrefBranchDropdownOpen(!prefBranchDropdownOpen)}
+                  style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                >
+                  + Add Branch
+                </button>
+                {prefBranchDropdownOpen && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, width: '220px', maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: '4px', padding: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
+                      <Search size={12} style={{ color: 'var(--text-secondary)' }} />
+                      <input
+                        type="text"
+                        placeholder="Search branch..."
+                        value={prefBranchSearch}
+                        onChange={(e) => setPrefBranchSearch(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.78rem', padding: '2px', color: 'var(--text-primary)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {ENGINEERING_BRANCHES.filter(branch => !selectedBranches.includes(branch) && branch.toLowerCase().includes(prefBranchSearch.toLowerCase())).map(branch => (
+                      <div
+                        key={branch}
+                        onClick={() => {
+                          handleBranchCheckboxChange(branch, true);
+                          setPrefBranchSearch('');
+                          setPrefBranchDropdownOpen(false);
+                        }}
+                        style={{ padding: '6px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '4px', color: 'var(--text-primary)' }}
+                        className="dropdownItem"
+                      >
+                        {branch}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </label>
+          </div>
         </div>
 
         <div style={{ padding: '0 18px 18px' }}>
@@ -416,6 +456,8 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
   const [homeStateDropdownOpen, setHomeStateDropdownOpen] = useState(false);
   const [prefStateSearch, setPrefStateSearch] = useState('');
   const [prefStateDropdownOpen, setPrefStateDropdownOpen] = useState(false);
+  const [prefBranchSearch, setPrefBranchSearch] = useState('');
+  const [prefBranchDropdownOpen, setPrefBranchDropdownOpen] = useState(false);
 
   const selectedStates = admissionProfile.preferredStates
     ? admissionProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
@@ -840,32 +882,70 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
             </div>
           </div>
 
-          <label className="wideField">
-            Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+          <div className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            </span>
             <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              minHeight: '41px',
+              padding: '6px 10px',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
-              padding: '10px',
-              height: '130px',
-              overflowY: 'auto',
-              background: 'var(--bg-app)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
+              background: 'var(--bg-card)',
+              alignItems: 'center'
             }}>
-              {ENGINEERING_BRANCHES.map(branch => (
-                <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedBranches.includes(branch)}
-                    onChange={(e) => handleBranchCheckboxChange(branch, e.target.checked)}
-                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                  />
+              {selectedBranches.map(branch => (
+                <div key={branch} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.3)', color: '#6c5ce7', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                   {branch}
-                </label>
+                  <button type="button" onClick={() => handleBranchCheckboxChange(branch, false)} style={{ background: 'none', border: 'none', color: '#6c5ce7', cursor: 'pointer', padding: 0, fontSize: '0.88rem', display: 'flex', alignItems: 'center', marginLeft: '2px' }}>
+                    ✕
+                  </button>
+                </div>
               ))}
+              
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button
+                  type="button"
+                  onClick={() => setPrefBranchDropdownOpen(!prefBranchDropdownOpen)}
+                  style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                >
+                  + Add Branch
+                </button>
+                {prefBranchDropdownOpen && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, width: '220px', maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: '4px', padding: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
+                      <Search size={12} style={{ color: 'var(--text-secondary)' }} />
+                      <input
+                        type="text"
+                        placeholder="Search branch..."
+                        value={prefBranchSearch}
+                        onChange={(e) => setPrefBranchSearch(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.78rem', padding: '2px', color: 'var(--text-primary)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {ENGINEERING_BRANCHES.filter(branch => !selectedBranches.includes(branch) && branch.toLowerCase().includes(prefBranchSearch.toLowerCase())).map(branch => (
+                      <div
+                        key={branch}
+                        onClick={() => {
+                          handleBranchCheckboxChange(branch, true);
+                          setPrefBranchSearch('');
+                          setPrefBranchDropdownOpen(false);
+                        }}
+                        style={{ padding: '6px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '4px', color: 'var(--text-primary)' }}
+                        className="dropdownItem"
+                      >
+                        {branch}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </label>
+          </div>
         </div>
 
         <div style={{ padding: '0 18px 18px' }}>
