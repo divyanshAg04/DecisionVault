@@ -2648,26 +2648,45 @@ function App() {
               )}
             </div>
 
-            {college.isDatasetResult ? (
-              <button
-                type="button"
-                className="textButton savePredictionButton"
-                onClick={() => handleSavePrediction(college)}
-                style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
-                title="This is a cutoff prediction, not a saved shortlist item."
-              >
-                Save prediction
-              </button>
-            ) : (
-              <button
-                className={`iconAction ${shortlistedIds.includes(college.id) ? 'on' : ''}`}
-                onClick={() => toggleShortlist(college.id)}
-                aria-label={`${shortlistedIds.includes(college.id) ? 'Remove' : 'Add'} ${college.name}`}
-                style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
-              >
-                <Check size={17} />
-              </button>
-            )}
+            {(() => {
+              const savedInCatalog = college.isDatasetResult
+                ? catalog.find(
+                    (c) =>
+                      normalizeSearchText(c.name) === normalizeSearchText(college.name) &&
+                      normalizeSearchText(c.branch) === normalizeSearchText(college.branch)
+                  )
+                : null;
+
+              const isAlreadySaved = college.isDatasetResult
+                ? !!(savedInCatalog && shortlistedIds.includes(savedInCatalog.id))
+                : shortlistedIds.includes(college.id);
+
+              if (college.isDatasetResult && !isAlreadySaved) {
+                return (
+                  <button
+                    type="button"
+                    className="textButton savePredictionButton"
+                    onClick={() => handleSavePrediction(college)}
+                    style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
+                    title="This is a cutoff prediction, not a saved shortlist item."
+                  >
+                    Save prediction
+                  </button>
+                );
+              }
+
+              const targetId = college.isDatasetResult && savedInCatalog ? savedInCatalog.id : college.id;
+              return (
+                <button
+                  className={`iconAction ${isAlreadySaved ? 'on' : ''}`}
+                  onClick={() => toggleShortlist(targetId)}
+                  aria-label={`${isAlreadySaved ? 'Remove' : 'Add'} ${college.name}`}
+                  style={{ gridRow: '1 / 2', gridColumn: '2 / 3', alignSelf: 'center' }}
+                >
+                  <Check size={17} />
+                </button>
+              );
+            })()}
 
             {selectedCollege.id === college.id && (
               <div className="scoreExplainability" style={{ gridColumn: '1 / -1', marginTop: '10px', background: 'var(--bg-app)', padding: '12px', borderRadius: '6px', fontSize: '0.78rem', borderLeft: '4px solid #526b35', textAlign: 'left' }}>
