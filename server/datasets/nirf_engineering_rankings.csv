@@ -1,0 +1,51 @@
+Rank,Institute Name,City,State,TLR_Score,RPC_Score,GO_Score,OI_Score,PR_Score,Total_Score,Median_Salary_LPA,Placement_Rate,Annual_Fee
+1,Indian Institute of Technology Madras,Chennai,Tamil Nadu,95.79,93.10,81.07,65.85,100.00,89.46,TBD,TBD,TBD
+2,Indian Institute of Technology Delhi,New Delhi,Delhi,85.71,92.20,84.52,65.39,98.53,86.66,TBD,TBD,TBD
+3,Indian Institute of Technology Bombay,Mumbai,Maharashtra,86.34,84.18,84.78,58.67,91.13,83.09,TBD,TBD,TBD
+4,Indian Institute of Technology Kanpur,Kanpur,Uttar Pradesh,94.25,74.08,89.05,60.62,84.19,82.79,TBD,TBD,TBD
+5,Indian Institute of Technology Kharagpur,Kharagpur,West Bengal,78.22,79.28,79.16,57.83,80.26,76.88,TBD,TBD,TBD
+6,Indian Institute of Technology Roorkee,Roorkee,Uttarakhand,77.72,74.70,87.35,62.20,65.79,76.00,TBD,TBD,TBD
+7,Indian Institute of Technology Guwahati,Guwahati,Assam,76.81,68.07,84.48,59.56,55.38,71.86,TBD,TBD,TBD
+8,Indian Institute of Technology Hyderabad,Hyderabad,Telangana,88.73,57.50,77.88,55.70,65.31,71.55,TBD,TBD,TBD
+9,National Institute of Technology Tiruchirappalli,Tiruchirappalli,Tamil Nadu,69.69,57.02,78.69,63.12,68.07,66.88,TBD,TBD,TBD
+10,Indian Institute of Technology (Banaras Hindu University) Varanasi,Varanasi,Uttar Pradesh,66.26,60.16,84.78,57.89,60.05,66.69,TBD,TBD,TBD
+11,Vellore Institute of Technology,Vellore,Tamil Nadu,65.52,71.94,69.40,61.75,49.28,66.22,TBD,TBD,TBD
+12,Jadavpur University,Kolkata,West Bengal,78.24,59.47,76.55,48.89,41.13,65.62,TBD,TBD,TBD
+13,S.R.M. Institute of Science and Technology,Chennai,Tamil Nadu,78.11,68.70,64.60,66.85,17.57,65.41,TBD,TBD,TBD
+14,Anna University,Chennai,Tamil Nadu,65.94,71.32,63.43,48.67,65.97,65.34,TBD,TBD,TBD
+15,Indian Institute of Technology (Indian School of Mines) Dhanbad,Dhanbad,Jharkhand,73.39,60.91,75.94,59.84,33.72,64.83,TBD,TBD,TBD
+16,Indian Institute of Technology Indore,Indore,Madhya Pradesh,79.79,55.21,75.82,60.67,29.90,64.72,TBD,TBD,TBD
+17,National Institute of Technology Karnataka Surathkal,Surathkal,Karnataka,74.65,49.04,78.44,62.31,52.37,64.27,TBD,TBD,TBD
+18,Indian Institute of Technology Gandhinagar,Gandhinagar,Gujarat,88.39,42.21,70.33,65.56,36.08,63.42,TBD,TBD,TBD
+19,National Institute of Technology Rourkela,Rourkela,Odisha,76.49,57.00,73.24,59.41,27.38,63.38,TBD,TBD,TBD
+20,Birla Institute of Technology and Science Pilani,Pilani,Rajasthan,73.19,52.49,79.47,58.14,36.28,63.04,TBD,TBD,TBD
+21,National Institute of Technology Warangal,Warangal,Telangana,76.99,48.25,75.28,58.05,32.90,61.72,TBD,TBD,TBD
+22,Indian Institute of Technology Ropar,Rupnagar,Punjab,77.30,46.40,73.59,65.15,32.06,61.56,TBD,TBD,TBD
+23,Amrita Vishwa Vidyapeetham,Coimbatore,Tamil Nadu,78.05,49.58,65.28,62.49,37.03,61.29,TBD,TBD,TBD
+24,Jamia Millia Islamia,New Delhi,Delhi,66.48,58.75,75.46,66.84,19.33,61.28,TBD,TBD,TBD
+25,National Institute of Technology Calicut,Kozhikode,Kerala,77.36,37.59,79.48,67.93,40.10,61.19,TBD,TBD,TBD
+26,Siksha O Anusandhan,Bhubaneswar,Odisha,82.08,42.44,66.25,73.63,30.12,60.97,TBD,TBD,TBD
+27,Delhi Technological University,New Delhi,Delhi,73.10,43.87,76.17,55.57,49.00,60.78,TBD,TBD,TBD
+28,Indian Institute of Technology Jodhpur,Jodhpur,Rajasthan,87.05,40.25,72.26,66.24,13.50,60.61,TBD,TBD,TBD
+29,Thapar Institute of Engineering and Technology,Patiala,Punjab,70.75,51.69,73.58,64.01,24.95,60.35,TBD,TBD,TBD
+30,Amity University,Gautam Budh Nagar,Uttar Pradesh,75.21,59.52,61.72,63.28,8.23,59.91,TBD,TBD,TBD
+31,Indian Institute of Technology Mandi,Mandi,Himachal Pradesh,74.90,41.80,79.03,70.51,19.90,59.86,TBD,TBD,TBD
+32,Chandigarh University,Mohali,Punjab,76.22,45.76,66.21,75.56,24.19,59.82,TBD,TBD,TBD
+33,Aligarh Muslim University,Aligarh,Uttar Pradesh,75.47,58.68,63.11,41.23,21.83,59.16,TBD,TBD,TBD
+34,Indian Institute of Technology Patna,Patna,Bihar,67.22,49.41,77.73,53.00,25.69,58.40,TBD,TBD,TBD
+35,Koneru Lakshmaiah Education Foundation,Vaddeswaram,Andhra Pradesh,74.84,47.52,65.41,66.32,18.17,58.24,TBD,TBD,TBD
+36,Kalasalingam Academy of Research and Education,Srivilliputhur,Tamil Nadu,78.67,38.81,71.56,76.14,10.42,58.20,TBD,TBD,TBD
+37,Kalinga Institute of Industrial Technology,Bhubaneswar,Odisha,78.06,42.99,62.03,76.29,16.36,58.00,TBD,TBD,TBD
+38,Shanmugha Arts Science Technology and Research Academy,Thanjavur,Tamil Nadu,78.42,39.30,72.10,67.21,15.11,57.97,TBD,TBD,TBD
+39,Visvesvaraya National Institute of Technology Nagpur,Nagpur,Maharashtra,74.71,43.37,73.89,55.62,21.28,57.89,TBD,TBD,TBD
+40,National Institute of Technology Silchar,Silchar,Assam,67.13,53.82,73.05,56.86,10.06,57.60,TBD,TBD,TBD
+41,Institute of Chemical Technology,Mumbai,Maharashtra,71.23,49.07,66.74,54.19,20.74,56.93,TBD,TBD,TBD
+42,UPES,Dehradun,Uttarakhand,73.11,52.19,51.10,62.70,25.69,56.65,TBD,TBD,TBD
+43,Malaviya National Institute of Technology,Jaipur,Rajasthan,69.24,48.66,69.43,59.76,11.12,56.35,TBD,TBD,TBD
+44,National Institute of Technology Durgapur,Durgapur,West Bengal,70.41,38.70,78.05,58.99,20.18,56.26,TBD,TBD,TBD
+45,National Institute of Technology Delhi,Delhi,Delhi,77.19,30.17,67.64,77.54,21.83,55.67,TBD,TBD,TBD
+46,Sri Sivasubramaniya Nadar College of Engineering,Kalavakkam,Tamil Nadu,69.93,41.32,69.34,57.10,20.46,55.01,TBD,TBD,TBD
+47,International Institute of Information Technology Hyderabad,Hyderabad,Telangana,65.47,40.89,66.90,63.14,26.90,54.29,TBD,TBD,TBD
+48,Birla Institute of Technology,Ranchi,Jharkhand,75.92,39.20,62.50,52.44,19.04,54.18,TBD,TBD,TBD
+49,Indian Institute of Engineering Science and Technology Shibpur,Howrah,West Bengal,64.01,39.61,72.26,54.45,31.85,54.17,TBD,TBD,TBD
+50,Lovely Professional University,Phagwara,Punjab,59.41,53.01,57.76,67.10,21.83,54.16,TBD,TBD,TBD
