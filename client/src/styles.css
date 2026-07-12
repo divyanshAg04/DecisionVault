@@ -2776,3 +2776,51 @@ body.dark-theme {
     color: #000 !important;
   }
 }
+
+/* Premium Tooltips */
+.premium-tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  cursor: help;
+}
+
+.premium-tooltip-text {
+  visibility: hidden;
+  width: 240px;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  text-align: left;
+  border-radius: 8px;
+  padding: 10px 14px;
+  position: absolute;
+  z-index: 999;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  font-size: 0.78rem;
+  font-weight: normal;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.premium-tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--border-color) transparent transparent transparent;
+}
+
+.premium-tooltip-container:hover .premium-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}

@@ -1,9 +1,24 @@
 import React, { useState } from 'react';
-import { GraduationCap, Upload, ShieldAlert } from 'lucide-react';
+import { GraduationCap, Upload, ShieldAlert, HelpCircle, Search, Check, ChevronDown } from 'lucide-react';
 import { INDIAN_STATES, ENGINEERING_BRANCHES, BUDGET_RANGES } from '../data/constants';
+
+const EXAM_TOOLTIPS = {
+  'JEE Main': 'Used for admission into NITs, IIITs, GFTIs and qualification for JEE Advanced.',
+  'JEE Advanced': 'Used for admission into IITs (Indian Institutes of Technology).',
+  'CUET': 'Common University Entrance Test for admission to Central and State universities.',
+  'NEET': 'National Eligibility cum Entrance Test for admission to Medical and Dental colleges.',
+  'GATE': 'Graduate Aptitude Test in Engineering for PG admissions and PSU recruitment.',
+  'CAT': 'Common Admission Test for admission to prestigious business schools (IIMs).',
+  'State CET': 'State-level Common Entrance Test for regional engineering/technical colleges.',
+  'Not decided': 'Select if you are still planning your exam strategy.'
+};
 
 export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfile, onBack, onContinue }) {
   const [validationError, setValidationError] = useState('');
+  const [homeStateSearch, setHomeStateSearch] = useState('');
+  const [homeStateDropdownOpen, setHomeStateDropdownOpen] = useState(false);
+  const [prefStateSearch, setPrefStateSearch] = useState('');
+  const [prefStateDropdownOpen, setPrefStateDropdownOpen] = useState(false);
 
   const selectedStates = admissionProfile.preferredStates
     ? admissionProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
@@ -155,7 +170,15 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </label>
 
           <label>
-            Target exam <span style={{ color: '#ff4d4f' }}>*</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Target Exam <span style={{ color: '#ff4d4f' }}>*</span>
+              <div className="premium-tooltip-container">
+                <HelpCircle size={14} style={{ color: 'var(--text-secondary)' }} />
+                <span className="premium-tooltip-text">
+                  {EXAM_TOOLTIPS[admissionProfile.targetExam || 'JEE Main'] || 'Target entrance exam selection.'}
+                </span>
+              </div>
+            </div>
             <select
               value={admissionProfile.targetExam || 'JEE Main'}
               onChange={(event) => {
@@ -186,18 +209,85 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             </select>
           </label>
 
-          <label>
-            Home state <span style={{ color: '#ff4d4f' }}>*</span>
-            <select
-              value={admissionProfile.homeState}
-              onChange={(event) => updateAdmissionProfile('homeState', event.target.value)}
-              style={{ cursor: 'pointer' }}
+          <label style={{ position: 'relative' }}>
+            Home State <span style={{ color: '#ff4d4f' }}>*</span>
+            <div
+              onClick={() => setHomeStateDropdownOpen(!homeStateDropdownOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                background: 'var(--bg-card)',
+                color: admissionProfile.homeState ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                minHeight: '41px'
+              }}
             >
-              <option value="">-- Select State --</option>
-              {INDIAN_STATES.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
+              <span>{admissionProfile.homeState || 'Search State...'}</span>
+              <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+            </div>
+
+            {homeStateDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  zIndex: 1000,
+                  width: '100%',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  marginTop: '4px',
+                  padding: '8px'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '6px' }}>
+                  <Search size={14} style={{ color: 'var(--text-secondary)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search State..."
+                    value={homeStateSearch}
+                    onChange={(e) => setHomeStateSearch(e.target.value)}
+                    style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.84rem', padding: '4px', color: 'var(--text-primary)' }}
+                  />
+                </div>
+                {INDIAN_STATES.filter(state => state.toLowerCase().includes(homeStateSearch.toLowerCase())).map(state => (
+                  <div
+                    key={state}
+                    onClick={() => {
+                      updateAdmissionProfile('homeState', state);
+                      setHomeStateDropdownOpen(false);
+                      setHomeStateSearch('');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 10px',
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                      borderRadius: '6px',
+                      background: admissionProfile.homeState === state ? 'rgba(108, 92, 231, 0.08)' : 'transparent',
+                      color: admissionProfile.homeState === state ? '#6c5ce7' : 'var(--text-primary)',
+                      fontWeight: admissionProfile.homeState === state ? 'bold' : 'normal'
+                    }}
+                    className="dropdownItem"
+                  >
+                    <span>{state}</span>
+                    {admissionProfile.homeState === state && <Check size={14} style={{ color: '#6c5ce7' }} />}
+                  </div>
+                ))}
+              </div>
+            )}
           </label>
 
           <label>
@@ -214,30 +304,66 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             </select>
           </label>
 
-          <label className="wideField">
+          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
             <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              minHeight: '41px',
+              padding: '6px 10px',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
-              padding: '10px',
-              height: '130px',
-              overflowY: 'auto',
-              background: 'var(--bg-app)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
+              background: 'var(--bg-card)',
+              alignItems: 'center'
             }}>
-              {INDIAN_STATES.map(state => (
-                <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedStates.includes(state)}
-                    onChange={(e) => handleStateCheckboxChange(state, e.target.checked)}
-                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                  />
+              {selectedStates.map(state => (
+                <div key={state} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.3)', color: '#6c5ce7', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                   {state}
-                </label>
+                  <button type="button" onClick={() => handleStateCheckboxChange(state, false)} style={{ background: 'none', border: 'none', color: '#6c5ce7', cursor: 'pointer', padding: 0, fontSize: '0.88rem', display: 'flex', alignItems: 'center', marginLeft: '2px' }}>
+                    ✕
+                  </button>
+                </div>
               ))}
+              
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button
+                  type="button"
+                  onClick={() => setPrefStateDropdownOpen(!prefStateDropdownOpen)}
+                  style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                >
+                  + Add State
+                </button>
+                {prefStateDropdownOpen && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, width: '200px', maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: '4px', padding: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
+                      <Search size={12} style={{ color: 'var(--text-secondary)' }} />
+                      <input
+                        type="text"
+                        placeholder="Search state..."
+                        value={prefStateSearch}
+                        onChange={(e) => setPrefStateSearch(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.78rem', padding: '2px', color: 'var(--text-primary)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {INDIAN_STATES.filter(state => !selectedStates.includes(state) && state.toLowerCase().includes(prefStateSearch.toLowerCase())).map(state => (
+                      <div
+                        key={state}
+                        onClick={() => {
+                          handleStateCheckboxChange(state, true);
+                          setPrefStateSearch('');
+                          setPrefStateDropdownOpen(false);
+                        }}
+                        style={{ padding: '6px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '4px', color: 'var(--text-primary)' }}
+                        className="dropdownItem"
+                      >
+                        {state}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </label>
 
@@ -281,6 +407,10 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
 
 export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onBack, onContinue, onFileUpload }) {
   const [validationError, setValidationError] = useState('');
+  const [homeStateSearch, setHomeStateSearch] = useState('');
+  const [homeStateDropdownOpen, setHomeStateDropdownOpen] = useState(false);
+  const [prefStateSearch, setPrefStateSearch] = useState('');
+  const [prefStateDropdownOpen, setPrefStateDropdownOpen] = useState(false);
 
   const selectedStates = admissionProfile.preferredStates
     ? admissionProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
@@ -416,8 +546,16 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
 
         <div className="intakeGrid" style={{ padding: '0 18px 18px' }}>
           <label>
-            Exam <span style={{ color: '#ff4d4f' }}>*</span>
-            <select value={admissionProfile.exam} onChange={(event) => updateAdmissionProfile('exam', event.target.value)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Exam <span style={{ color: '#ff4d4f' }}>*</span>
+              <div className="premium-tooltip-container">
+                <HelpCircle size={14} style={{ color: 'var(--text-secondary)' }} />
+                <span className="premium-tooltip-text">
+                  {EXAM_TOOLTIPS[admissionProfile.exam || 'JEE Main'] || 'Select your competitive entrance exam.'}
+                </span>
+              </div>
+            </div>
+            <select value={admissionProfile.exam || 'JEE Main'} onChange={(event) => updateAdmissionProfile('exam', event.target.value)}>
               <option>JEE Main</option>
               <option>JEE Advanced</option>
               <option>CUET</option>
@@ -493,46 +631,149 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
             </select>
           </label>
 
-          <label>
-            Home state <span style={{ color: '#ff4d4f' }}>*</span>
-            <select
-              value={admissionProfile.homeState}
-              onChange={(event) => updateAdmissionProfile('homeState', event.target.value)}
-              style={{ cursor: 'pointer' }}
+          <label style={{ position: 'relative' }}>
+            Home State <span style={{ color: '#ff4d4f' }}>*</span>
+            <div
+              onClick={() => setHomeStateDropdownOpen(!homeStateDropdownOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                background: 'var(--bg-card)',
+                color: admissionProfile.homeState ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                minHeight: '41px'
+              }}
             >
-              <option value="">-- Select State --</option>
-              {INDIAN_STATES.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
+              <span>{admissionProfile.homeState || 'Search State...'}</span>
+              <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+            </div>
+
+            {homeStateDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  zIndex: 1000,
+                  width: '100%',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  marginTop: '4px',
+                  padding: '8px'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '6px' }}>
+                  <Search size={14} style={{ color: 'var(--text-secondary)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search State..."
+                    value={homeStateSearch}
+                    onChange={(e) => setHomeStateSearch(e.target.value)}
+                    style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.84rem', padding: '4px', color: 'var(--text-primary)' }}
+                  />
+                </div>
+                {INDIAN_STATES.filter(state => state.toLowerCase().includes(homeStateSearch.toLowerCase())).map(state => (
+                  <div
+                    key={state}
+                    onClick={() => {
+                      updateAdmissionProfile('homeState', state);
+                      setHomeStateDropdownOpen(false);
+                      setHomeStateSearch('');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 10px',
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                      borderRadius: '6px',
+                      background: admissionProfile.homeState === state ? 'rgba(108, 92, 231, 0.08)' : 'transparent',
+                      color: admissionProfile.homeState === state ? '#6c5ce7' : 'var(--text-primary)',
+                      fontWeight: admissionProfile.homeState === state ? 'bold' : 'normal'
+                    }}
+                    className="dropdownItem"
+                  >
+                    <span>{state}</span>
+                    {admissionProfile.homeState === state && <Check size={14} style={{ color: '#6c5ce7' }} />}
+                  </div>
+                ))}
+              </div>
+            )}
           </label>
 
           <div style={{ minHeight: '1px' }}></div> {/* Grid Spacer */}
 
-          <label className="wideField">
+          <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
             <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              minHeight: '41px',
+              padding: '6px 10px',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
-              padding: '10px',
-              height: '130px',
-              overflowY: 'auto',
-              background: 'var(--bg-app)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
+              background: 'var(--bg-card)',
+              alignItems: 'center'
             }}>
-              {INDIAN_STATES.map(state => (
-                <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedStates.includes(state)}
-                    onChange={(e) => handleStateCheckboxChange(state, e.target.checked)}
-                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                  />
+              {selectedStates.map(state => (
+                <div key={state} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.3)', color: '#6c5ce7', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                   {state}
-                </label>
+                  <button type="button" onClick={() => handleStateCheckboxChange(state, false)} style={{ background: 'none', border: 'none', color: '#6c5ce7', cursor: 'pointer', padding: 0, fontSize: '0.88rem', display: 'flex', alignItems: 'center', marginLeft: '2px' }}>
+                    ✕
+                  </button>
+                </div>
               ))}
+              
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button
+                  type="button"
+                  onClick={() => setPrefStateDropdownOpen(!prefStateDropdownOpen)}
+                  style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                >
+                  + Add State
+                </button>
+                {prefStateDropdownOpen && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, width: '200px', maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: '4px', padding: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
+                      <Search size={12} style={{ color: 'var(--text-secondary)' }} />
+                      <input
+                        type="text"
+                        placeholder="Search state..."
+                        value={prefStateSearch}
+                        onChange={(e) => setPrefStateSearch(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.78rem', padding: '2px', color: 'var(--text-primary)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {INDIAN_STATES.filter(state => !selectedStates.includes(state) && state.toLowerCase().includes(prefStateSearch.toLowerCase())).map(state => (
+                      <div
+                        key={state}
+                        onClick={() => {
+                          handleStateCheckboxChange(state, true);
+                          setPrefStateSearch('');
+                          setPrefStateDropdownOpen(false);
+                        }}
+                        style={{ padding: '6px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '4px', color: 'var(--text-primary)' }}
+                        className="dropdownItem"
+                      >
+                        {state}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </label>
 
