@@ -55,6 +55,8 @@ A full-stack MERN application built around **CollegeVault**, its flagship module
 - [Docker](#-docker)
 - [API Reference](#-api-reference)
 - [Available Scripts](#-available-scripts)
+- [Testing](#-testing)
+- [Design Decisions](#-design-decisions)
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
 
@@ -85,10 +87,11 @@ College admission decisions are usually made across a dozen browser tabs, a few 
 - **Dual-Theme Login Portal**: Fully redesigned login panel adapting natively between light dashboard card theme and cosmic radial-gradient dark theme
 - **Adaptive Journey Selection**: Option cards for onboarding tracks with custom hover lift and purple glow highlights
 - Onboarding for both Class 12 planning and entrance-result admissions workflows
-- College discovery with explainable fit scoring and contribution breakdowns
+- College discovery with explainable fit scoring, contribution breakdowns, and server-side result caching
 - Shortlist comparison with evidence links, notes, pros/cons, and an audit timeline
 - Priority matrix with what-if presets
 - Final decision lock with a post-admission reflection loop
+- CSV/JSON export for shortlists and locked decisions
 
 </details>
 
@@ -104,15 +107,25 @@ College admission decisions are usually made across a dozen browser tabs, a few 
 </details>
 
 <details>
-<summary><b>Platform & Security</b></summary>
+<summary><b>Platform, Auth & Security</b></summary>
 <br/>
 
-- JWT auth via HttpOnly cookies
+- JWT auth via HttpOnly cookies, with short-lived access tokens and a rotating refresh-token flow
+- Email verification on signup (OTP-based, resend supported), with an Ethereal preview link when no SMTP provider is configured
 - Rate limiting, Helmet, and Zod-validated input on every route
+- Structured logging (Pino) and optional Sentry error tracking for production
+- Optional AWS S3 storage for uploaded scorecards, with automatic fallback to local disk when S3 isn't configured
+- Self-serve account deletion that transactionally removes all related records
+- Auto-generated Swagger/OpenAPI docs at `/api/docs`
 - **Dynamic Light/Dark Theme**: Cohesive dark-theme cosmic gradients and clean white dashboard styling throughout the application
 - Docker Compose setup for one-command local environments
 
 </details>
+
+<br/>
+
+> [!NOTE]
+> A collaboration layer (shared workspaces, invite-a-collaborator, viewer/editor roles) is scaffolded on both ends — the `Invitation` model, activity-log event types, and invite email template exist on the backend, and the client already has UI and API-client calls wired up for it. The corresponding `/api/collaborators/*` routes aren't mounted on the server yet, so this feature isn't functional in the current build. See [Roadmap](#-roadmap).
 
 <br/>
 
@@ -155,11 +168,16 @@ flowchart LR
 | Frontend | React 19, Vite, Lucide Icons |
 | Backend | Node.js, Express |
 | Database | MongoDB + Mongoose |
-| Auth | JWT (HttpOnly cookies), bcryptjs |
+| Auth | JWT (HttpOnly cookies) + refresh tokens, bcryptjs, OTP email verification |
 | Validation / Security | Zod, Helmet, express-rate-limit, CORS |
 | AI | Google Gemini (summarizer + counselor) |
-| ML | Python (scikit-learn) for classification/regression, JS fallback model |
+| ML | Python (scikit-learn, XGBoost) for classification/regression, JS fallback model |
 | OCR | Tesseract.js |
+| Email | Nodemailer (SMTP in production, Ethereal preview in dev) |
+| Storage | AWS S3 (optional) with local-disk fallback |
+| Observability | Pino structured logging, Sentry (optional) |
+| API Docs | swagger-jsdoc + swagger-ui-express (`/api/docs`) |
+| Testing | Vitest, Supertest, mongodb-memory-server, Testing Library |
 | Infra | Docker Compose, Nginx (client container) |
 
 <br/>
@@ -176,11 +194,16 @@ flowchart TB
         Routes[Routes & Controllers]
         ML[ML Predictor]
         OCR[OCR Utility]
+        Mailer[Mailer]
+        Docs[Swagger Docs]
     end
 
     subgraph External["External Services"]
         Gemini[(Gemini AI)]
         Sklearn[(Python / scikit-learn model)]
+        SMTP[(SMTP / Ethereal)]
+        S3[(AWS S3, optional)]
+        Sentry[(Sentry, optional)]
     end
 
     DB[(MongoDB)]
@@ -191,6 +214,11 @@ flowchart TB
     ML --> Sklearn
     Routes --> Gemini
     Routes --> OCR
+    Routes --> Mailer
+    Mailer --> SMTP
+    Routes --> S3
+    Routes -.errors.-> Sentry
+    Routes --> Docs
 
     style Client fill:#7C3AED,color:#fff,stroke:none
     style Server fill:#4C1D95,color:#fff,stroke:none
@@ -209,7 +237,7 @@ flowchart TB
 - Optional: a Gemini API key for live AI responses
 
 > [!TIP]
-> No Gemini key? The app still runs — AI summaries and the counselor fall back to a lightweight parser instead of failing.
+> No Gemini key? The app still runs — AI summaries and the counselor fall back to a lightweight parser instead of failing. The same applies to SMTP, S3, and Sentry: each is optional and degrades gracefully.
 
 ### Installation
 
@@ -235,6 +263,22 @@ CLIENT_ORIGIN=http://localhost:5173
 GEMINI_API_KEY=your-gemini-api-key-here
 NODE_ENV=development
 PYTHON_BIN=
+
+# Optional: Sentry error tracking (leave blank to disable)
+SENTRY_DSN=
+
+# Optional: SMTP email for verification emails (leave blank to use Ethereal in dev)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM="DecisionVault" <noreply@decisionvault.dev>
+
+# Optional: AWS S3 for scorecard storage (leave blank to use local /public/uploads fallback)
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+AWS_REGION=ap-south-1
 ```
 
 For the client, copy `client/.env.example` to `client/.env` if the API isn't at `http://localhost:5000/api`, and set `VITE_API_URL` accordingly. Production builds require `VITE_API_URL`; if it is missing, the app shows a configuration error instead of falling back to localhost.
@@ -271,6 +315,7 @@ npm run dev
 - Client → `http://localhost:5173`
 - API → `http://localhost:5000/api`
 - Health check → `curl http://localhost:5000/api/health`
+- Swagger docs → `http://localhost:5000/api/docs`
 
 <br/>
 
@@ -317,24 +362,41 @@ The client container serves the production React build through Nginx, with a fal
 <summary>Click to expand the full route table</summary>
 <br/>
 
+The full interactive spec is also available at [`/api/docs`](https://collegevault-backend.onrender.com/api/docs) (Swagger UI).
+
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/register` | Create an account |
+| GET | `/api/health` | Service and database health check |
+| POST | `/api/auth/register` | Create an account (triggers email verification) |
+| ALL | `/api/auth/verify-email` | Verify an account via OTP |
+| POST | `/api/auth/resend-verification` | Resend the verification email |
 | POST | `/api/auth/login` | Log in |
 | POST | `/api/auth/logout` | Log out |
+| POST | `/api/auth/refresh` | Rotate an access token using the refresh token |
 | GET | `/api/auth/me` | Get current session user |
 | PATCH | `/api/auth/profile` | Update profile |
-| GET | `/api/colleges` | Browse/search colleges |
-| POST | `/api/shortlists` | Manage shortlist entries |
-| GET | `/api/activities` | Audit timeline |
+| DELETE | `/api/auth/account` | Delete account and all related records (transactional) |
+| GET | `/api/colleges` | Browse/search colleges (filterable, cached) |
+| GET | `/api/colleges/:id` | Get a single college |
+| GET | `/api/shortlists` | List shortlist entries |
+| GET | `/api/shortlists/export` | Export shortlist as CSV/JSON |
+| POST | `/api/shortlists` | Add a college to the shortlist |
+| POST | `/api/shortlists/prediction` | Get admission/placement prediction for a shortlist entry |
+| POST | `/api/shortlists/:id/notes` | Add a note to a shortlist entry |
+| DELETE | `/api/shortlists/:id/notes/:noteId` | Remove a note |
+| PATCH | `/api/shortlists/:id/status` | Update shortlist entry status |
+| DELETE | `/api/shortlists/:id` | Remove a shortlist entry |
+| GET | `/api/decisions` | List locked decisions |
+| GET | `/api/decisions/export` | Export decisions as CSV/JSON |
+| POST | `/api/decisions` | Lock in a final decision |
+| POST | `/api/decisions/reflections` | Record a post-admission reflection |
+| GET | `/api/activities` | Audit timeline (last 50 events) |
 | POST | `/api/ai/summarize` | Gemini research summarizer |
 | POST | `/api/ai/ask` | Gemini Q&A counselor |
 | POST | `/api/ml/predict-admission` | Admission likelihood prediction |
 | POST | `/api/ml/predict-placement` | Placement/package prediction |
-| POST | `/api/decisions` | Lock in a final decision |
-| POST | `/api/decisions/reflections` | Record a post-admission reflection |
 
-Most application routes require an authenticated session cookie.
+Most application routes require an authenticated session cookie (or bearer token).
 
 </details>
 
@@ -356,6 +418,20 @@ Run from the project root:
 
 <br/>
 
+## ✅ Testing
+
+```bash
+# Server (Vitest + Supertest, in-memory MongoDB via mongodb-memory-server)
+cd server && npm test
+
+# Client (Vitest + Testing Library, jsdom)
+cd client && npm test
+```
+
+Server tests cover auth, refresh tokens, email verification, transactional account deletion, AI routes, ML routes, shortlists, and the logger.
+
+<br/>
+
 ## 🛡 Design Decisions
 
 ### 1. Cryptographic Security (BCrypt Cost Factor)
@@ -370,6 +446,9 @@ Our Admissions Counselor and Research Summarizer invoke Google's Gemini API with
 ### 4. Database Consistency (Transaction-Based Account Deletion)
 When a user deletes their account, we execute deletions across all relational collections (`Shortlists`, `Decisions`, `Reflections`, `ActivityLogs`, `Users`) inside a session transaction (`session.withTransaction()`). This guarantees database integrity by ensuring partial write failures trigger a complete rollback rather than leaving orphaned data.
 
+### 5. Graceful Degradation for Third-Party Integrations
+SMTP, AWS S3, and Sentry are all optional at the environment-variable level. Missing SMTP credentials fall back to an Ethereal preview link (and a local `invite_debug.txt`/console log in dev); a missing S3 bucket falls back to local disk under `public/uploads`; a missing Sentry DSN simply skips initialization. The app is designed to run fully offline-capable in development with zero third-party credentials.
+
 <br/>
 
 ## 🗺 Roadmap
@@ -377,9 +456,9 @@ When a user deletes their account, we execute deletions across all relational co
 Ideas worth exploring next:
 
 - [x] Automated test suite (Vitest / Supertest / MongoMemoryReplSet)
-- [x] CI pipeline for lint, test, and build checks
-- [ ] CSV/JSON export for shortlists and decisions
-- [ ] Multi-user collaboration on a single shortlist
+- [x] CSV/JSON export for shortlists and decisions
+- [ ] Wire up `/api/collaborators/*` routes to finish multi-user collaboration (model, mailer, and client UI already exist)
+- [ ] CI pipeline for lint, test, and build checks on every PR
 - [ ] Mobile-first PWA mode
 
 <br/>
