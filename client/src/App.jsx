@@ -2125,7 +2125,7 @@ function App() {
           )}
 
           {profileEditTab === 'path' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', width: '100%', padding: '10px 0' }}>
+            <div className="journeyGrid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', width: '100%', padding: '10px 0' }}>
               {[
                 {
                   id: 'jee_main',
@@ -2135,8 +2135,9 @@ function App() {
                   examTrack: 'JEE',
                   scoreType: 'Rank',
                   score: '8900',
-                  icon: <Target size={18} />,
-                  desc: 'National level engineering admissions (NITs, IIITs, GFTIs).'
+                  icon: <Target size={22} />,
+                  desc: 'National level engineering admissions (NITs, IIITs, GFTIs).',
+                  badge: 'NITs / IIITs / GFTIs'
                 },
                 {
                   id: 'jee_adv',
@@ -2146,8 +2147,9 @@ function App() {
                   examTrack: 'JEE',
                   scoreType: 'Rank',
                   score: '8900',
-                  icon: <Sparkles size={18} />,
-                  desc: 'Admissions into premium IITs (Indian Institutes of Technology).'
+                  icon: <Sparkles size={22} />,
+                  desc: 'Admissions into premium IITs (Indian Institutes of Technology).',
+                  badge: 'IITs'
                 },
                 {
                   id: 'cuet',
@@ -2157,8 +2159,9 @@ function App() {
                   examTrack: 'CUET',
                   scoreType: 'Percentile',
                   score: '98.73',
-                  icon: <GraduationCap size={18} />,
-                  desc: 'Central & State universities entrance channel.'
+                  icon: <GraduationCap size={22} />,
+                  desc: 'Central & State universities entrance channel.',
+                  badge: 'Central & State Universities'
                 },
                 {
                   id: 'private_univ',
@@ -2168,8 +2171,9 @@ function App() {
                   examTrack: 'Other',
                   scoreType: 'Board %',
                   score: '86',
-                  icon: <Building2 size={18} />,
-                  desc: 'Direct or board percentage merit planning (VIT, BITS, SRM).'
+                  icon: <Building2 size={22} />,
+                  desc: 'Direct or board percentage merit planning (VIT, BITS, SRM, Manipal).',
+                  badge: 'Board % / Merit Planning'
                 },
                 {
                   id: 'mgmt_quota',
@@ -2179,8 +2183,9 @@ function App() {
                   examTrack: 'Other',
                   scoreType: 'Board %',
                   score: '86',
-                  icon: <Lock size={18} />,
-                  desc: 'Institution direct admission counselling channels.'
+                  icon: <Lock size={22} />,
+                  desc: 'Institution direct admission counselling channels.',
+                  badge: 'Direct Admission Quota'
                 }
               ].map(opt => {
                 const isSelected = editProfile.exam === opt.exam && editProfile.journey === opt.journey;
@@ -2188,6 +2193,7 @@ function App() {
                   <button 
                     key={opt.id}
                     type="button" 
+                    className="journeyCard"
                     onClick={() => {
                       setEditProfile(p => ({ 
                         ...p, 
@@ -2208,24 +2214,22 @@ function App() {
                     }}
                     style={{
                       border: `2px solid ${isSelected ? '#6c5ce7' : 'var(--border-color)'}`,
+                      minHeight: '340px',
                       background: 'var(--bg-card)',
-                      borderRadius: '12px',
-                      padding: '18px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s',
+                      boxShadow: isSelected ? '0 12px 30px rgba(108, 92, 231, 0.12)' : 'none',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
-                      boxShadow: isSelected ? '0 4px 12px rgba(108,92,231,0.15)' : 'none'
+                      gap: '4px'
                     }}
                   >
-                    <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '8px', background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}>
+                    <span>
                       {opt.icon}
                     </span>
-                    <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{opt.label}</strong>
-                    <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.4, flexGrow: 1 }}>{opt.desc}</p>
-                    {isSelected && <span style={{ marginTop: '4px', color: '#27ae60', fontSize: '0.78rem', fontWeight: 'bold' }}>✓ Selected</span>}
+                    <strong style={{ fontSize: '1.25rem', marginTop: '16px' }}>{opt.label}</strong>
+                    <p style={{ flexGrow: 1, marginTop: '8px' }}>{opt.desc}</p>
+                    <small style={{ marginTop: '24px', color: isSelected ? '#6c5ce7' : 'var(--text-secondary)' }}>
+                      {isSelected ? '✓ Selected' : opt.badge}
+                    </small>
                   </button>
                 );
               })}
