@@ -3186,8 +3186,16 @@ function App() {
     </section>
   );
 
-  const renderMatrixPanel = () => (
-    <section className="panel" id="matrix" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
+  const renderMatrixPanel = () => {
+    const pkgWeight = priorities.find(p => p.key === 'avgPackage')?.weight || 3;
+    const feesWeight = priorities.find(p => p.key === 'fees')?.weight || 3;
+    const targetPkg = pkgWeight * 8;
+    const targetY = 175 - (targetPkg / 40) * 160;
+    const targetFees = 13 - (feesWeight * 2);
+    const targetX = 45 + (targetFees / 12) * 340;
+
+    return (
+      <section className="panel" id="matrix" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
       <div className="panelHeader">
         <div>
           <p className="eyebrow">Priority engine</p>
@@ -3233,6 +3241,25 @@ function App() {
               </p>
               <div style={{ position: 'relative', width: '100%', height: '220px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px 16px 8px 16px', boxSizing: 'border-box' }}>
                 <svg viewBox="0 0 400 220" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                  <defs>
+                    <linearGradient id="targetZoneGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(39, 174, 96, 0.18)" />
+                      <stop offset="100%" stopColor="rgba(39, 174, 96, 0.02)" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Shaded Target ROI Zone */}
+                  {targetX > 45 && targetY > 15 && (
+                    <rect
+                      x={45}
+                      y={15}
+                      width={Math.max(0, targetX - 45)}
+                      height={Math.max(0, targetY - 15)}
+                      fill="url(#targetZoneGradient)"
+                      style={{ transition: 'all 0.3s ease' }}
+                    />
+                  )}
+
                   {/* Axes lines */}
                   <line x1="45" y1="15" x2="45" y2="175" stroke="var(--border-color)" strokeWidth="1.5" />
                   <line x1="45" y1="175" x2="385" y2="175" stroke="var(--border-color)" strokeWidth="1.5" />
@@ -3263,9 +3290,54 @@ function App() {
                   <text x="215" y="208" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" textAnchor="middle">Tuition Fees (Lakhs)</text>
                   <text x="12" y="95" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" transform="rotate(-90 12 95)" textAnchor="middle">Average Salary (LPA)</text>
 
+                  {/* Dynamic Target Reference Lines (Aligned with Sliders) */}
+                  <line
+                    x1="45"
+                    y1={targetY}
+                    x2="385"
+                    y2={targetY}
+                    stroke="#27ae60"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,4"
+                    style={{ transition: 'y1 0.3s ease, y2 0.3s ease' }}
+                  />
+                  <text
+                    x="380"
+                    y={targetY - 4}
+                    fill="#27ae60"
+                    fontSize="7.5"
+                    fontWeight="bold"
+                    textAnchor="end"
+                    style={{ transition: 'y 0.3s ease' }}
+                  >
+                    Target Salary: {targetPkg} LPA
+                  </text>
+
+                  <line
+                    x1={targetX}
+                    y1="15"
+                    x2={targetX}
+                    y2="175"
+                    stroke="#e67e22"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,4"
+                    style={{ transition: 'x1 0.3s ease, x2 0.3s ease' }}
+                  />
+                  <text
+                    x={targetX - 4}
+                    y="24"
+                    fill="#e67e22"
+                    fontSize="7.5"
+                    fontWeight="bold"
+                    textAnchor="end"
+                    style={{ transition: 'x 0.3s ease' }}
+                  >
+                    Max Budget: {targetFees}L
+                  </text>
+
                   {/* Quadrant Guide Labels */}
-                  <text x="380" y="26" fill="rgba(108, 92, 231, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">💎 High return</text>
-                  <text x="55" y="26" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite Return on Investment (ROI)</text>
+                  <text x="380" y="34" fill="rgba(108, 92, 231, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">💎 High return</text>
+                  <text x="55" y="34" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite ROI Zone</text>
                   <text x="380" y="165" fill="rgba(230, 126, 34, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">⚠️ Premium Fees</text>
 
                   {/* Data points */}
@@ -3278,16 +3350,21 @@ function App() {
                     const x = 45 + Math.min(1, Math.max(0, feeLakhs / 12)) * 340;
                     const y = 175 - Math.min(1, Math.max(0, pkg / 40)) * 160;
 
+                    // Dynamic scale: sizes pulse/scale based on Priority Fit Score!
+                    const scoreScale = 0.6 + (college.score / 100) * 0.7; // 0.6x to 1.3x size
+                    const baseRadius = isLeader ? 8 : 6.5;
+                    const radius = baseRadius * scoreScale;
+
                     return (
                       <g key={college.id}>
                         <circle
                           cx={x}
                           cy={y}
-                          r={isLeader ? 7.5 : 6}
+                          r={radius}
                           fill={isLeader ? '#27ae60' : '#6c5ce7'}
                           stroke={isLeader ? '#fff' : 'rgba(255, 255, 255, 0.8)'}
                           strokeWidth={isLeader ? 2 : 1}
-                          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
                           onMouseEnter={(e) => {
                             setHoveredRoiCollege({
                               college,
@@ -3301,11 +3378,12 @@ function App() {
                           <circle
                             cx={x}
                             cy={y}
-                            r="11"
+                            r={radius + 5}
                             fill="none"
                             stroke="#27ae60"
-                            strokeWidth="1"
+                            strokeWidth="1.2"
                             strokeDasharray="2,2"
+                            style={{ transition: 'all 0.3s ease' }}
                           />
                         )}
                       </g>
@@ -3375,17 +3453,19 @@ function App() {
                     const isLeader = finalCollege.name === college.name;
 
                     const groupWidth = 340 / vaultColleges.length;
-                    const barWidth = Math.min(18, groupWidth / 3.5);
-                    const spacing = 4;
-                    const startX = 45 + idx * groupWidth + (groupWidth - (2 * barWidth + spacing)) / 2;
+                    const barWidth = Math.min(13, groupWidth / 4.5);
+                    const spacing = 3;
+                    const startX = 45 + idx * groupWidth + (groupWidth - (3 * barWidth + 2 * spacing)) / 2;
 
                     // Heights
                     const feeHeight = Math.min(115, (feeLakhs / 12) * 115);
                     const pkgHeight = Math.min(115, (pkg / 40) * 115);
+                    const fitHeight = (college.score / 100) * 115;
 
                     // Y positions
                     const feeY = 125 - feeHeight;
                     const pkgY = 125 - pkgHeight;
+                    const fitY = 125 - fitHeight;
 
                     return (
                       <g key={college.id}>
@@ -3409,9 +3489,19 @@ function App() {
                           rx="2"
                           style={{ transition: 'all 0.3s ease' }}
                         />
+                        {/* Priority Fit Score Bar */}
+                        <rect
+                          x={startX + 2 * barWidth + 2 * spacing}
+                          y={fitY}
+                          width={barWidth}
+                          height={fitHeight}
+                          fill="#6c5ce7"
+                          rx="2"
+                          style={{ transition: 'all 0.3s ease' }}
+                        />
                         {/* College Shortname Label */}
                         <text
-                          x={startX + barWidth + spacing / 2}
+                          x={startX + 1.5 * barWidth + spacing}
                           y="138"
                           fill={isLeader ? '#27ae60' : 'var(--text-primary)'}
                           fontSize="9"
@@ -3434,6 +3524,10 @@ function App() {
                     <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#27ae60', borderRadius: '2px' }} />
                     <span style={{ color: 'var(--text-secondary)' }}>Average Package (LPA)</span>
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#6c5ce7', borderRadius: '2px' }} />
+                    <span style={{ color: 'var(--text-secondary)' }}>Fit Score (%)</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3448,34 +3542,85 @@ function App() {
           </div>
         )}
 
-        {/* Right Column: Sliders List */}
-        <div>
-          <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-            ⚙️ Slider Weights (1-5 Scale)
-          </p>
-          <div className="priorityList" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {priorities.map((priority) => (
-              <label className="priorityItem" key={priority.key} style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
-                <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <strong style={{ fontSize: '0.8rem' }}>{priority.label}</strong>
-                  <small style={{ color: 'var(--text-secondary)' }}>{priority.weight}/5 priority</small>
-                </span>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={priority.weight}
-                  onChange={(event) => updatePriority(priority.key, event.target.value)}
-                  style={{ width: '100%' }}
-                />
-              </label>
-            ))}
+        {/* Right Column: Sliders List & Live Fit Score Leaderboard */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+              ⚙️ Slider Weights (1-5 Scale)
+            </p>
+            <div className="priorityList" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {priorities.map((priority) => (
+                <label className="priorityItem" key={priority.key} style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
+                  <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <strong style={{ fontSize: '0.8rem' }}>{priority.label}</strong>
+                    <small style={{ color: 'var(--text-secondary)' }}>{priority.weight}/5 priority</small>
+                  </span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={priority.weight}
+                    onChange={(event) => updatePriority(priority.key, event.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </label>
+              ))}
+            </div>
           </div>
+
+          {/* Live Fit Score Leaderboard */}
+          {vaultColleges.length > 0 && (
+            <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
+              <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '12px', marginTop: 0 }}>
+                🏆 Live Fit Score Leaderboard
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {vaultColleges.map((college, idx) => {
+                  const isLeader = finalCollege.name === college.name;
+                  return (
+                    <div
+                      key={college.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        background: 'var(--bg-card)',
+                        border: `1px solid ${isLeader ? '#27ae60' : 'var(--border-color)'}`,
+                        borderRadius: '6px',
+                        boxShadow: isLeader ? '0 4px 12px rgba(39, 174, 96, 0.08)' : 'none',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: isLeader ? '#27ae60' : 'var(--text-secondary)', minWidth: '20px' }}>
+                          #{idx + 1}
+                        </span>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{college.name}</strong>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {college.branch}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', minWidth: '45px' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: isLeader ? '#27ae60' : '#6c5ce7' }}>
+                          {college.score}%
+                        </span>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Fit</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
     </section>
   );
+  };
 
   const renderVaultPanel = () => (
     <section className="panel selectedVault" id="vault" style={{ width: '100%', animation: 'fadeIn 0.2s ease' }}>
