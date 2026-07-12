@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "seed": "node src/data/seed.js",
     "seed:cutoffs": "node src/data/seedCutoffs.js",
+    "seed:nirf": "node src/data/seedCollegesNIRF.js",
     "datasets": "node download_datasets.js",
     "train:ml": "node scripts/runPython.js train_models.py",
     "test": "vitest run"

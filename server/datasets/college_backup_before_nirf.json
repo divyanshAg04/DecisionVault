@@ -1,0 +1,2341 @@
+[
+  {
+    "_id": "6a452c2855596a1430169762",
+    "shortName": "IIITL",
+    "__v": 0,
+    "avgPackage": 30.5,
+    "branch": "Computer Science",
+    "campusLife": 7.1,
+    "city": "Lucknow",
+    "cons": [
+      "Compact campus",
+      "Limited extracurricular diversity",
+      "Competitive workload"
+    ],
+    "createdAt": "2026-07-01T15:03:04.583Z",
+    "cutoff": 8900,
+    "distanceKm": 425,
+    "faculty": 8,
+    "fees": 92000,
+    "hostel": true,
+    "medianPackage": 25,
+    "name": "IIIT Lucknow",
+    "nirfRank": 90,
+    "placementRate": 96,
+    "pros": [
+      "Strong coding culture",
+      "High average package",
+      "Fast-growing alumni network"
+    ],
+    "research": 6.8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://iiitl.ac.in/"
+      }
+    ],
+    "roi": 9.4,
+    "state": "Uttar Pradesh",
+    "tags": [
+      "coding culture",
+      "high ROI",
+      "small campus"
+    ],
+    "type": "Institute of National Importance",
+    "updatedAt": "2026-07-12T15:21:01.024Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.016Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169763",
+    "shortName": "DTU",
+    "__v": 0,
+    "avgPackage": 16.3,
+    "branch": "Computer Engineering",
+    "campusLife": 9.2,
+    "city": "New Delhi",
+    "cons": [
+      "Higher fee than some alternatives",
+      "Large batch size",
+      "Hostel not guaranteed for all"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 7100,
+    "distanceKm": 35,
+    "faculty": 8.3,
+    "fees": 229000,
+    "hostel": true,
+    "medianPackage": 13.2,
+    "name": "Delhi Technological University",
+    "nirfRank": 29,
+    "placementRate": 91,
+    "pros": [
+      "Strong alumni network",
+      "Excellent campus life",
+      "Good Delhi startup access"
+    ],
+    "research": 7.7,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://dtu.ac.in/"
+      }
+    ],
+    "roi": 7.7,
+    "state": "Delhi",
+    "tags": [
+      "brand value",
+      "Delhi network",
+      "large campus"
+    ],
+    "type": "State Technical University",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "JEE Main (JAC Delhi)",
+    "lastVerifiedAt": "2026-07-12T15:21:01.018Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169764",
+    "shortName": "NSUT",
+    "__v": 0,
+    "avgPackage": 17.7,
+    "branch": "Computer Science",
+    "campusLife": 8.5,
+    "city": "New Delhi",
+    "cons": [
+      "Fee is significant",
+      "Commute can matter",
+      "Competitive branch allocation"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 7600,
+    "distanceKm": 52,
+    "faculty": 8.1,
+    "fees": 244000,
+    "hostel": true,
+    "medianPackage": 14.8,
+    "name": "Netaji Subhas University of Technology",
+    "nirfRank": 57,
+    "placementRate": 93,
+    "pros": [
+      "Good placements",
+      "Balanced academics and societies",
+      "Strong location advantage"
+    ],
+    "research": 7.5,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://nsut.ac.in/"
+      }
+    ],
+    "roi": 7.9,
+    "state": "Delhi",
+    "tags": [
+      "placements",
+      "Delhi location",
+      "tech societies"
+    ],
+    "type": "State Technical University",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "JEE Main (JAC Delhi)",
+    "lastVerifiedAt": "2026-07-12T15:21:01.019Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169765",
+    "shortName": "NITD",
+    "__v": 0,
+    "avgPackage": 15.6,
+    "branch": "Computer Science",
+    "campusLife": 7.4,
+    "city": "New Delhi",
+    "cons": [
+      "Newer reputation than top NITs",
+      "Infrastructure still growing",
+      "Smaller alumni base"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 10600,
+    "distanceKm": 62,
+    "faculty": 7.8,
+    "fees": 151000,
+    "hostel": true,
+    "medianPackage": 12.6,
+    "name": "National Institute of Technology Delhi",
+    "nirfRank": 51,
+    "placementRate": 89,
+    "pros": [
+      "NIT brand",
+      "Good ROI",
+      "Delhi NCR exposure"
+    ],
+    "research": 7.2,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://nitdelhi.ac.in/"
+      }
+    ],
+    "roi": 8.5,
+    "state": "Delhi",
+    "tags": [
+      "NIT tag",
+      "Delhi",
+      "growing campus"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.019Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169766",
+    "shortName": "AMU",
+    "__v": 0,
+    "avgPackage": 7.5,
+    "branch": "Computer Engineering",
+    "campusLife": 8.3,
+    "city": "Aligarh",
+    "cons": [
+      "Lower tech placement ceiling",
+      "Needs stronger self-driven coding effort",
+      "Less startup exposure"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 14800,
+    "distanceKm": 130,
+    "faculty": 7.9,
+    "fees": 18000,
+    "hostel": true,
+    "medianPackage": 6.2,
+    "name": "Aligarh Muslim University",
+    "nirfRank": 32,
+    "placementRate": 73,
+    "pros": [
+      "Very affordable",
+      "Recognized university",
+      "Good hostel ecosystem"
+    ],
+    "research": 7.1,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://amu.ac.in/"
+      }
+    ],
+    "roi": 8.8,
+    "state": "Uttar Pradesh",
+    "tags": [
+      "affordable",
+      "central university",
+      "near home"
+    ],
+    "type": "Central University",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "AMUEE",
+    "lastVerifiedAt": "2026-07-12T15:21:01.020Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169767",
+    "shortName": "IITM",
+    "__v": 0,
+    "avgPackage": 21.4,
+    "branch": "Computer Science",
+    "campusLife": 9.1,
+    "city": "Chennai",
+    "cons": [
+      "Strict attendance policies",
+      "Humid coastal weather",
+      "Distance from North India"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 148,
+    "distanceKm": 2000,
+    "faculty": 9.6,
+    "fees": 108000,
+    "hostel": true,
+    "medianPackage": 18,
+    "name": "Indian Institute of Technology Madras",
+    "nirfRank": 1,
+    "placementRate": 96,
+    "pros": [
+      "NIRF Rank 1",
+      "Excellent research parks",
+      "Deer & blackbuck filled campus"
+    ],
+    "research": 9.9,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iitm.ac.in/"
+      }
+    ],
+    "roi": 8.3,
+    "state": "Tamil Nadu",
+    "tags": [
+      "ranked #1",
+      "lush forest campus",
+      "research focused"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.020Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169768",
+    "shortName": "IITK",
+    "__v": 0,
+    "avgPackage": 22.2,
+    "branch": "Computer Science",
+    "campusLife": 9,
+    "city": "Kanpur",
+    "cons": [
+      "Extremely rigorous grading system",
+      "Intense summer temperatures",
+      "Far from main city center"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 238,
+    "distanceKm": 350,
+    "faculty": 9.4,
+    "fees": 112000,
+    "hostel": true,
+    "medianPackage": 19,
+    "name": "Indian Institute of Technology Kanpur",
+    "nirfRank": 4,
+    "placementRate": 95,
+    "pros": [
+      "Excellent computer networks",
+      "Self-contained 1000-acre campus",
+      "Private airstrip for gliding"
+    ],
+    "research": 9.6,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iitk.ac.in/"
+      }
+    ],
+    "roi": 8.5,
+    "state": "Uttar Pradesh",
+    "tags": [
+      "airstrip campus",
+      "academic rigor",
+      "strong alumni"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.020Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169769",
+    "shortName": "IITKGP",
+    "__v": 0,
+    "avgPackage": 20.8,
+    "branch": "Computer Science",
+    "campusLife": 8.9,
+    "city": "Kharagpur",
+    "cons": [
+      "2.5 hours train ride from Kolkata",
+      "Humid climate",
+      "Older hostel infrastructure"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 260,
+    "distanceKm": 1500,
+    "faculty": 9.1,
+    "fees": 114000,
+    "hostel": true,
+    "medianPackage": 17.5,
+    "name": "Indian Institute of Technology Kharagpur",
+    "nirfRank": 6,
+    "placementRate": 94,
+    "pros": [
+      "Largest student population & campus",
+      "Strongest nostalgic alumni network",
+      "Fascinating local history"
+    ],
+    "research": 9.3,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iitkgp.ac.in/"
+      }
+    ],
+    "roi": 8.1,
+    "state": "West Bengal",
+    "tags": [
+      "largest campus",
+      "spring fest",
+      "heritage brand"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.020Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016976a",
+    "shortName": "IITR",
+    "__v": 0,
+    "avgPackage": 19.8,
+    "branch": "Computer Science",
+    "campusLife": 9.2,
+    "city": "Roorkee",
+    "cons": [
+      "High relative fees",
+      "Less local corporate headquarters",
+      "Winter smog"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 412,
+    "distanceKm": 180,
+    "faculty": 8.9,
+    "fees": 110000,
+    "hostel": true,
+    "medianPackage": 16.8,
+    "name": "Indian Institute of Technology Roorkee",
+    "nirfRank": 5,
+    "placementRate": 93,
+    "pros": [
+      "Oldest engineering college in India",
+      "Close to scenic hill stations",
+      "Superb campus architecture"
+    ],
+    "research": 9,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iitr.ac.in/"
+      }
+    ],
+    "roi": 8.2,
+    "state": "Uttarakhand",
+    "tags": [
+      "historic campus",
+      "near himalayas",
+      "great sports"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016976b",
+    "shortName": "BITS Pilani",
+    "__v": 0,
+    "avgPackage": 21,
+    "branch": "Computer Science",
+    "campusLife": 9.3,
+    "city": "Pilani",
+    "cons": [
+      "Very high fee structure",
+      "Remote desert town location",
+      "No government reservation quota"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 320,
+    "distanceKm": 200,
+    "faculty": 9,
+    "fees": 275000,
+    "hostel": true,
+    "medianPackage": 18.2,
+    "name": "Birla Institute of Technology and Science, Pilani",
+    "nirfRank": 25,
+    "placementRate": 97,
+    "pros": [
+      "No attendance policy",
+      "Strong brand on par with IITs",
+      "Famous \"BITSian\" startup network"
+    ],
+    "research": 8.2,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.bits-pilani.ac.in/"
+      }
+    ],
+    "roi": 7.2,
+    "state": "Rajasthan",
+    "tags": [
+      "zero attendance",
+      "no reservation",
+      "high fees"
+    ],
+    "type": "Deemed University",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "BITSAT",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016976c",
+    "shortName": "NITT",
+    "__v": 0,
+    "avgPackage": 18.2,
+    "branch": "Computer Science",
+    "campusLife": 8.4,
+    "city": "Trichy",
+    "cons": [
+      "Remote campus from Chennai",
+      "Hot Tamil Nadu weather",
+      "Language barrier for North students"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 1500,
+    "distanceKm": 2100,
+    "faculty": 8.7,
+    "fees": 75000,
+    "hostel": true,
+    "medianPackage": 15,
+    "name": "National Institute of Technology Trichy",
+    "nirfRank": 9,
+    "placementRate": 95,
+    "pros": [
+      "Ranked 1 among NITs",
+      "Very high ROI due to low fees",
+      "Active cultural and technical fests"
+    ],
+    "research": 8.5,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.nitt.edu/"
+      }
+    ],
+    "roi": 9.1,
+    "state": "Tamil Nadu",
+    "tags": [
+      "top NIT",
+      "festember",
+      "high roi"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016976d",
+    "shortName": "NITK",
+    "__v": 0,
+    "avgPackage": 17.9,
+    "branch": "Computer Science",
+    "campusLife": 8.8,
+    "city": "Surathkal",
+    "cons": [
+      "High humidity",
+      "Strict hostel curfews",
+      "Distance from major airport"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 1800,
+    "distanceKm": 1800,
+    "faculty": 8.6,
+    "fees": 76000,
+    "hostel": true,
+    "medianPackage": 14.5,
+    "name": "National Institute of Technology Surathkal",
+    "nirfRank": 12,
+    "placementRate": 94,
+    "pros": [
+      "Has its own private beach",
+      "Top tier placements",
+      "Great coding culture"
+    ],
+    "research": 8.4,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.nitk.ac.in/"
+      }
+    ],
+    "roi": 9,
+    "state": "Karnataka",
+    "tags": [
+      "beach campus",
+      "south karnataka",
+      "excellent placements"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016976e",
+    "shortName": "NITW",
+    "__v": 0,
+    "avgPackage": 17.5,
+    "branch": "Computer Science",
+    "campusLife": 8.2,
+    "city": "Warangal",
+    "cons": [
+      "Mess food can be spicy",
+      "Warangal is a small city",
+      "Water scarcity in dry summers"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 2100,
+    "distanceKm": 1400,
+    "faculty": 8.5,
+    "fees": 74000,
+    "hostel": true,
+    "medianPackage": 14.2,
+    "name": "National Institute of Technology Warangal",
+    "nirfRank": 21,
+    "placementRate": 93,
+    "pros": [
+      "Exceptional placement records",
+      "Highly supportive senior network",
+      "Vibrant campus life"
+    ],
+    "research": 8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.nitw.ac.in/"
+      }
+    ],
+    "roi": 8.9,
+    "state": "Telangana",
+    "tags": [
+      "historical city",
+      "strong code culture",
+      "telangana tech"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016976f",
+    "shortName": "MNNIT",
+    "__v": 0,
+    "avgPackage": 17.2,
+    "branch": "Computer Science",
+    "campusLife": 8,
+    "city": "Allahabad",
+    "cons": [
+      "Old hostel architecture",
+      "Crowded campus environment",
+      "Limited luxury spots in city"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 2800,
+    "distanceKm": 200,
+    "faculty": 8.2,
+    "fees": 78000,
+    "hostel": true,
+    "medianPackage": 13.8,
+    "name": "Motilal Nehru National Institute of Technology",
+    "nirfRank": 49,
+    "placementRate": 94,
+    "pros": [
+      "Outstanding coding culture",
+      "Excellent placements in North India",
+      "Affordable fees"
+    ],
+    "research": 7.8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.mnnit.ac.in/"
+      }
+    ],
+    "roi": 9.2,
+    "state": "Uttar Pradesh",
+    "tags": [
+      "allahabad coding",
+      "insane placements",
+      "high return"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169770",
+    "shortName": "VIT",
+    "__v": 0,
+    "avgPackage": 9.2,
+    "branch": "Computer Science",
+    "campusLife": 8.5,
+    "city": "Vellore",
+    "cons": [
+      "Huge student intake/batch size",
+      "Strict rules (curfews & permission forms)",
+      "Vellore is a dry place"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 15000,
+    "distanceKm": 1900,
+    "faculty": 7.9,
+    "fees": 198000,
+    "hostel": true,
+    "medianPackage": 8,
+    "name": "Vellore Institute of Technology",
+    "nirfRank": 11,
+    "placementRate": 90,
+    "pros": [
+      "State of the art infrastructure",
+      "Large corporate relationships",
+      "Lots of student clubs"
+    ],
+    "research": 8.1,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://vit.ac.in/"
+      }
+    ],
+    "roi": 6.8,
+    "state": "Tamil Nadu",
+    "tags": [
+      "massive strength",
+      "strict rules",
+      "modern campus"
+    ],
+    "type": "Private University",
+    "updatedAt": "2026-07-12T15:21:01.028Z",
+    "admissionChannel": "VITEEE",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169771",
+    "shortName": "TIET",
+    "__v": 0,
+    "avgPackage": 10.5,
+    "branch": "Computer Science",
+    "campusLife": 9.1,
+    "city": "Patiala",
+    "cons": [
+      "Expensive fees",
+      "High Punjab state quota percentage",
+      "Patiala is semi-urban"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 25000,
+    "distanceKm": 250,
+    "faculty": 8,
+    "fees": 235000,
+    "hostel": true,
+    "medianPackage": 9.2,
+    "name": "Thapar Institute of Engineering and Technology",
+    "nirfRank": 20,
+    "placementRate": 88,
+    "pros": [
+      "Incredible campus architecture",
+      "Strong placement record",
+      "Fun college life"
+    ],
+    "research": 7.9,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.thapar.edu/"
+      }
+    ],
+    "roi": 6.5,
+    "state": "Punjab",
+    "tags": [
+      "royal campus",
+      "punjab network",
+      "expensive"
+    ],
+    "type": "Private University",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "JEE Main / Board %",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169772",
+    "shortName": "BIT Mesra",
+    "__v": 0,
+    "avgPackage": 11.5,
+    "branch": "Computer Science",
+    "campusLife": 8,
+    "city": "Ranchi",
+    "cons": [
+      "Ranchi weather can be erratic",
+      "Hostel maintenance is average",
+      "Placement package ceiling is lower"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 12000,
+    "distanceKm": 900,
+    "faculty": 8.1,
+    "fees": 165000,
+    "hostel": true,
+    "medianPackage": 9.8,
+    "name": "Birla Institute of Technology, Mesra",
+    "nirfRank": 53,
+    "placementRate": 85,
+    "pros": [
+      "Very old & respected legacy brand",
+      "Beautiful green campus in Ranchi",
+      "Decent ROI"
+    ],
+    "research": 7.6,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.bitmesra.ac.in/"
+      }
+    ],
+    "roi": 7.2,
+    "state": "Jharkhand",
+    "tags": [
+      "legacy institute",
+      "green campus",
+      "good placements"
+    ],
+    "type": "Deemed University",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169773",
+    "shortName": "COEP",
+    "__v": 0,
+    "avgPackage": 12.8,
+    "branch": "Computer Engineering",
+    "campusLife": 8.3,
+    "city": "Pune",
+    "cons": [
+      "Limited campus space",
+      "Admission is extremely competitive for outsiders",
+      "Strict grading"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 1100,
+    "distanceKm": 1300,
+    "faculty": 8.5,
+    "fees": 85000,
+    "hostel": true,
+    "medianPackage": 10.5,
+    "name": "College of Engineering, Pune",
+    "nirfRank": 73,
+    "placementRate": 91,
+    "pros": [
+      "Very low fees & high ROI",
+      "Located in the IT hub of Pune",
+      "Rich historical heritage"
+    ],
+    "research": 7.8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.coep.org.in/"
+      }
+    ],
+    "roi": 8.8,
+    "state": "Maharashtra",
+    "tags": [
+      "maharashtra legacy",
+      "pune hub",
+      "very affordable"
+    ],
+    "type": "Government Autonomous",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "MHT-CET / JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169774",
+    "shortName": "JU",
+    "__v": 0,
+    "avgPackage": 15.4,
+    "branch": "Computer Science",
+    "campusLife": 8.2,
+    "city": "Kolkata",
+    "cons": [
+      "Frequent student union protests",
+      "Aged campus infrastructure",
+      "Humid Bengal summers"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 400,
+    "distanceKm": 1400,
+    "faculty": 9,
+    "fees": 5000,
+    "hostel": true,
+    "medianPackage": 12,
+    "name": "Jadavpur University",
+    "nirfRank": 10,
+    "placementRate": 94,
+    "pros": [
+      "Fees is virtually zero (INR 2400/year)",
+      "Incredible placement statistics",
+      "Kolkata local life"
+    ],
+    "research": 8.8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "http://www.jaduniv.edu.in/"
+      }
+    ],
+    "roi": 15,
+    "state": "West Bengal",
+    "tags": [
+      "insane roi",
+      "kolkata culture",
+      "minimal fees"
+    ],
+    "type": "State University",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "WBJEE",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169775",
+    "shortName": "PEC",
+    "__v": 0,
+    "avgPackage": 13.5,
+    "branch": "Computer Science",
+    "campusLife": 9,
+    "city": "Chandigarh",
+    "cons": [
+      "Batch sizes are growing",
+      "Hostels are crowded",
+      "Placement is average outside tech branches"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 9800,
+    "distanceKm": 270,
+    "faculty": 8.1,
+    "fees": 112000,
+    "hostel": true,
+    "medianPackage": 11.2,
+    "name": "Punjab Engineering College",
+    "nirfRank": 82,
+    "placementRate": 89,
+    "pros": [
+      "Located in clean city of Chandigarh",
+      "Great industrial internship opportunities",
+      "Good sports facilities"
+    ],
+    "research": 7.7,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://pec.ac.in/"
+      }
+    ],
+    "roi": 8,
+    "state": "Chandigarh",
+    "tags": [
+      "chandigarh lifestyle",
+      "heritage",
+      "good industry tieups"
+    ],
+    "type": "Centrally Funded",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169776",
+    "shortName": "HBTU",
+    "__v": 0,
+    "avgPackage": 8.8,
+    "branch": "Computer Science",
+    "campusLife": 7.5,
+    "city": "Kanpur",
+    "cons": [
+      "Outdated syllabus structures",
+      "Campus split into two parts",
+      "Less corporate tech visits"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 19000,
+    "distanceKm": 320,
+    "faculty": 7.8,
+    "fees": 135000,
+    "hostel": true,
+    "medianPackage": 7.2,
+    "name": "Harcourt Butler Technical University",
+    "nirfRank": 150,
+    "placementRate": 82,
+    "pros": [
+      "Respected UP state brand",
+      "Good placements in chemical & paint sectors",
+      "Historic campus"
+    ],
+    "research": 7,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://hbtu.ac.in/"
+      }
+    ],
+    "roi": 7.8,
+    "state": "Uttar Pradesh",
+    "tags": [
+      "UP government",
+      "kanpur heritage",
+      "older brand"
+    ],
+    "type": "State Technical University",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.021Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169777",
+    "shortName": "IIITH",
+    "__v": 0,
+    "avgPackage": 32.2,
+    "branch": "Computer Science",
+    "campusLife": 8.1,
+    "city": "Hyderabad",
+    "cons": [
+      "Heavy research workload",
+      "High fees per semester",
+      "Hard to maintain GPA"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 800,
+    "distanceKm": 1300,
+    "faculty": 9.7,
+    "fees": 300000,
+    "hostel": true,
+    "medianPackage": 28,
+    "name": "International Institute of Information Technology Hyderabad",
+    "nirfRank": 55,
+    "placementRate": 99,
+    "pros": [
+      "Highest average packages in India",
+      "World class coding community (GSoC, ACM-ICPC)",
+      "Top tier research output"
+    ],
+    "research": 9.8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iiit.ac.in/"
+      }
+    ],
+    "roi": 8.8,
+    "state": "Telangana",
+    "tags": [
+      "insane packages",
+      "coding capital",
+      "research hub"
+    ],
+    "type": "Private Autonomous",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "JEE Main / SPEC / LEEE",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169778",
+    "shortName": "IIITB",
+    "__v": 0,
+    "avgPackage": 26.5,
+    "branch": "Computer Science",
+    "campusLife": 8,
+    "city": "Bengaluru",
+    "cons": [
+      "Small campus size",
+      "Extremely high tuition cost",
+      "High living costs in Bangalore"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 1200,
+    "distanceKm": 1950,
+    "faculty": 9.2,
+    "fees": 320000,
+    "hostel": true,
+    "medianPackage": 22,
+    "name": "International Institute of Information Technology Bangalore",
+    "nirfRank": 74,
+    "placementRate": 98,
+    "pros": [
+      "Superb location in Electronic City Bengaluru",
+      "Direct corporate mentorships",
+      "Excellent average placements"
+    ],
+    "research": 9,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iiitb.ac.in/"
+      }
+    ],
+    "roi": 8.1,
+    "state": "Karnataka",
+    "tags": [
+      "silicon valley hub",
+      "niche branch",
+      "high salary"
+    ],
+    "type": "Private Autonomous",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a1430169779",
+    "shortName": "SRM",
+    "__v": 0,
+    "avgPackage": 7.2,
+    "branch": "Computer Science",
+    "campusLife": 8.7,
+    "city": "Chennai",
+    "cons": [
+      "Very high batch intake",
+      "Expensive fees and hostels",
+      "Restrictive campus travel rules"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 35000,
+    "distanceKm": 2000,
+    "faculty": 7.5,
+    "fees": 250000,
+    "hostel": true,
+    "medianPackage": 6,
+    "name": "SRM Institute of Science and Technology",
+    "nirfRank": 36,
+    "placementRate": 85,
+    "pros": [
+      "Very active campus life (Milan fest)",
+      "Excellent infrastructure",
+      "Semester abroad programs"
+    ],
+    "research": 7.8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.srmist.edu.in/"
+      }
+    ],
+    "roi": 6,
+    "state": "Tamil Nadu",
+    "tags": [
+      "cultural events",
+      "huge campus",
+      "international linkages"
+    ],
+    "type": "Private University",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "SRMJEEE",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016977a",
+    "shortName": "IITB",
+    "__v": 0,
+    "avgPackage": 23.5,
+    "branch": "Computer Science",
+    "campusLife": 9.6,
+    "city": "Mumbai",
+    "cons": [
+      "High academic pressure",
+      "Difficult to get Computer Science",
+      "Hot weather"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 67,
+    "distanceKm": 1400,
+    "faculty": 9.5,
+    "fees": 115000,
+    "hostel": true,
+    "medianPackage": 20,
+    "name": "Indian Institute of Technology Bombay",
+    "nirfRank": 3,
+    "placementRate": 98,
+    "pros": [
+      "Top tier placements",
+      "Great startup ecosystem",
+      "Beautiful Powai lake campus"
+    ],
+    "research": 9.7,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iitb.ac.in/"
+      }
+    ],
+    "roi": 8.2,
+    "state": "Maharashtra",
+    "tags": [
+      "premium brand",
+      "lake view campus",
+      "highly competitive"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.020Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2855596a143016977b",
+    "shortName": "VJTI",
+    "__v": 0,
+    "avgPackage": 14.2,
+    "branch": "Computer Engineering",
+    "campusLife": 8,
+    "city": "Mumbai",
+    "cons": [
+      "Old facilities and hostels",
+      "Competitive admissions",
+      "Limited campus area"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 800,
+    "distanceKm": 1400,
+    "faculty": 8.3,
+    "fees": 83000,
+    "hostel": true,
+    "medianPackage": 12,
+    "name": "Veermata Jijabai Technological Institute",
+    "nirfRank": 80,
+    "placementRate": 93,
+    "pros": [
+      "Located in central Mumbai (Dadar)",
+      "Very high ROI",
+      "Strong industry connections"
+    ],
+    "research": 7.5,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://vjti.ac.in/"
+      }
+    ],
+    "roi": 9,
+    "state": "Maharashtra",
+    "tags": [
+      "mumbai brand",
+      "high return",
+      "central dadar"
+    ],
+    "type": "Government Autonomous",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "MHT-CET / JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a143016977c",
+    "shortName": "CEG",
+    "__v": 0,
+    "avgPackage": 13.5,
+    "branch": "Computer Science",
+    "campusLife": 8.5,
+    "city": "Chennai",
+    "cons": [
+      "Strict local administrative rules",
+      "Hostel seats are limited",
+      "Humid climate"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 300,
+    "distanceKm": 2000,
+    "faculty": 8.9,
+    "fees": 25000,
+    "hostel": true,
+    "medianPackage": 11,
+    "name": "College of Engineering Guindy, Anna University",
+    "nirfRank": 13,
+    "placementRate": 92,
+    "pros": [
+      "One of the oldest tech colleges in Asia",
+      "Extremely cheap fees",
+      "Excellent placements in South India"
+    ],
+    "research": 8.4,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.annauniv.edu/"
+      }
+    ],
+    "roi": 10.5,
+    "state": "Tamil Nadu",
+    "tags": [
+      "historic CEG",
+      "chennai network",
+      "low cost"
+    ],
+    "type": "State Government",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "TNEA (Board %)",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a143016977d",
+    "shortName": "PSG Tech",
+    "__v": 0,
+    "avgPackage": 10.2,
+    "branch": "Computer Science",
+    "campusLife": 8.2,
+    "city": "Coimbatore",
+    "cons": [
+      "Strict dress code & discipline",
+      "Coimbatore is less active than Chennai",
+      "Outdated hostel amenities"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 1200,
+    "distanceKm": 2200,
+    "faculty": 8.4,
+    "fees": 65000,
+    "hostel": true,
+    "medianPackage": 8.5,
+    "name": "PSG College of Technology",
+    "nirfRank": 63,
+    "placementRate": 89,
+    "pros": [
+      "Very strong industrial connection in Coimbatore",
+      "Massive alumni base",
+      "Good return on investment"
+    ],
+    "research": 8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.psgtech.edu/"
+      }
+    ],
+    "roi": 8.5,
+    "state": "Tamil Nadu",
+    "tags": [
+      "coimbatore industry",
+      "alumni strength",
+      "disciplined"
+    ],
+    "type": "Government Aided",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "TNEA (Board %)",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a143016977e",
+    "shortName": "IITH",
+    "__v": 0,
+    "avgPackage": 20.2,
+    "branch": "Computer Science",
+    "campusLife": 8.7,
+    "city": "Hyderabad",
+    "cons": [
+      "Campus is located 50km from Hyderabad city (Kandi)",
+      "Ongoing campus construction",
+      "Very hot summers"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 620,
+    "distanceKm": 1350,
+    "faculty": 9.3,
+    "fees": 118000,
+    "hostel": true,
+    "medianPackage": 17,
+    "name": "Indian Institute of Technology Hyderabad",
+    "nirfRank": 8,
+    "placementRate": 94,
+    "pros": [
+      "Japanese collaborative research labs",
+      "Excellent startup incubator",
+      "Modern single occupancy hostels"
+    ],
+    "research": 9.4,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iith.ac.in/"
+      }
+    ],
+    "roi": 8.1,
+    "state": "Telangana",
+    "tags": [
+      "futuristic campus",
+      "japan collaboration",
+      "tech incubator"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a143016977f",
+    "shortName": "IITG",
+    "__v": 0,
+    "avgPackage": 19.5,
+    "branch": "Computer Science",
+    "campusLife": 9.3,
+    "city": "Guwahati",
+    "cons": [
+      "Distant from mainland cities",
+      "Monsoon season has heavy rainfall",
+      "Expensive food options on campus"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 601,
+    "distanceKm": 1750,
+    "faculty": 9,
+    "fees": 110000,
+    "hostel": true,
+    "medianPackage": 16.5,
+    "name": "Indian Institute of Technology Guwahati",
+    "nirfRank": 7,
+    "placementRate": 93,
+    "pros": [
+      "Most scenic campus in India",
+      "Excellent research infrastructure",
+      "Great computing resources"
+    ],
+    "research": 9.2,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.iitg.ac.in/"
+      }
+    ],
+    "roi": 8,
+    "state": "Assam",
+    "tags": [
+      "scenic hills",
+      "brahmaputra river",
+      "superb campus"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a1430169780",
+    "shortName": "IITD",
+    "__v": 0,
+    "avgPackage": 22.8,
+    "branch": "Computer Science",
+    "campusLife": 9.4,
+    "city": "New Delhi",
+    "cons": [
+      "High cost of living",
+      "Intense competitive environment",
+      "Metro noise nearby"
+    ],
+    "createdAt": "2026-07-01T15:03:04.584Z",
+    "cutoff": 115,
+    "distanceKm": 30,
+    "faculty": 9.3,
+    "fees": 110000,
+    "hostel": true,
+    "medianPackage": 19.5,
+    "name": "Indian Institute of Technology Delhi",
+    "nirfRank": 2,
+    "placementRate": 97,
+    "pros": [
+      "Unmatched brand value",
+      "Prime capital location",
+      "Highly active tech clubs"
+    ],
+    "research": 9.5,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://home.iitd.ac.in/"
+      }
+    ],
+    "roi": 8.4,
+    "state": "Delhi",
+    "tags": [
+      "delhi hub",
+      "elite research",
+      "strong startup culture"
+    ],
+    "type": "IIT",
+    "updatedAt": "2026-07-12T15:21:01.027Z",
+    "admissionChannel": "JEE Advanced",
+    "lastVerifiedAt": "2026-07-12T15:21:01.020Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a1430169781",
+    "shortName": "NITC",
+    "__v": 0,
+    "avgPackage": 14.2,
+    "branch": "Computer Science",
+    "campusLife": 8.5,
+    "city": "Calicut",
+    "cons": [
+      "Heavy rainfall restricts mobility",
+      "Strict campus rules",
+      "Distance from airport (40km)"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 4500,
+    "distanceKm": 2200,
+    "faculty": 8.3,
+    "fees": 75000,
+    "hostel": true,
+    "medianPackage": 11.5,
+    "name": "National Institute of Technology Calicut",
+    "nirfRank": 23,
+    "placementRate": 90,
+    "pros": [
+      "Beautiful green location near Western Ghats",
+      "High placement rate in tech companies",
+      "Active student committees"
+    ],
+    "research": 8.1,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://nitc.ac.in/"
+      }
+    ],
+    "roi": 8.7,
+    "state": "Kerala",
+    "tags": [
+      "kerala rain",
+      "scenic campus",
+      "great placements"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a1430169782",
+    "shortName": "BITS Goa",
+    "__v": 0,
+    "avgPackage": 19.8,
+    "branch": "Computer Science",
+    "campusLife": 9.7,
+    "city": "Zuarinagar",
+    "cons": [
+      "Very expensive fee structure",
+      "High student distractions",
+      "High humidity"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 750,
+    "distanceKm": 1600,
+    "faculty": 8.9,
+    "fees": 275000,
+    "hostel": true,
+    "medianPackage": 17,
+    "name": "Birla Institute of Technology and Science, Goa",
+    "nirfRank": 25,
+    "placementRate": 96,
+    "pros": [
+      "Stunning campus location in Goa",
+      "No attendance requirement",
+      "Excellent placements"
+    ],
+    "research": 8,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.bits-pilani.ac.in/goa/"
+      }
+    ],
+    "roi": 7,
+    "state": "Goa",
+    "tags": [
+      "goa beach life",
+      "zero attendance",
+      "modern infrastructure"
+    ],
+    "type": "Deemed University",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "BITSAT",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a1430169783",
+    "shortName": "MIT Manipal",
+    "__v": 0,
+    "avgPackage": 10.8,
+    "branch": "Computer Science",
+    "campusLife": 9.5,
+    "city": "Manipal",
+    "cons": [
+      "Very high fees and living expenses",
+      "Distant from North Indian airports",
+      "Academic distractions"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 28000,
+    "distanceKm": 1850,
+    "faculty": 8.2,
+    "fees": 295000,
+    "hostel": true,
+    "medianPackage": 9,
+    "name": "Manipal Institute of Technology",
+    "nirfRank": 61,
+    "placementRate": 91,
+    "pros": [
+      "Stunning campus life and coastal climate",
+      "Excellent sports complex",
+      "Good startup culture (alumni like Satya Nadella)"
+    ],
+    "research": 7.9,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://manipal.edu/mit.html"
+      }
+    ],
+    "roi": 6.2,
+    "state": "Karnataka",
+    "tags": [
+      "beach visits",
+      "amazing campus life",
+      "premium crowd"
+    ],
+    "type": "Private University",
+    "updatedAt": "2026-07-12T15:21:01.029Z",
+    "admissionChannel": "MET (Manipal)",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "_id": "6a452c2955596a1430169784",
+    "shortName": "NITRKL",
+    "__v": 0,
+    "avgPackage": 14.8,
+    "branch": "Computer Science",
+    "campusLife": 8.3,
+    "city": "Rourkela",
+    "cons": [
+      "Remote town location in Odisha",
+      "Summer heat is high",
+      "Limited local flight connectivity"
+    ],
+    "createdAt": "2026-07-01T15:03:04.585Z",
+    "cutoff": 4200,
+    "distanceKm": 1100,
+    "faculty": 8.4,
+    "fees": 73000,
+    "hostel": true,
+    "medianPackage": 12,
+    "name": "National Institute of Technology Rourkela",
+    "nirfRank": 16,
+    "placementRate": 91,
+    "pros": [
+      "Extensive 1200-acre green campus",
+      "High research publications",
+      "Affordable fee structure"
+    ],
+    "research": 8.5,
+    "researchLinks": [
+      {
+        "label": "Official website",
+        "type": "Official",
+        "url": "https://www.nitrkl.ac.in/"
+      }
+    ],
+    "roi": 8.8,
+    "state": "Odisha",
+    "tags": [
+      "massive campus",
+      "cultural events",
+      "growing research"
+    ],
+    "type": "NIT",
+    "updatedAt": "2026-07-12T15:21:01.030Z",
+    "admissionChannel": "JEE Main",
+    "lastVerifiedAt": "2026-07-12T15:21:01.022Z",
+    "source": "demo/placeholder"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Mining Safety Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 10090,
+      "closingRank": 11583,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a464bb355596a143016d7f8",
+    "name": "Indian Institute of Technology Kharagpur",
+    "branch": "Mining Safety Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:29:56.550Z",
+    "cutoff": 11583,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 11583 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTK",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:30:53.479Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Chemistry (5 Years, Integrated Master of Science)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 8657,
+      "closingRank": 11999,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a464bb955596a143016d7fa",
+    "branch": "Chemistry (5 Years, Integrated Master of Science)",
+    "name": "Indian Institute of Technology Roorkee",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:30:02.053Z",
+    "cutoff": 11999,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 11999 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTR",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:30:02.053Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Materials Science and Technology (5 Years, Bachelor and Master of Technology (Dual Degree))",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 8540,
+      "closingRank": 12524,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a464bcb55596a143016d7fc",
+    "branch": "Materials Science and Technology (5 Years, Bachelor and Master of Technology (Dual Degree))",
+    "name": "Indian Institute of Technology (BHU) Varanasi",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:30:20.551Z",
+    "cutoff": 12524,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 12524 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOT(V",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:30:20.551Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Civil Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 8956,
+      "closingRank": 14916,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a464bf055596a143016d7fe",
+    "name": "Indian Institute of Technology Tirupati",
+    "branch": "Civil Engineering (4 Years, Bachelor of Technology)",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:30:56.953Z",
+    "cutoff": 14916,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 14916 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTT",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:30:56.953Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Mechanical Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 7058,
+      "closingRank": 9177,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a464d8a55596a143016d805",
+    "name": "Indian Institute of Technology Jodhpur",
+    "type": "Cutoff dataset prediction",
+    "branch": "Mechanical Engineering (4 Years, Bachelor of Technology)",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:37:47.042Z",
+    "cutoff": 9177,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 9177 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTJ",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:37:47.042Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Civil Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 8857,
+      "closingRank": 10100,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a464d8c55596a143016d807",
+    "branch": "Civil Engineering (4 Years, Bachelor of Technology)",
+    "type": "Cutoff dataset prediction",
+    "name": "Indian Institute of Technology Gandhinagar",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:37:48.944Z",
+    "cutoff": 10100,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 10100 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTG",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:37:48.944Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Chemical Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 5739,
+      "closingRank": 7586,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a46503655596a143016d816",
+    "branch": "Chemical Engineering (4 Years, Bachelor of Technology)",
+    "name": "Indian Institute of Technology (BHU) Varanasi",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:49:11.352Z",
+    "cutoff": 7586,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 7586 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOT(V",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:52:23.644Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Physics (5 Years, Integrated Master of Science)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 4955,
+      "closingRank": 7936,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a46503a55596a143016d818",
+    "name": "Indian Institute of Technology Roorkee",
+    "type": "Cutoff dataset prediction",
+    "branch": "Physics (5 Years, Integrated Master of Science)",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:49:15.452Z",
+    "cutoff": 7936,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 7936 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTR",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:49:15.452Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "B.Tech (Electrical and Electronics Engineering) - MBA (IIM Bodh Gaya) (5 Years, Bachelor of Technology and MBA (Dual Degree))",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 6111,
+      "closingRank": 7718,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a4650f955596a143016d81e",
+    "branch": "B.Tech (Electrical and Electronics Engineering) - MBA (IIM Bodh Gaya) (5 Years, Bachelor of Technology and MBA (Dual Degree))",
+    "name": "Indian Institute of Technology Patna",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:52:26.701Z",
+    "cutoff": 7718,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 7718 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTP",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:52:26.701Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Mathematics and Computing (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 6582,
+      "closingRank": 7208,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a4651be55596a143016d822",
+    "name": "Indian Institute of Technology Dharwad",
+    "type": "Cutoff dataset prediction",
+    "branch": "Mathematics and Computing (4 Years, Bachelor of Technology)",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:55:43.011Z",
+    "cutoff": 7208,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 7208 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTD",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:55:43.011Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Mechanical Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 7261,
+      "closingRank": 9563,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a4651c255596a143016d824",
+    "branch": "Mechanical Engineering (4 Years, Bachelor of Technology)",
+    "name": "Indian Institute of Technology (ISM) Dhanbad",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-02T11:55:47.745Z",
+    "cutoff": 9563,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 9563 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOT(D",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-02T11:55:47.745Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Metallurgical and Materials Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 11591,
+      "closingRank": 14179,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a535677de7b6054e55e7ca3",
+    "name": "Indian Institute of Technology Bhubaneswar",
+    "branch": "Metallurgical and Materials Engineering (4 Years, Bachelor of Technology)",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-12T08:55:19.627Z",
+    "cutoff": 14179,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 14179 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTB",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-12T09:22:00.220Z"
+  },
+  {
+    "cutoffSnapshot": {
+      "program": "Mechatronics Engineering (4 Years, Bachelor of Technology)",
+      "quota": "AI",
+      "seatType": "OPEN",
+      "gender": "Gender-Neutral",
+      "openingRank": 9416,
+      "closingRank": 11206,
+      "probability": 100,
+      "source": "cutoff-dataset"
+    },
+    "_id": "6a53567cde7b6054e55e7ca5",
+    "branch": "Mechatronics Engineering (4 Years, Bachelor of Technology)",
+    "name": "Indian Institute of Technology Bhilai",
+    "type": "Cutoff dataset prediction",
+    "__v": 0,
+    "avgPackage": 0,
+    "campusLife": 0,
+    "city": "All India",
+    "cons": [
+      "Fees, placements, hostel, and campus details need manual verification"
+    ],
+    "createdAt": "2026-07-12T08:55:24.174Z",
+    "cutoff": 11206,
+    "distanceKm": 0,
+    "faculty": 0,
+    "fees": 0,
+    "hostel": false,
+    "medianPackage": 0,
+    "nirfRank": 0,
+    "placementRate": 0,
+    "pros": [
+      "100% admission signal for this rank",
+      "Closing rank 11206 in the selected seat filter"
+    ],
+    "research": 0,
+    "researchLinks": [],
+    "roi": 0,
+    "shortName": "IIOTB",
+    "state": "All India",
+    "tags": [
+      "cutoff dataset",
+      "AI",
+      "OPEN",
+      "Gender-Neutral"
+    ],
+    "updatedAt": "2026-07-12T08:55:24.174Z"
+  }
+]
