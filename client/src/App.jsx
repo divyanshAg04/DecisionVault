@@ -387,6 +387,37 @@ function App() {
   const [editHomeStateDropdownOpen, setEditHomeStateDropdownOpen] = useState(false);
   const [editPrefStateSearch, setEditPrefStateSearch] = useState('');
   const [editPrefStateDropdownOpen, setEditPrefStateDropdownOpen] = useState(false);
+
+  const getEstimatedEligibleCollegesEditProfile = () => {
+    const scoreVal = parseFloat(editProfile?.score);
+    if (isNaN(scoreVal) || scoreVal <= 0) return [];
+
+    const type = editProfile?.scoreType || 'Rank';
+    let targetRank = 999999;
+
+    if (type === 'Rank') {
+      targetRank = scoreVal;
+    } else if (type === 'Percentile') {
+      targetRank = Math.round((100 - scoreVal) * 12000);
+    } else if (type === 'Score') {
+      const estimatedPercentile = Math.min(100, Math.max(0, (scoreVal / 300) * 100));
+      targetRank = Math.round((100 - estimatedPercentile) * 12000);
+    }
+
+    const eligible = catalog
+      .filter(c => {
+        if (targetRank <= 15000) {
+          return ['IIT Delhi', 'IIT Roorkee', 'IIIT Hyderabad', 'NIT Trichy', 'IIT Madras', 'IIT Kanpur'].includes(c.shortName || c.name);
+        }
+        if (targetRank <= 40000) {
+          return ['NIT Surathkal', 'NIT Warangal', 'MNNIT', 'IIIT Bangalore', 'BITS Goa', 'COEP'].includes(c.shortName || c.name);
+        }
+        return ['VIT', 'TIET', 'BIT Mesra', 'VJTI', 'COEP', 'Jadavpur University'].includes(c.shortName || c.name);
+      })
+      .slice(0, 4);
+
+    return eligible;
+  };
   const [newPro, setNewPro] = useState('');
   const [newCon, setNewCon] = useState('');
   const [newNote, setNewNote] = useState('');
@@ -2086,88 +2117,110 @@ function App() {
           )}
 
           {profileEditTab === 'path' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '800px', padding: '10px 0' }}>
-              <button 
-                type="button" 
-                onClick={async () => {
-                  setEditProfile(p => ({ 
-                    ...p, 
-                    journey: 'Class 12 planning',
-                    exam: 'Class 12',
-                    scoreType: 'Board %',
-                    score: '86',
-                    category: 'General',
-                    homeState: 'Uttar Pradesh',
-                    preferredBranches: 'Computer Science, Computer Science and Engineering',
-                    preferredStates: 'Delhi',
-                    stream: 'PCM',
-                    budget: 'Up to INR 8L total',
-                    targetExam: 'JEE Main'
-                  }));
-                  showToast('Switched to Class 12 Planning track! Make sure to save changes.', 'info');
-                }}
-                style={{
-                  border: `2px solid ${editProfile.journey === 'Class 12 planning' ? '#6c5ce7' : 'var(--border-color)'}`,
-                  background: 'var(--bg-card)',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  boxShadow: editProfile.journey === 'Class 12 planning' ? '0 4px 12px rgba(108,92,231,0.15)' : 'none'
-                }}
-              >
-                <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '8px', background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}>
-                  <GraduationCap size={18} />
-                </span>
-                <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Class 12 Planning</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Plan based on board percentage before entrance results arrive.</p>
-                {editProfile.journey === 'Class 12 planning' && <span style={{ marginTop: '8px', color: '#27ae60', fontSize: '0.8rem', fontWeight: 'bold' }}>✓ Selected (Click Save changes to lock)</span>}
-              </button>
-
-              <button 
-                type="button" 
-                onClick={async () => {
-                  setEditProfile(p => ({ 
-                    ...p, 
-                    journey: 'Entrance result ready',
-                    exam: 'JEE Main',
-                    scoreType: 'Rank',
-                    score: '8900',
-                    category: 'General',
-                    homeState: 'Uttar Pradesh',
-                    preferredBranches: 'Computer Science, Computer Science and Engineering',
-                    preferredStates: 'Delhi',
-                    stream: '',
-                    budget: '',
-                    targetExam: ''
-                  }));
-                  showToast('Switched to Entrance Result track! Make sure to save changes.', 'info');
-                }}
-                style={{
-                  border: `2px solid ${editProfile.journey === 'Entrance result ready' ? '#6c5ce7' : 'var(--border-color)'}`,
-                  background: 'var(--bg-card)',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  boxShadow: editProfile.journey === 'Entrance result ready' ? '0 4px 12px rgba(108,92,231,0.15)' : 'none'
-                }}
-              >
-                <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '8px', background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}>
-                  <Upload size={18} />
-                </span>
-                <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Entrance Result Ready</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Explore colleges based on your rank or score in JEE, CUET, NEET, etc.</p>
-                {editProfile.journey === 'Entrance result ready' && <span style={{ marginTop: '8px', color: '#27ae60', fontSize: '0.8rem', fontWeight: 'bold' }}>✓ Selected (Click Save changes to lock)</span>}
-              </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', width: '100%', padding: '10px 0' }}>
+              {[
+                {
+                  id: 'jee_main',
+                  label: 'JEE Main',
+                  journey: 'Entrance result ready',
+                  exam: 'JEE Main',
+                  examTrack: 'JEE',
+                  scoreType: 'Rank',
+                  score: '8900',
+                  icon: <Target size={18} />,
+                  desc: 'National level engineering admissions (NITs, IIITs, GFTIs).'
+                },
+                {
+                  id: 'jee_adv',
+                  label: 'JEE Advanced',
+                  journey: 'Entrance result ready',
+                  exam: 'JEE Advanced',
+                  examTrack: 'JEE',
+                  scoreType: 'Rank',
+                  score: '8900',
+                  icon: <Sparkles size={18} />,
+                  desc: 'Admissions into premium IITs (Indian Institutes of Technology).'
+                },
+                {
+                  id: 'cuet',
+                  label: 'CUET',
+                  journey: 'Entrance result ready',
+                  exam: 'CUET',
+                  examTrack: 'CUET',
+                  scoreType: 'Percentile',
+                  score: '98.73',
+                  icon: <GraduationCap size={18} />,
+                  desc: 'Central & State universities entrance channel.'
+                },
+                {
+                  id: 'private_univ',
+                  label: 'Private Universities',
+                  journey: 'Class 12 planning',
+                  exam: 'Private Universities',
+                  examTrack: 'Other',
+                  scoreType: 'Board %',
+                  score: '86',
+                  icon: <Building2 size={18} />,
+                  desc: 'Direct or board percentage merit planning (VIT, BITS, SRM).'
+                },
+                {
+                  id: 'mgmt_quota',
+                  label: 'Management Quota',
+                  journey: 'Class 12 planning',
+                  exam: 'Management Quota',
+                  examTrack: 'Other',
+                  scoreType: 'Board %',
+                  score: '86',
+                  icon: <Lock size={18} />,
+                  desc: 'Institution direct admission counselling channels.'
+                }
+              ].map(opt => {
+                const isSelected = editProfile.exam === opt.exam && editProfile.journey === opt.journey;
+                return (
+                  <button 
+                    key={opt.id}
+                    type="button" 
+                    onClick={() => {
+                      setEditProfile(p => ({ 
+                        ...p, 
+                        journey: opt.journey,
+                        exam: opt.exam,
+                        examTrack: opt.examTrack,
+                        scoreType: opt.scoreType,
+                        score: p.exam === opt.exam ? p.score : opt.score,
+                        category: p.category || 'General',
+                        homeState: p.homeState || 'Uttar Pradesh',
+                        preferredBranches: p.preferredBranches || 'Computer Science, Computer Science and Engineering',
+                        preferredStates: p.preferredStates || 'Delhi',
+                        stream: opt.journey === 'Class 12 planning' ? (p.stream || 'PCM') : '',
+                        budget: opt.journey === 'Class 12 planning' ? (p.budget || 'Up to INR 8L total') : '',
+                        targetExam: opt.journey === 'Class 12 planning' ? 'Not decided' : ''
+                      }));
+                      showToast(`Switched to ${opt.label} path! Make sure to save changes.`, 'info');
+                    }}
+                    style={{
+                      border: `2px solid ${isSelected ? '#6c5ce7' : 'var(--border-color)'}`,
+                      background: 'var(--bg-card)',
+                      borderRadius: '12px',
+                      padding: '18px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      boxShadow: isSelected ? '0 4px 12px rgba(108,92,231,0.15)' : 'none'
+                    }}
+                  >
+                    <span style={{ display: 'grid', width: '36px', height: '36px', placeItems: 'center', borderRadius: '8px', background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}>
+                      {opt.icon}
+                    </span>
+                    <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{opt.label}</strong>
+                    <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.4, flexGrow: 1 }}>{opt.desc}</p>
+                    {isSelected && <span style={{ marginTop: '4px', color: '#27ae60', fontSize: '0.78rem', fontWeight: 'bold' }}>✓ Selected</span>}
+                  </button>
+                );
+              })}
 
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px', marginTop: '20px' }}>
                 <button type="button" onClick={handleSaveProfile} className="primaryAction" style={{ margin: 0, width: 'auto', padding: '0 24px' }}>Save Path Change</button>
@@ -2392,6 +2445,28 @@ function App() {
                       style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                     />
                   </label>
+
+                  {getEstimatedEligibleCollegesEditProfile().length > 0 && (
+                    <div style={{
+                      marginTop: '10px',
+                      padding: '12px 16px',
+                      background: 'rgba(31, 138, 76, 0.05)',
+                      border: '1px dashed rgba(31, 138, 76, 0.3)',
+                      borderRadius: '8px',
+                      marginBottom: '10px'
+                    }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#1f8a4c', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        🎯 Estimated Eligible Colleges
+                      </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px' }}>
+                        {getEstimatedEligibleCollegesEditProfile().map(c => (
+                          <div key={c.id || c.name} style={{ fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ color: '#1f8a4c', fontWeight: 'bold' }}>✓</span> {c.name} ({c.shortName})
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
                     Category <span style={{ color: '#ff4d4f' }}>*</span>
