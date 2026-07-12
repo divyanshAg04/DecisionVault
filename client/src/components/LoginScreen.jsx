@@ -3,12 +3,13 @@ import { GraduationCap, Lock, Mail, KeyRound } from 'lucide-react';
 import { login, register } from '../lib/api';
 
 export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
+  const currentYear = new Date().getFullYear();
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName]             = useState('');
   const [email, setEmail]           = useState('');
   const [password, setPassword]     = useState('');
   const [examTrack, setExamTrack]   = useState('JEE');
-  const [targetYear, setTargetYear] = useState(2027);
+  const [targetYear, setTargetYear] = useState(currentYear + 1);
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
 
@@ -17,6 +18,7 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
     try {
       if (isRegister) {
         if (name.trim().length < 2) throw new Error('Enter your full name.');
+        if (Number(targetYear) < currentYear) throw new Error(`Target year cannot be less than ${currentYear}.`);
         const d = await register(name.trim(), creds.email, creds.password, examTrack, Number(targetYear));
         onLoginSuccess(d.user);
       } else {
@@ -121,7 +123,7 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
               </label>
               <label>
                 Target Year
-                <input value={targetYear} onChange={e => setTargetYear(e.target.value)} type="number" min="2026" max="2035" required />
+                <input value={targetYear} onChange={e => setTargetYear(e.target.value)} type="number" min={currentYear} max="2035" required />
               </label>
             </div>
           )}
