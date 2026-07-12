@@ -31,6 +31,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { colleges as fallbackColleges, defaultPriorities } from './data/colleges';
 import { INDIAN_STATES, ENGINEERING_BRANCHES } from './data/constants';
 
+const EXAM_TOOLTIPS = {
+  'JEE Main': 'Used for admission into NITs, IIITs, GFTIs and qualification for JEE Advanced.',
+  'JEE Advanced': 'Used for admission into IITs (Indian Institutes of Technology).',
+  'CUET': 'Common University Entrance Test for admission to Central and State universities.',
+  'NEET': 'National Eligibility cum Entrance Test for admission to Medical and Dental colleges.',
+  'GATE': 'Graduate Aptitude Test in Engineering for PG admissions and PSU recruitment.',
+  'CAT': 'Common Admission Test for admission to prestigious business schools (IIMs).',
+  'State CET': 'State-level Common Entrance Test for regional engineering/technical colleges.',
+  'Not decided': 'Select if you are still planning your exam strategy.'
+};
+
 // Custom Components
 import LandingPage from './components/LandingPage';
 import LoginScreen from './components/LoginScreen';
@@ -372,6 +383,10 @@ function App() {
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
   const [profileEditTab, setProfileEditTab] = useState('details');
   const [profileValidationError, setProfileValidationError] = useState('');
+  const [editHomeStateSearch, setEditHomeStateSearch] = useState('');
+  const [editHomeStateDropdownOpen, setEditHomeStateDropdownOpen] = useState(false);
+  const [editPrefStateSearch, setEditPrefStateSearch] = useState('');
+  const [editPrefStateDropdownOpen, setEditPrefStateDropdownOpen] = useState(false);
   const [newPro, setNewPro] = useState('');
   const [newCon, setNewCon] = useState('');
   const [newNote, setNewNote] = useState('');
@@ -2195,7 +2210,15 @@ function App() {
                   </label>
 
                   <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                    Target Exam <span style={{ color: '#ff4d4f' }}>*</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Target Exam <span style={{ color: '#ff4d4f' }}>*</span>
+                      <div className="premium-tooltip-container">
+                        <HelpCircle size={14} style={{ color: 'var(--text-secondary)' }} />
+                        <span className="premium-tooltip-text">
+                          {EXAM_TOOLTIPS[editProfile.targetExam || 'JEE Main'] || 'Target entrance exam selection.'}
+                        </span>
+                      </div>
+                    </div>
                     <select value={editProfile.targetExam || 'JEE Main'} onChange={e => setEditProfile(p => ({ ...p, targetExam: e.target.value, exam: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                       <option>JEE Main</option>
                       <option>CUET</option>
@@ -2217,14 +2240,84 @@ function App() {
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, position: 'relative' }}>
                     Home State <span style={{ color: '#ff4d4f' }}>*</span>
-                    <select value={editProfile.homeState || ''} onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                      <option value="">-- Select State --</option>
-                      {INDIAN_STATES.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                      ))}
-                    </select>
+                    <div
+                      onClick={() => setEditHomeStateDropdownOpen(!editHomeStateDropdownOpen)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        background: 'var(--bg-card)',
+                        color: editProfile.homeState ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        minHeight: '41px'
+                      }}
+                    >
+                      <span>{editProfile.homeState || 'Search State...'}</span>
+                      <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+                    </div>
+
+                    {editHomeStateDropdownOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          zIndex: 1000,
+                          width: '100%',
+                          maxHeight: '220px',
+                          overflowY: 'auto',
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                          marginTop: '4px',
+                          padding: '8px'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '6px' }}>
+                          <Search size={14} style={{ color: 'var(--text-secondary)' }} />
+                          <input
+                            type="text"
+                            placeholder="Search State..."
+                            value={editHomeStateSearch}
+                            onChange={(e) => setEditHomeStateSearch(e.target.value)}
+                            style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.84rem', padding: '4px', color: 'var(--text-primary)' }}
+                          />
+                        </div>
+                        {INDIAN_STATES.filter(state => state.toLowerCase().includes(editHomeStateSearch.toLowerCase())).map(state => (
+                          <div
+                            key={state}
+                            onClick={() => {
+                              setEditProfile(p => ({ ...p, homeState: state }));
+                              setEditHomeStateDropdownOpen(false);
+                              setEditHomeStateSearch('');
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 10px',
+                              fontSize: '0.84rem',
+                              cursor: 'pointer',
+                              borderRadius: '6px',
+                              background: editProfile.homeState === state ? 'rgba(108, 92, 231, 0.08)' : 'transparent',
+                              color: editProfile.homeState === state ? '#6c5ce7' : 'var(--text-primary)',
+                              fontWeight: editProfile.homeState === state ? 'bold' : 'normal'
+                            }}
+                            className="dropdownItem"
+                          >
+                            <span>{state}</span>
+                            {editProfile.homeState === state && <Check size={14} style={{ color: '#6c5ce7' }} />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </label>
 
                   <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -2312,14 +2405,84 @@ function App() {
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600, position: 'relative' }}>
                     Home State <span style={{ color: '#ff4d4f' }}>*</span>
-                    <select value={editProfile.homeState || ''} onChange={e => setEditProfile(p => ({ ...p, homeState: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                      <option value="">-- Select State --</option>
-                      {INDIAN_STATES.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                      ))}
-                    </select>
+                    <div
+                      onClick={() => setEditHomeStateDropdownOpen(!editHomeStateDropdownOpen)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        background: 'var(--bg-card)',
+                        color: editProfile.homeState ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        minHeight: '41px'
+                      }}
+                    >
+                      <span>{editProfile.homeState || 'Search State...'}</span>
+                      <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+                    </div>
+
+                    {editHomeStateDropdownOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          zIndex: 1000,
+                          width: '100%',
+                          maxHeight: '220px',
+                          overflowY: 'auto',
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                          marginTop: '4px',
+                          padding: '8px'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '6px' }}>
+                          <Search size={14} style={{ color: 'var(--text-secondary)' }} />
+                          <input
+                            type="text"
+                            placeholder="Search State..."
+                            value={editHomeStateSearch}
+                            onChange={(e) => setEditHomeStateSearch(e.target.value)}
+                            style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.84rem', padding: '4px', color: 'var(--text-primary)' }}
+                          />
+                        </div>
+                        {INDIAN_STATES.filter(state => state.toLowerCase().includes(editHomeStateSearch.toLowerCase())).map(state => (
+                          <div
+                            key={state}
+                            onClick={() => {
+                              setEditProfile(p => ({ ...p, homeState: state }));
+                              setEditHomeStateDropdownOpen(false);
+                              setEditHomeStateSearch('');
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 10px',
+                              fontSize: '0.84rem',
+                              cursor: 'pointer',
+                              borderRadius: '6px',
+                              background: editProfile.homeState === state ? 'rgba(108, 92, 231, 0.08)' : 'transparent',
+                              color: editProfile.homeState === state ? '#6c5ce7' : 'var(--text-primary)',
+                              fontWeight: editProfile.homeState === state ? 'bold' : 'normal'
+                            }}
+                            className="dropdownItem"
+                          >
+                            <span>{state}</span>
+                            {editProfile.homeState === state && <Check size={14} style={{ color: '#6c5ce7' }} />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </label>
 
                   <div style={{ minHeight: '1px' }}></div>
@@ -2329,40 +2492,80 @@ function App() {
               <label className="wideField" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
                 Preferred College States (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
                 <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  minHeight: '41px',
+                  padding: '6px 10px',
                   border: '1px solid var(--border-color)',
                   borderRadius: '8px',
-                  padding: '10px',
-                  height: '130px',
-                  overflowY: 'auto',
-                  background: 'var(--bg-app)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px'
+                  background: 'var(--bg-card)',
+                  alignItems: 'center'
                 }}>
-                  {INDIAN_STATES.map(state => {
+                  {(() => {
                     const selectedStates = editProfile.preferredStates
                       ? editProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
                       : [];
                     return (
-                      <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal', color: 'var(--text-primary)' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedStates.includes(state)}
-                          onChange={(e) => {
-                            let next;
-                            if (e.target.checked) {
-                              next = [...selectedStates, state];
-                            } else {
-                              next = selectedStates.filter(x => x !== state);
-                            }
-                            setEditProfile(p => ({ ...p, preferredStates: next.join(', ') }));
-                          }}
-                          style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
-                        />
-                        {state}
-                      </label>
+                      <>
+                        {selectedStates.map(state => (
+                          <div key={state} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.3)', color: '#6c5ce7', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                            {state}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = selectedStates.filter(x => x !== state);
+                                setEditProfile(p => ({ ...p, preferredStates: next.join(', ') }));
+                              }}
+                              style={{ background: 'none', border: 'none', color: '#6c5ce7', cursor: 'pointer', padding: 0, fontSize: '0.88rem', display: 'flex', alignItems: 'center', marginLeft: '2px' }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <button
+                            type="button"
+                            onClick={() => setEditPrefStateDropdownOpen(!editPrefStateDropdownOpen)}
+                            style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                          >
+                            + Add State
+                          </button>
+                          {editPrefStateDropdownOpen && (
+                            <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, width: '200px', maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: '4px', padding: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
+                                <Search size={12} style={{ color: 'var(--text-secondary)' }} />
+                                <input
+                                  type="text"
+                                  placeholder="Search state..."
+                                  value={editPrefStateSearch}
+                                  onChange={(e) => setEditPrefStateSearch(e.target.value)}
+                                  style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.78rem', padding: '2px', color: 'var(--text-primary)' }}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                              {INDIAN_STATES.filter(state => !selectedStates.includes(state) && state.toLowerCase().includes(editPrefStateSearch.toLowerCase())).map(state => (
+                                <div
+                                  key={state}
+                                  onClick={() => {
+                                    const next = [...selectedStates, state];
+                                    setEditProfile(p => ({ ...p, preferredStates: next.join(', ') }));
+                                    setEditPrefStateSearch('');
+                                    setEditPrefStateDropdownOpen(false);
+                                  }}
+                                  style={{ padding: '6px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '4px', color: 'var(--text-primary)' }}
+                                  className="dropdownItem"
+                                >
+                                  {state}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               </label>
 
