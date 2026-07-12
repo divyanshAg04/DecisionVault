@@ -1,7 +1,56 @@
-import React from 'react';
-import { GraduationCap, Upload } from 'lucide-react';
+import React, { useState } from 'react';
+import { GraduationCap, Upload, ShieldAlert } from 'lucide-react';
+import { INDIAN_STATES, ENGINEERING_BRANCHES, BUDGET_RANGES } from '../data/constants';
 
-export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfile, onHome, onBack, onContinue }) {
+export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfile, onBack, onContinue }) {
+  const [validationError, setValidationError] = useState('');
+
+  const selectedStates = admissionProfile.preferredStates
+    ? admissionProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
+    : [];
+  const selectedBranches = admissionProfile.preferredBranches
+    ? admissionProfile.preferredBranches.split(',').map(x => x.trim()).filter(Boolean)
+    : [];
+
+  const handleStateCheckboxChange = (state, isChecked) => {
+    let next;
+    if (isChecked) {
+      next = [...selectedStates, state];
+    } else {
+      next = selectedStates.filter(x => x !== state);
+    }
+    updateAdmissionProfile('preferredStates', next.join(', '));
+  };
+
+  const handleBranchCheckboxChange = (branch, isChecked) => {
+    let next;
+    if (isChecked) {
+      next = [...selectedBranches, branch];
+    } else {
+      next = selectedBranches.filter(x => x !== branch);
+    }
+    updateAdmissionProfile('preferredBranches', next.join(', '));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const missing = [];
+    if (!admissionProfile.stream) missing.push('Stream');
+    if (!admissionProfile.score || !admissionProfile.score.trim()) missing.push('Board percentage');
+    if (!admissionProfile.targetExam) missing.push('Target exam');
+    if (!admissionProfile.category) missing.push('Category');
+    if (!admissionProfile.homeState) missing.push('Home state');
+    if (selectedBranches.length === 0) missing.push('Preferred branches');
+    if (selectedStates.length === 0) missing.push('Preferred college states');
+
+    if (missing.length > 0) {
+      setValidationError(`You missed some mandatory fields: ${missing.join(', ')}.`);
+      return;
+    }
+    setValidationError('');
+    onContinue();
+  };
+
   return (
     <main className="onboardingShell">
       <section className="onboardingIntro">
@@ -42,7 +91,26 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
           </button>
         </div>
 
-        <div className="intakeGrid">
+        {validationError && (
+          <div style={{
+            margin: '0 18px 16px',
+            padding: '12px 16px',
+            background: '#fff2f0',
+            border: '1px solid #ffccc7',
+            borderRadius: '8px',
+            color: '#ff4d4f',
+            fontSize: '0.88rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <ShieldAlert size={16} />
+            <span>{validationError}</span>
+          </div>
+        )}
+
+        <div className="intakeGrid" style={{ padding: '0 18px 18px' }}>
           <label>
             Stream <span style={{ color: '#ff4d4f' }}>*</span>
             <select value={admissionProfile.stream || 'PCM'} onChange={(event) => updateAdmissionProfile('stream', event.target.value)}>
@@ -55,11 +123,15 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
 
           <label>
             Board percentage <span style={{ color: '#ff4d4f' }}>*</span>
-            <input
-              value={admissionProfile.score}
-              onChange={(event) => updateAdmissionProfile('score', event.target.value)}
-              placeholder="Example: 86"
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                value={admissionProfile.score}
+                onChange={(event) => updateAdmissionProfile('score', event.target.value)}
+                placeholder="Example: 86"
+                style={{ width: '100%', paddingRight: '32px' }}
+              />
+              <span style={{ position: 'absolute', right: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>%</span>
+            </div>
           </label>
 
           <label>
@@ -96,41 +168,153 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
 
           <label>
             Home state <span style={{ color: '#ff4d4f' }}>*</span>
-            <input
+            <select
               value={admissionProfile.homeState}
               onChange={(event) => updateAdmissionProfile('homeState', event.target.value)}
-              placeholder="Example: Uttar Pradesh"
-            />
+              style={{ cursor: 'pointer' }}
+            >
+              <option value="">-- Select State --</option>
+              {INDIAN_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </label>
 
           <label>
             Budget range <span style={{ color: '#ff4d4f' }}>*</span>
-            <input
-              value={admissionProfile.budget || ''}
+            <select
+              value={admissionProfile.budget}
               onChange={(event) => updateAdmissionProfile('budget', event.target.value)}
-              placeholder="Example: Up to INR 8L total"
-            />
+              style={{ cursor: 'pointer' }}
+            >
+              <option value="">-- Select Budget --</option>
+              {BUDGET_RANGES.map(range => (
+                <option key={range} value={range}>{range}</option>
+              ))}
+            </select>
           </label>
 
           <label className="wideField">
-            Preferred branches or interests <span style={{ color: '#ff4d4f' }}>*</span>
-            <input
-              value={admissionProfile.preferredBranches}
-              onChange={(event) => updateAdmissionProfile('preferredBranches', event.target.value)}
-              placeholder="CSE, Data Science, Electronics, Economics"
-            />
+            Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            <div style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              height: '130px',
+              overflowY: 'auto',
+              background: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              {INDIAN_STATES.map(state => (
+                <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedStates.includes(state)}
+                    onChange={(e) => handleStateCheckboxChange(state, e.target.checked)}
+                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                  />
+                  {state}
+                </label>
+              ))}
+            </div>
+          </label>
+
+          <label className="wideField">
+            Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            <div style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              height: '130px',
+              overflowY: 'auto',
+              background: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              {ENGINEERING_BRANCHES.map(branch => (
+                <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedBranches.includes(branch)}
+                    onChange={(e) => handleBranchCheckboxChange(branch, e.target.checked)}
+                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                  />
+                  {branch}
+                </label>
+              ))}
+            </div>
           </label>
         </div>
 
-        <button className="primaryAction" type="button" onClick={onContinue}>
-          Open planning dashboard
-        </button>
+        <div style={{ padding: '0 18px 18px' }}>
+          <button className="primaryAction" type="button" onClick={handleSubmit} style={{ width: '100%', margin: 0 }}>
+            Open planning dashboard
+          </button>
+        </div>
       </section>
     </main>
   );
 }
 
-export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onHome, onBack, onContinue, onFileUpload }) {
+export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onBack, onContinue, onFileUpload }) {
+  const [validationError, setValidationError] = useState('');
+
+  const selectedStates = admissionProfile.preferredStates
+    ? admissionProfile.preferredStates.split(',').map(x => x.trim()).filter(Boolean)
+    : [];
+  const selectedBranches = admissionProfile.preferredBranches
+    ? admissionProfile.preferredBranches.split(',').map(x => x.trim()).filter(Boolean)
+    : [];
+
+  const handleStateCheckboxChange = (state, isChecked) => {
+    let next;
+    if (isChecked) {
+      next = [...selectedStates, state];
+    } else {
+      next = selectedStates.filter(x => x !== state);
+    }
+    updateAdmissionProfile('preferredStates', next.join(', '));
+  };
+
+  const handleBranchCheckboxChange = (branch, isChecked) => {
+    let next;
+    if (isChecked) {
+      next = [...selectedBranches, branch];
+    } else {
+      next = selectedBranches.filter(x => x !== branch);
+    }
+    updateAdmissionProfile('preferredBranches', next.join(', '));
+  };
+
+  const getScorePlaceholder = () => {
+    const type = admissionProfile.scoreType || 'Rank';
+    if (type === 'Percentile') return 'Example: 98.76';
+    if (type === 'Score') return 'Example: 120 (Marks)';
+    return 'Example: 8900 (CRL Rank)';
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const missing = [];
+    if (!admissionProfile.exam) missing.push('Exam');
+    if (!admissionProfile.scoreType) missing.push('Score type');
+    if (!admissionProfile.score || !admissionProfile.score.trim()) missing.push('Rank / score');
+    if (!admissionProfile.category) missing.push('Category');
+    if (!admissionProfile.homeState) missing.push('Home state');
+    if (selectedBranches.length === 0) missing.push('Preferred branches');
+    if (selectedStates.length === 0) missing.push('Preferred college states');
+
+    if (missing.length > 0) {
+      setValidationError(`You missed some mandatory fields: ${missing.join(', ')}.`);
+      return;
+    }
+    setValidationError('');
+    onContinue();
+  };
+
   return (
     <main className="onboardingShell">
       <section className="onboardingIntro">
@@ -171,6 +355,25 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           </button>
         </div>
 
+        {validationError && (
+          <div style={{
+            margin: '0 18px 16px',
+            padding: '12px 16px',
+            background: '#fff2f0',
+            border: '1px solid #ffccc7',
+            borderRadius: '8px',
+            color: '#ff4d4f',
+            fontSize: '0.88rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <ShieldAlert size={16} />
+            <span>{validationError}</span>
+          </div>
+        )}
+
         <label className="uploadBox">
           <Upload size={22} />
           <span>
@@ -184,7 +387,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
           />
         </label>
 
-        <div className="intakeGrid">
+        <div className="intakeGrid" style={{ padding: '0 18px 18px' }}>
           <label>
             Exam <span style={{ color: '#ff4d4f' }}>*</span>
             <select value={admissionProfile.exam} onChange={(event) => updateAdmissionProfile('exam', event.target.value)}>
@@ -201,7 +404,11 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
             Score type <span style={{ color: '#ff4d4f' }}>*</span>
             <select
               value={admissionProfile.scoreType}
-              onChange={(event) => updateAdmissionProfile('scoreType', event.target.value)}
+              onChange={(event) => {
+                updateAdmissionProfile('scoreType', event.target.value);
+                // Clear score on type change to avoid format confusion
+                updateAdmissionProfile('score', '');
+              }}
             >
               <option>Rank</option>
               <option>Percentile</option>
@@ -214,7 +421,7 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
             <input
               value={admissionProfile.score}
               onChange={(event) => updateAdmissionProfile('score', event.target.value)}
-              placeholder="Example: 8900"
+              placeholder={getScorePlaceholder()}
             />
           </label>
 
@@ -235,26 +442,80 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onH
 
           <label>
             Home state <span style={{ color: '#ff4d4f' }}>*</span>
-            <input
+            <select
               value={admissionProfile.homeState}
               onChange={(event) => updateAdmissionProfile('homeState', event.target.value)}
-              placeholder="Example: Uttar Pradesh"
-            />
+              style={{ cursor: 'pointer' }}
+            >
+              <option value="">-- Select State --</option>
+              {INDIAN_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </label>
 
-          <label>
-            Preferred branches <span style={{ color: '#ff4d4f' }}>*</span>
-            <input
-              value={admissionProfile.preferredBranches}
-              onChange={(event) => updateAdmissionProfile('preferredBranches', event.target.value)}
-              placeholder="CSE, IT, ECE"
-            />
+          <div style={{ minHeight: '1px' }}></div> {/* Grid Spacer */}
+
+          <label className="wideField">
+            Preferred college states (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            <div style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              height: '130px',
+              overflowY: 'auto',
+              background: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              {INDIAN_STATES.map(state => (
+                <label key={state} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedStates.includes(state)}
+                    onChange={(e) => handleStateCheckboxChange(state, e.target.checked)}
+                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                  />
+                  {state}
+                </label>
+              ))}
+            </div>
+          </label>
+
+          <label className="wideField">
+            Preferred branches (Select more than 1) <span style={{ color: '#ff4d4f' }}>*</span>
+            <div style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              padding: '10px',
+              height: '130px',
+              overflowY: 'auto',
+              background: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              {ENGINEERING_BRANCHES.map(branch => (
+                <label key={branch} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 'normal' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedBranches.includes(branch)}
+                    onChange={(e) => handleBranchCheckboxChange(branch, e.target.checked)}
+                    style={{ width: 'auto', minHeight: '0', cursor: 'pointer' }}
+                  />
+                  {branch}
+                </label>
+              ))}
+            </div>
           </label>
         </div>
 
-        <button className="primaryAction" type="button" onClick={onContinue}>
-          Open decision dashboard
-        </button>
+        <div style={{ padding: '0 18px 18px' }}>
+          <button className="primaryAction" type="button" onClick={handleSubmit} style={{ width: '100%', margin: 0 }}>
+            Open decision dashboard
+          </button>
+        </div>
       </section>
     </main>
   );
