@@ -33,13 +33,17 @@ describe('Refresh Token Rotation', () => {
   });
 
   it('should rotate refresh token on POST /api/auth/refresh', async () => {
-    const { refreshToken } = await registerAndLogin('rtrotate@example.com');
+    const { refreshToken, cookies } = await registerAndLogin('rtrotate@example.com');
     expect(refreshToken).toBeDefined();
+
+    const csrfCookie = cookies.find(c => c.startsWith('csrfToken='));
+    const csrfToken = csrfCookie?.split(';')[0]?.split('=')[1];
 
     // Use old refresh token to get a new pair
     const refreshRes = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', `refreshToken=${refreshToken}`);
+      .set('Cookie', `refreshToken=${refreshToken}; csrfToken=${csrfToken}`)
+      .set('X-CSRF-Token', csrfToken);
 
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.message).toBe('Token refreshed successfully');
@@ -55,17 +59,21 @@ describe('Refresh Token Rotation', () => {
   });
 
   it('should reject reuse of a revoked refresh token', async () => {
-    const { refreshToken } = await registerAndLogin('rtreuse@example.com');
+    const { refreshToken, cookies } = await registerAndLogin('rtreuse@example.com');
+    const csrfCookie = cookies.find(c => c.startsWith('csrfToken='));
+    const csrfToken = csrfCookie?.split(';')[0]?.split('=')[1];
 
     // Rotate once (first use — valid)
     await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', `refreshToken=${refreshToken}`);
+      .set('Cookie', `refreshToken=${refreshToken}; csrfToken=${csrfToken}`)
+      .set('X-CSRF-Token', csrfToken);
 
     // Reuse the same (now revoked) token
     const reuseRes = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', `refreshToken=${refreshToken}`);
+      .set('Cookie', `refreshToken=${refreshToken}; csrfToken=${csrfToken}`)
+      .set('X-CSRF-Token', csrfToken);
 
     expect(reuseRes.status).toBe(401);
     expect(reuseRes.body.message).toContain('invalid or expired');

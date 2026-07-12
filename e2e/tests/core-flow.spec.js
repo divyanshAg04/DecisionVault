@@ -108,5 +108,5 @@ test('complete core decision-vault flow', async ({ page }) => {
   await submitReflectionBtn.click();
 
   // Verify reflection is successfully logged in UI
-  await expect(page.locator('text=Reflection Logged successfully!')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=Reflection Logged successfully!').first()).toBeVisible({ timeout: 5000 });
 });

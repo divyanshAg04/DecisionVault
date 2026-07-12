@@ -275,10 +275,9 @@ SMTP_PASS=
 SMTP_FROM="DecisionVault" <noreply@decisionvault.dev>
 
 # Optional in development, but required for production; without them, uploaded evidence files will not persist across deploys (uses ephemeral local /public/uploads fallback)
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_S3_BUCKET=
-AWS_REGION=ap-south-1
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
 For the client, copy `client/.env.example` to `client/.env` if the API isn't at `http://localhost:5000/api`, and set `VITE_API_URL` accordingly. Production builds require `VITE_API_URL`; if it is missing, the app shows a configuration error instead of falling back to localhost.
@@ -465,7 +464,7 @@ Our Admissions Counselor and Research Summarizer invoke Google's Gemini API with
 When a user deletes their account, we execute deletions across all relational collections (`Shortlists`, `Decisions`, `Reflections`, `ActivityLogs`, `Users`) inside a session transaction (`session.withTransaction()`). This guarantees database integrity by ensuring partial write failures trigger a complete rollback rather than leaving orphaned data.
 
 ### 5. Graceful Degradation for Third-Party Integrations
-SMTP, AWS S3, and Sentry are all optional at the environment-variable level. Missing SMTP credentials fall back to an Ethereal preview link (and a local `invite_debug.txt`/console log in dev); a missing S3 bucket falls back to local disk under `public/uploads`; a missing Sentry DSN simply skips initialization. The app is designed to run fully offline-capable in development with zero third-party credentials.
+SMTP, Cloudinary, and Sentry are all optional at the environment-variable level. Missing SMTP credentials fall back to an Ethereal preview link (and a local `invite_debug.txt`/console log in dev); a missing Cloudinary configuration falls back to local disk under `public/uploads`; a missing Sentry DSN simply skips initialization. The app is designed to run fully offline-capable in development with zero third-party credentials.
 
 <br/>
 

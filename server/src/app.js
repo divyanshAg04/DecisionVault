@@ -19,9 +19,19 @@ import shortlistRoutes from './routes/shortlistRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import mlRoutes from './routes/mlRoutes.js';
-import { s3Configured } from './utils/s3.js';
+import { cloudinaryConfigured } from './utils/cloudinary.js';
 
 dotenv.config();
+
+// Ensure JWT_SECRET is configured in production, or set fallback in development/test
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    logger.error('FATAL: JWT_SECRET environment variable is required in production mode.');
+    throw new Error('FATAL: JWT_SECRET environment variable is required in production mode.');
+  } else {
+    process.env.JWT_SECRET = 'test-secret';
+  }
+}
 
 // Initialize Sentry error tracking
 if (process.env.SENTRY_DSN) {
@@ -40,6 +50,14 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 200 : 10000, // Loose limit in development
   message: { message: 'Too many requests from this IP, please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: process.env.NODE_ENV === 'test' ? 100 : 5, // 5 attempts per minute (100 in test environment to avoid breaking tests)
+  message: { message: 'Too many authentication attempts, please try again after a minute.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -94,7 +112,7 @@ app.use(morgan('dev'));
 app.use('/api', limiter);
 
 // CSRF double-submit-cookie validation middleware
-const CSRF_EXEMPT_PATHS = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
+const CSRF_EXEMPT_PATHS = ['/api/auth/login', '/api/auth/register'];
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 app.use('/api', (req, res, next) => {
@@ -129,7 +147,7 @@ app.get('/api/health', async (req, res) => {
     uptime: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    storage: s3Configured ? 's3' : 'local-ephemeral',
+    storage: cloudinaryConfigured ? 'cloudinary' : 'local-ephemeral',
   });
 });
 
@@ -140,6 +158,8 @@ app.get('/api/docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/shortlists', shortlistRoutes);

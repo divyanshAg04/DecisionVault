@@ -1,34 +1,28 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { v2 as cloudinary } from 'cloudinary';
 import { logger } from './logger.js';
 
-// Setup S3 Client if credentials are provided
-export const s3Configured = !!(
-  process.env.AWS_ACCESS_KEY_ID && 
-  process.env.AWS_SECRET_ACCESS_KEY && 
-  process.env.AWS_S3_BUCKET && 
-  process.env.AWS_REGION
+// Setup Cloudinary Client if credentials are provided
+export const cloudinaryConfigured = !!(
+  process.env.CLOUDINARY_CLOUD_NAME && 
+  process.env.CLOUDINARY_API_KEY && 
+  process.env.CLOUDINARY_API_SECRET
 );
 
-if (!s3Configured) {
-  logger.warn('S3 not configured — uploads will use ephemeral local storage and WILL BE LOST on redeploy. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION to enable persistent storage.');
-}
-
-let s3Client = null;
-if (s3Configured) {
-  s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
+if (!cloudinaryConfigured) {
+  logger.warn('Cloudinary not configured — uploads will use ephemeral local storage and WILL BE LOST on redeploy. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET to enable persistent storage.');
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
 
 /**
- * Uploads a base64-encoded image to S3 (or local filesystem fallback).
+ * Uploads a base64-encoded image to Cloudinary (or local filesystem fallback).
  * @param {string} base64Data - Raw data URL (e.g. data:image/png;base64,...)
  * @param {string} originalName - Original filename
  * @returns {Promise<string>} File URL
@@ -46,18 +40,14 @@ export async function uploadScorecard(base64Data, originalName) {
   const ext = originalName ? path.extname(originalName) : `.${contentType.split('/')[1] || 'png'}`;
   const filename = `${crypto.randomBytes(16).toString('hex')}${ext}`;
 
-  if (s3Configured && s3Client) {
-    const bucketName = process.env.AWS_S3_BUCKET;
-    const key = `scorecards/${filename}`;
-    
-    await s3Client.send(new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-    }));
-    
-    return `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  if (cloudinaryConfigured) {
+    // Cloudinary supports direct upload of base64 data URLs
+    const result = await cloudinary.uploader.upload(base64Data, {
+      folder: 'scorecards',
+      public_id: path.parse(filename).name,
+      resource_type: 'auto',
+    });
+    return result.secure_url;
   } else {
     // Local fallback: write to public/uploads
     const uploadDir = path.join(process.cwd(), 'public/uploads');
