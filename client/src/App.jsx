@@ -3237,7 +3237,7 @@ function App() {
             {/* Chart 1: Scatter Plot */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: 0 }}>
-                📊 Value Matrix: Fees vs. Placements (Scatter Trade-off)
+                📊 Value Matrix: Fees vs. Priority Fit Score (Dynamic Scatter Trade-off)
               </p>
               <div style={{ position: 'relative', width: '100%', height: '220px', background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px 16px 8px 16px', boxSizing: 'border-box' }}>
                 <svg viewBox="0 0 400 220" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
@@ -3248,13 +3248,13 @@ function App() {
                     </linearGradient>
                   </defs>
 
-                  {/* Shaded Target ROI Zone */}
-                  {targetX > 45 && targetY > 15 && (
+                  {/* Shaded Target ROI Zone (Low Fees & High Fit Score) */}
+                  {targetX > 45 && (
                     <rect
                       x={45}
                       y={15}
                       width={Math.max(0, targetX - 45)}
-                      height={Math.max(0, targetY - 15)}
+                      height={40} // Shading the top region above 75% fit score
                       fill="url(#targetZoneGradient)"
                       style={{ transition: 'all 0.3s ease' }}
                     />
@@ -3264,18 +3264,18 @@ function App() {
                   <line x1="45" y1="15" x2="45" y2="175" stroke="var(--border-color)" strokeWidth="1.5" />
                   <line x1="45" y1="175" x2="385" y2="175" stroke="var(--border-color)" strokeWidth="1.5" />
 
-                  {/* Grid Lines & Y-ticks */}
-                  {[10, 20, 30, 40].map((pkg) => {
-                    const y = 175 - (pkg / 40) * 160;
+                  {/* Grid Lines & Y-ticks (Fit Score 0% to 100%) */}
+                  {[25, 50, 75, 100].map((score) => {
+                    const y = 175 - (score / 100) * 160;
                     return (
-                      <g key={pkg}>
+                      <g key={score}>
                         <line x1="45" y1={y} x2="385" y2={y} stroke="var(--border-color)" strokeDasharray="3,3" strokeWidth="1" />
-                        <text x="38" y={y + 3} fill="var(--text-secondary)" fontSize="8.5" textAnchor="end">{pkg}L</text>
+                        <text x="38" y={y + 3} fill="var(--text-secondary)" fontSize="8.5" textAnchor="end">{score}%</text>
                       </g>
                     );
                   })}
 
-                  {/* Grid Lines & X-ticks */}
+                  {/* Grid Lines & X-ticks (Fees 0L to 12L) */}
                   {[0, 3, 6, 9, 12].map((fee) => {
                     const x = 45 + (fee / 12) * 340;
                     return (
@@ -3288,31 +3288,30 @@ function App() {
 
                   {/* Axis Titles */}
                   <text x="215" y="208" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" textAnchor="middle">Tuition Fees (Lakhs)</text>
-                  <text x="12" y="95" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" transform="rotate(-90 12 95)" textAnchor="middle">Average Salary (LPA)</text>
+                  <text x="12" y="95" fill="var(--text-secondary)" fontSize="9" fontWeight="bold" transform="rotate(-90 12 95)" textAnchor="middle">Priority Fit Score (%)</text>
 
-                  {/* Dynamic Target Reference Lines (Aligned with Sliders) */}
+                  {/* Dynamic horizontal 75% Fit Score threshold line */}
                   <line
                     x1="45"
-                    y1={targetY}
+                    y1={55}
                     x2="385"
-                    y2={targetY}
+                    y2={55}
                     stroke="#27ae60"
                     strokeWidth="1.5"
                     strokeDasharray="4,4"
-                    style={{ transition: 'y1 0.3s ease, y2 0.3s ease' }}
                   />
                   <text
                     x="380"
-                    y={targetY - 4}
+                    y={51}
                     fill="#27ae60"
                     fontSize="7.5"
                     fontWeight="bold"
                     textAnchor="end"
-                    style={{ transition: 'y 0.3s ease' }}
                   >
-                    Target Salary: {targetPkg} LPA
+                    High Fit Threshold (75%)
                   </text>
 
+                  {/* Dynamic vertical Max Budget threshold line (moves with Fee slider) */}
                   <line
                     x1={targetX}
                     y1="15"
@@ -3336,19 +3335,18 @@ function App() {
                   </text>
 
                   {/* Quadrant Guide Labels */}
-                  <text x="380" y="34" fill="rgba(108, 92, 231, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">💎 High return</text>
-                  <text x="55" y="34" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite ROI Zone</text>
-                  <text x="380" y="165" fill="rgba(230, 126, 34, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">⚠️ Premium Fees</text>
+                  <text x="380" y="34" fill="rgba(108, 92, 231, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">💎 High Fit</text>
+                  <text x="55" y="34" fill="rgba(39, 174, 96, 0.65)" fontSize="8" fontWeight="bold" textAnchor="start">🔥 Elite ROI Fit Zone</text>
+                  <text x="380" y="165" fill="rgba(230, 126, 34, 0.45)" fontSize="8" fontWeight="bold" textAnchor="end">⚠️ Lower Fit</text>
 
-                  {/* Data points */}
+                  {/* Data points (glide up and down dynamically as scores recalculate!) */}
                   {vaultColleges.map((college) => {
                     const feeLakhs = college.fees ? (college.fees / 100000) : 0;
-                    const pkg = college.avgPackage || 0;
                     const isLeader = finalCollege.name === college.name;
 
                     // Map coordinates
                     const x = 45 + Math.min(1, Math.max(0, feeLakhs / 12)) * 340;
-                    const y = 175 - Math.min(1, Math.max(0, pkg / 40)) * 160;
+                    const y = 175 - (college.score / 100) * 160;
 
                     // Dynamic scale: sizes pulse/scale based on Priority Fit Score!
                     const scoreScale = 0.6 + (college.score / 100) * 0.7; // 0.6x to 1.3x size
