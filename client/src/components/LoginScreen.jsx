@@ -117,8 +117,7 @@ export default function LoginScreen({ onBack, onHome, onLoginSuccess }) {
               <label>
                 Exam Track
                 <select value={examTrack} onChange={e => setExamTrack(e.target.value)} style={{ cursor: 'pointer' }}>
-                  <option>JEE</option><option>CUET</option><option>NEET</option>
-                  <option>GATE</option><option>CAT</option><option>Other</option>
+                  <option>JEE</option><option>CUET</option><option>Other</option>
                 </select>
               </label>
               <label>

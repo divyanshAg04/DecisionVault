@@ -36,9 +36,6 @@ const EXAM_TOOLTIPS = {
   'JEE Main': 'Used for admission into NITs, IIITs, GFTIs and qualification for JEE Advanced.',
   'JEE Advanced': 'Used for admission into IITs (Indian Institutes of Technology).',
   'CUET': 'Common University Entrance Test for admission to Central and State universities.',
-  'NEET': 'National Eligibility cum Entrance Test for admission to Medical and Dental colleges.',
-  'GATE': 'Graduate Aptitude Test in Engineering for PG admissions and PSU recruitment.',
-  'CAT': 'Common Admission Test for admission to prestigious business schools (IIMs).',
   'State CET': 'State-level Common Entrance Test for regional engineering/technical colleges.',
   'Not decided': 'Select if you are still planning your exam strategy.'
 };
@@ -2201,7 +2198,7 @@ function App() {
                   journey: 'Entrance result ready',
                   icon: <Upload size={22} />,
                   desc: 'Upload scorecard or enter rank, category, home state, and branch preference.',
-                  badge: 'Best after JEE, CUET, NEET, GATE, CAT'
+                  badge: 'Best after JEE, CUET'
                 }
               ].map(opt => {
                 const isSelected = editProfile.journey === opt.journey;
@@ -2320,7 +2317,6 @@ function App() {
                     <select value={editProfile.targetExam || 'JEE Main'} onChange={e => setEditProfile(p => ({ ...p, targetExam: e.target.value, exam: e.target.value }))} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                       <option>JEE Main</option>
                       <option>CUET</option>
-                      <option>NEET</option>
                       <option>State CET</option>
                       <option>Not decided</option>
                     </select>
@@ -2436,9 +2432,6 @@ function App() {
                       <option>JEE Main</option>
                       <option>JEE Advanced</option>
                       <option>CUET</option>
-                      <option>NEET</option>
-                      <option>GATE</option>
-                      <option>CAT</option>
                     </select>
                   </label>
 

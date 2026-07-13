@@ -7,9 +7,6 @@ const EXAM_TOOLTIPS = {
   'JEE Main': 'Used for admission into NITs, IIITs, GFTIs and qualification for JEE Advanced.',
   'JEE Advanced': 'Used for admission into IITs (Indian Institutes of Technology).',
   'CUET': 'Common University Entrance Test for admission to Central and State universities.',
-  'NEET': 'National Eligibility cum Entrance Test for admission to Medical and Dental colleges.',
-  'GATE': 'Graduate Aptitude Test in Engineering for PG admissions and PSU recruitment.',
-  'CAT': 'Common Admission Test for admission to prestigious business schools (IIMs).',
   'State CET': 'State-level Common Entrance Test for regional engineering/technical colleges.',
   'Not decided': 'Select if you are still planning your exam strategy.'
 };
@@ -191,7 +188,6 @@ export function Class12OnboardingScreen({ admissionProfile, updateAdmissionProfi
             >
               <option>JEE Main</option>
               <option>CUET</option>
-              <option>NEET</option>
               <option>State CET</option>
               <option>Not decided</option>
             </select>
@@ -637,9 +633,6 @@ export function OnboardingScreen({ admissionProfile, updateAdmissionProfile, onB
               <option>JEE Main</option>
               <option>JEE Advanced</option>
               <option>CUET</option>
-              <option>NEET</option>
-              <option>GATE</option>
-              <option>CAT</option>
             </select>
           </label>
 

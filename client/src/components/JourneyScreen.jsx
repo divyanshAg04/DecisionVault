@@ -55,7 +55,7 @@ export default function JourneyScreen({ onClass12, onEntrance, onBack }) {
             </span>
             <strong>Entrance result ready</strong>
             <p>Upload scorecard or enter rank, category, home state, and branch preference.</p>
-            <small>Best after JEE, CUET, NEET, GATE, CAT</small>
+            <small>Best after JEE, CUET</small>
           </button>
         </div>
       </section>
