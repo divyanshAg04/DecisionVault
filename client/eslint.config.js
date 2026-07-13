@@ -38,7 +38,6 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/no-unescaped-entities': 'off',
-      'react/jsx-key': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'no-unused-vars': 'off',
     },
