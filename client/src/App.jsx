@@ -1811,6 +1811,8 @@ function App() {
     const rank = getRankFromProfile(admissionProfile);
     if (rank) setJeeRank(String(rank));
     setJeeCategory(mapCategoryToSeatType(admissionProfile.category));
+    // intentionally depends on primitive fields only, not full admissionProfile object
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [admissionProfile.score, admissionProfile.scoreType, admissionProfile.category]);
 
   if (appStage === 'landing') {
