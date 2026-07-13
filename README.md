@@ -39,7 +39,7 @@
 
 <br/>
 
-A full-stack MERN application built around **CollegeVault**, its flagship module for Indian college admissions. It turns scattered research — cutoff trends, placement data, pros and cons, gut feelings — into a structured, evidence-backed decision, complemented by an AI research summarizer and counselor, and a built-in reflection loop for after the decision is made.
+**DecisionVault** is a full-stack MERN application and decision intelligence platform built around **CollegeVault**, its flagship module for Indian college admissions. It transforms chaotic research—cutoff trends, placement data, pros/cons, and subjective feelings—into structured, evidence-backed decisions, integrated with a Gemini-powered AI counselor, scikit-learn placement predictions, and a post-decision reflection loop.
 
 <br/>
 
