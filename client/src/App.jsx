@@ -27,11 +27,11 @@ import {
   X,
   Sun,
   Moon,
+  Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { colleges as fallbackColleges, defaultPriorities } from './data/colleges';
 import { INDIAN_STATES, ENGINEERING_BRANCHES } from './data/constants';
-
 const EXAM_TOOLTIPS = {
   'JEE Main': 'Used for admission into NITs, IIITs, GFTIs and qualification for JEE Advanced.',
   'JEE Advanced': 'Used for admission into IITs (Indian Institutes of Technology).',
@@ -4683,6 +4683,11 @@ function App() {
           }}>
             {/* Left: Profile stats badges */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {workspaceUserId && (
+                <span style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#fda4af', border: '1px solid rgba(225, 29, 72, 0.3)', padding: '5px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                  👥 Shared Workspace ({workspaceRole})
+                </span>
+              )}
               <span style={{ background: 'rgba(108, 92, 231, 0.15)', color: '#a29bfe', border: '1px solid rgba(108, 92, 231, 0.3)', padding: '5px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 'bold' }}>
                 🎯 {admissionProfile.journey === 'Entrance result ready' ? 'Entrance Ready' : (admissionProfile.journey === 'Class 12 planning' ? 'Class 12 Planner' : admissionProfile.journey)}
               </span>
@@ -4699,6 +4704,27 @@ function App() {
 
             {/* Right: Action buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+              <button 
+                type="button" 
+                onClick={() => setShowCollabModal(true)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  borderColor: 'rgba(255, 255, 255, 0.15)', 
+                  color: '#ffffff', 
+                  background: 'rgba(255, 255, 255, 0.08)', 
+                  fontWeight: 'bold',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <Users size={14} /> Collaborators
+              </button>
+
               <button 
                 type="button" 
                 onClick={() => setShowAboutModal(true)}
@@ -5267,6 +5293,212 @@ function App() {
             >
               Get Started
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Glassmorphic Collaboration Modal */}
+      {showCollabModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '16px',
+            width: '650px',
+            maxWidth: '95%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '30px',
+            position: 'relative',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+            color: 'var(--text-primary)',
+            textAlign: 'left'
+          }}>
+            <button 
+              onClick={() => setShowCollabModal(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ background: '#6c5ce7', color: '#fff', borderRadius: '8px', padding: '6px', display: 'flex' }}>
+                <Users size={24} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Workspace Collaboration</h3>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Share shortlists & research in real-time</p>
+              </div>
+            </div>
+
+            {/* Invite Form */}
+            <div style={{ background: 'var(--bg-app)', padding: '16px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#6c5ce7' }}>Invite Collaborator</h4>
+              <form onSubmit={handleInviteCollaborator} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <input
+                  type="email"
+                  placeholder="Enter colleague or parent email..."
+                  value={collabEmail}
+                  onChange={(e) => setCollabEmail(e.target.value)}
+                  style={{ flex: 2, minWidth: '200px', padding: '8px 12px', fontSize: '0.82rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  required
+                />
+                <select
+                  value={collabRole}
+                  onChange={(e) => setCollabRole(e.target.value)}
+                  style={{ flex: 1, minWidth: '100px', padding: '8px', fontSize: '0.82rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                >
+                  <option value="viewer">Viewer (Read-only)</option>
+                  <option value="editor">Editor (Can edit)</option>
+                </select>
+                <button type="submit" className="primaryAction" style={{ width: 'auto', padding: '8px 16px', fontSize: '0.8rem' }}>
+                  Send Invite
+                </button>
+              </form>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flexWrap: 'wrap' }}>
+              {/* Sent Invites */}
+              <div>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Sent Invitations</h4>
+                {invitations.sent && invitations.sent.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {invitations.sent.map((inv) => (
+                      <div key={inv._id} style={{ background: 'var(--bg-app)', padding: '10px', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontWeight: 'bold', wordBreak: 'break-all' }}>{inv.inviteeEmail}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '0.75rem' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Role: {inv.role} &bull; <strong style={{ color: inv.status === 'accepted' ? '#27ae60' : (inv.status === 'declined' ? '#e74c3c' : '#f39c12') }}>{inv.status}</strong></span>
+                          <button onClick={() => handleRemoveCollaboratorShare(inv._id)} style={{ background: 'none', border: 'none', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', padding: '2px' }}>Revoke</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No sent invitations.</p>
+                )}
+              </div>
+
+              {/* Received Invites */}
+              <div>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Received Invitations</h4>
+                {invitations.received && invitations.received.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {invitations.received.map((inv) => (
+                      <div key={inv._id} style={{ background: 'var(--bg-app)', padding: '10px', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontWeight: 'bold' }}>{inv.sender?.name || 'Workspace Owner'}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{inv.sender?.email}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Role Offered: {inv.role}</div>
+                        {inv.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button onClick={() => handleRespondInvitation(inv._id, true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 'bold' }}>Accept</button>
+                            <button onClick={() => handleRespondInvitation(inv._id, false)} style={{ background: '#e74c3c', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 'bold' }}>Decline</button>
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '6px', fontSize: '0.75rem', fontWeight: 'bold', color: inv.status === 'accepted' ? '#27ae60' : '#e74c3c' }}>
+                            {inv.status.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No received invitations.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Shared Workspaces Switcher */}
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#6c5ce7' }}>Available Shared Workspaces</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', flexWrap: 'wrap' }}>
+                {/* Option to return to my own workspace */}
+                <div style={{
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid ' + (workspaceUserId === '' ? '#6c5ce7' : 'var(--border-color)'),
+                  background: workspaceUserId === '' ? 'rgba(108, 92, 231, 0.08)' : 'var(--bg-app)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <strong style={{ fontSize: '0.82rem' }}>My Workspace (Owner)</strong>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Your personal shortlist & matrix</div>
+                  </div>
+                  {workspaceUserId !== '' && (
+                    <button
+                      onClick={() => {
+                        handleWorkspaceChange('', 'owner');
+                        setShowCollabModal(false);
+                      }}
+                      className="primaryAction"
+                      style={{ marginTop: '8px', fontSize: '0.75rem', padding: '4px 8px', width: 'auto', alignSelf: 'flex-start' }}
+                    >
+                      Switch to My Workspace
+                    </button>
+                  )}
+                </div>
+
+                {sharedWorkspaces.map((share) => (
+                  <div key={share._id} style={{
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid ' + (workspaceUserId === share.sender?._id ? '#6c5ce7' : 'var(--border-color)'),
+                    background: workspaceUserId === share.sender?._id ? 'rgba(108, 92, 231, 0.08)' : 'var(--bg-app)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <strong style={{ fontSize: '0.82rem' }}>{share.sender?.name || 'Shared'}'s Workspace</strong>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Role: {share.role} ({share.sender?.email})</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      {workspaceUserId !== share.sender?._id && (
+                        <button
+                          onClick={() => {
+                            handleWorkspaceChange(share.sender?._id, share.role);
+                            setShowCollabModal(false);
+                          }}
+                          className="primaryAction"
+                          style={{ fontSize: '0.75rem', padding: '4px 8px', width: 'auto' }}
+                        >
+                          Switch Workspace
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleRemoveCollaboratorShare(share._id)}
+                        style={{ background: 'none', border: '1px solid #e11d48', color: '#e11d48', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                      >
+                        Leave
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
