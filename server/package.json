@@ -11,7 +11,8 @@
     "seed:nirf": "node src/data/seedCollegesNIRF.js",
     "datasets": "node download_datasets.js",
     "train:ml": "node scripts/runPython.js train_models.py",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@sentry/node": "^10.63.0",
@@ -38,6 +39,8 @@
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.9",
     "supertest": "^7.2.2",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "eslint": "^9.16.0",
+    "globals": "^15.12.0"
   }
 }
