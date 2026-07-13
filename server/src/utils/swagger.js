@@ -87,7 +87,7 @@ const options = {
                     name: { type: 'string', minLength: 2 },
                     email: { type: 'string', format: 'email' },
                     password: { type: 'string', minLength: 8 },
-                    examTrack: { type: 'string', enum: ['JEE', 'CUET', 'NEET', 'GATE', 'CAT', 'Other'] },
+                    examTrack: { type: 'string', enum: ['JEE', 'CUET', 'Other'] },
                   },
                 },
               },

@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     examTrack: {
       type: String,
-      enum: ['JEE', 'CUET', 'NEET', 'GATE', 'CAT', 'Other'],
+      enum: ['JEE', 'CUET', 'Other'],
       default: 'JEE',
     },
     targetYear: { type: Number, default: 2027 },

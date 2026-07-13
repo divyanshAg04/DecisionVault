@@ -34,7 +34,7 @@ const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  examTrack: z.enum(['JEE', 'CUET', 'NEET', 'GATE', 'CAT', 'Other']).default('JEE'),
+  examTrack: z.enum(['JEE', 'CUET', 'Other']).default('JEE'),
   targetYear: z.number().int().min(2026).max(2035).default(2027),
 });
 
