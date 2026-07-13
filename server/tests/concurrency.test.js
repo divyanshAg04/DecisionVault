@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
+import fs from 'fs';
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import jwt from 'jsonwebtoken';
@@ -41,6 +42,7 @@ vi.mock('child_process', async (importOriginal) => {
 
 describe('Subprocess Concurrency', () => {
   const jwtSecret = process.env.JWT_SECRET || 'test-secret';
+  const originalExistsSync = fs.existsSync;
 
   const makeAuthCookie = (userId) => {
     const token = jwt.sign({ userId }, jwtSecret);
@@ -48,52 +50,63 @@ describe('Subprocess Concurrency', () => {
   };
 
   it('should not block the event loop while Python is executing', async () => {
-    const user = await User.create({ name: 'Concurrency User', email: 'c@example.com', passwordHash: 'hash', emailVerified: true });
-    const authCookie = makeAuthCookie(user._id);
+    const existsSyncSpy = vi.spyOn(fs, 'existsSync').mockImplementation((pathToCheck) => {
+      if (String(pathToCheck).includes('placement_bundle.joblib')) {
+        return true;
+      }
+      return originalExistsSync(pathToCheck);
+    });
 
-    // Track response order
-    const events = [];
+    try {
+      const user = await User.create({ name: 'Concurrency User', email: 'c@example.com', passwordHash: 'hash', emailVerified: true });
+      const authCookie = makeAuthCookie(user._id);
 
-    // Trigger the slow prediction request
-    const predictPromise = request(app)
-      .post('/api/ml/predict-placement')
-      .set('Cookie', makeTestCookies(authCookie))
-      .set('X-CSRF-Token', TEST_CSRF_TOKEN)
-      .send({
-        gender: 'Male',
-        age: 21,
-        degree: 'BTech',
-        branch: 'CS',
-        cgpa: 9.0
-      })
-      .then((res) => {
-        events.push({ name: 'predict', time: Date.now() });
-        return res;
-      });
+      // Track response order
+      const events = [];
 
-    // Short timeout to guarantee that the prediction subprocess has started
-    await new Promise((resolve) => setTimeout(resolve, 50));
+      // Trigger the slow prediction request
+      const predictPromise = request(app)
+        .post('/api/ml/predict-placement')
+        .set('Cookie', makeTestCookies(authCookie))
+        .set('X-CSRF-Token', TEST_CSRF_TOKEN)
+        .send({
+          gender: 'Male',
+          age: 21,
+          degree: 'BTech',
+          branch: 'CS',
+          cgpa: 9.0
+        })
+        .then((res) => {
+          events.push({ name: 'predict', time: Date.now() });
+          return res;
+        });
 
-    // Fire the health check request concurrently
-    const healthPromise = request(app)
-      .get('/api/health')
-      .then((res) => {
-        events.push({ name: 'health', time: Date.now() });
-        return res;
-      });
+      // Short timeout to guarantee that the prediction subprocess has started
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-    // Await both
-    const [predictRes, healthRes] = await Promise.all([predictPromise, healthPromise]);
+      // Fire the health check request concurrently
+      const healthPromise = request(app)
+        .get('/api/health')
+        .then((res) => {
+          events.push({ name: 'health', time: Date.now() });
+          return res;
+        });
 
-    expect(healthRes.status).toBe(200);
-    expect(predictRes.status).toBe(200);
+      // Await both
+      const [predictRes, healthRes] = await Promise.all([predictPromise, healthPromise]);
 
-    // Verify order of events: health check must respond FIRST because predict takes 1200ms
-    expect(events[0].name).toBe('health');
-    expect(events[1].name).toBe('predict');
+      expect(healthRes.status).toBe(200);
+      expect(predictRes.status).toBe(200);
 
-    // Confirm that the time difference is significant
-    const diff = events[1].time - events[0].time;
-    expect(diff).toBeGreaterThanOrEqual(700);
+      // Verify order of events: health check must respond FIRST because predict takes 1200ms
+      expect(events[0].name).toBe('health');
+      expect(events[1].name).toBe('predict');
+
+      // Confirm that the time difference is significant
+      const diff = events[1].time - events[0].time;
+      expect(diff).toBeGreaterThanOrEqual(700);
+    } finally {
+      existsSyncSpy.mockRestore();
+    }
   });
 });
