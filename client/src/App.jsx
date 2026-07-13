@@ -29,7 +29,7 @@ import {
   Moon,
   Users,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { colleges as fallbackColleges, defaultPriorities } from './data/colleges';
 import { INDIAN_STATES, ENGINEERING_BRANCHES } from './data/constants';
 const EXAM_TOOLTIPS = {
