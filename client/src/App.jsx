@@ -1796,6 +1796,8 @@ function App() {
     }, 0);
 
     return () => clearTimeout(timer);
+    // intentionally depends on primitive fields only, not full admissionProfile object or runAdmissionMl, to avoid re-running ML prediction on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentUser,
     admissionProfile.score,
