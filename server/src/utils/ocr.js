@@ -14,7 +14,7 @@ export async function parseScorecardText(source) {
     let imageSource = null;
 
     if (source.startsWith('data:')) {
-      const matches = source.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      const matches = source.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
       if (!matches || matches.length !== 3) {
         console.warn('OCR skipped: Invalid base64 format');
         return null;

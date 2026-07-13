@@ -28,7 +28,7 @@ if (!cloudinaryConfigured) {
  * @returns {Promise<string>} File URL
  */
 export async function uploadScorecard(base64Data, originalName) {
-  const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  const matches = base64Data.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
   if (!matches || matches.length !== 3) {
     throw new Error('Invalid base64 format');
   }

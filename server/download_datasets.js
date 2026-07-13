@@ -49,7 +49,7 @@ function handleResponse(res, fileId, destPath, resolve, reject) {
     let body = '';
     res.on('data', chunk => { body += chunk; });
     res.on('end', () => {
-      const match = body.match(/confirm=([a-zA-Z0-9_\-]+)/);
+      const match = body.match(/confirm=([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
         const token = match[1];
         console.log(`Found confirmation token: ${token}`);
