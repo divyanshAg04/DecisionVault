@@ -15,7 +15,8 @@
     "train:ml": "npm --prefix server run train:ml",
     "build": "npm --prefix client run build",
     "start": "npm --prefix server start",
-    "e2e": "npm --prefix e2e run test"
+    "e2e": "npm --prefix e2e run test",
+    "lint": "npm --prefix client run lint && npm --prefix server run lint"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
