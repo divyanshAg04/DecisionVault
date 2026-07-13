@@ -6,35 +6,20 @@ import jwt from 'jsonwebtoken';
 import { TEST_CSRF_TOKEN, makeTestCookies } from './csrfHelper.js';
 import './setup.js';
 
-// Spy on/mock child_process.execFile
-vi.mock('child_process', async (importOriginal) => {
+vi.mock('../src/utils/mlPredictor.js', async (importOriginal) => {
   const original = await importOriginal();
   return {
     ...original,
-    execFile: vi.fn((file, args, options, callback) => {
-      // If it is calling predict_placement.py, delay the response
-      if (args && args[0] && args[0].includes('predict_placement.py')) {
-        setTimeout(() => {
-          callback(null, {
-            stdout: JSON.stringify({
-              status: 'Success',
-              placedProbability: 0.9,
-              expectedPackageLpa: 15.0,
-              expectedPackageMin: 12.0,
-              expectedPackageMax: 18.0,
-              dataDisclaimer: 'Trained on synthetic data; illustrative only, not a real placement guarantee'
-            }),
-            stderr: ''
-          });
-        }, 500); // 500ms mock delay
-      } else {
-        // Fallback to original behavior or immediate callback
-        if (typeof callback === 'function') {
-          callback(null, { stdout: '{}', stderr: '' });
-        } else if (typeof options === 'function') {
-          options(null, { stdout: '{}', stderr: '' });
-        }
-      }
+    predictPlacementAndPackage: vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return {
+        status: 'Success',
+        placedProbability: 0.9,
+        expectedPackageLpa: 15.0,
+        expectedPackageMin: 12.0,
+        expectedPackageMax: 18.0,
+        dataDisclaimer: 'Trained on synthetic data; illustrative only, not a real placement guarantee'
+      };
     })
   };
 });
