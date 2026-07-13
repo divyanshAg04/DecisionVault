@@ -40,9 +40,7 @@ export default [
       'react/no-unescaped-entities': 'off',
       'react/jsx-key': 'off',
       'react-hooks/exhaustive-deps': 'off',
-      'react-hooks/rules-of-hooks': 'off',
       'no-unused-vars': 'off',
-      'no-undef': 'off',
     },
   },
 ];
