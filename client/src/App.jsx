@@ -3137,7 +3137,7 @@ function App() {
                 <CompareRow
                   label="Eligibility"
                   values={shortlisted.map((college) => (
-                    <span className={`eligibilityBadge ${college.eligibility?.status.toLowerCase().replace(' ', '-')}`}>
+                    <span key={college.id} className={`eligibilityBadge ${college.eligibility?.status.toLowerCase().replace(' ', '-')}`}>
                       {college.eligibility?.status}
                     </span>
                   ))}
