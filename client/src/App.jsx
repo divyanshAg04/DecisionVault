@@ -464,6 +464,10 @@ function App() {
   const [workspaceUserId, setWorkspaceUserId] = useState('');
   const [workspaceRole, setWorkspaceRole] = useState('owner');
   const [invitations, setInvitations] = useState({ sent: [], received: [] });
+  const latestWorkspaceRole = useRef(workspaceRole);
+  const latestWorkspaceUserId = useRef(workspaceUserId);
+  latestWorkspaceRole.current = workspaceRole;
+  latestWorkspaceUserId.current = workspaceUserId;
   const [showCollabModal, setShowCollabModal] = useState(false);
   const [collabEmail, setCollabEmail] = useState('');
   const [collabRole, setCollabRole] = useState('viewer');
@@ -959,6 +963,7 @@ function App() {
     } else {
       restoreSession();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -975,7 +980,7 @@ function App() {
 
   // Sync priorities to shortlist in DB (debounced)
   useEffect(() => {
-    if (!currentUser || !currentUser.emailVerified || workspaceRole === 'viewer') return;
+    if (!currentUser || !currentUser.emailVerified || latestWorkspaceRole.current === 'viewer') return;
     const timer = setTimeout(async () => {
       try {
         const promises = catalog
@@ -987,7 +992,7 @@ function App() {
               cons: c.cons,
               priorities: priorities,
               researchLinks: c.customLinks || [],
-            }, workspaceUserId),
+            }, latestWorkspaceUserId.current),
           );
         await Promise.all(promises);
       } catch (err) {
@@ -996,6 +1001,8 @@ function App() {
     }, 1200);
 
     return () => clearTimeout(timer);
+    // Omit catalog to prevent redundant DB writes when catalogue query/search results change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priorities, shortlistedIds, currentUser]);
 
   const handleVerificationSuccess = (user) => {
