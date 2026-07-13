@@ -1,3 +1,4 @@
+process.env.MONGOMS_MD5_CHECK = 'false';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { beforeAll, afterAll, beforeEach } from 'vitest';
