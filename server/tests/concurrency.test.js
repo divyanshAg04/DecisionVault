@@ -26,7 +26,7 @@ vi.mock('child_process', async (importOriginal) => {
             }),
             stderr: ''
           });
-        }, 500); // 500ms mock delay
+        }, 1200); // 1200ms mock delay to make ordering deterministic under CI load
       } else {
         // Fallback to original behavior or immediate callback
         if (typeof callback === 'function') {
@@ -88,12 +88,12 @@ describe('Subprocess Concurrency', () => {
     expect(healthRes.status).toBe(200);
     expect(predictRes.status).toBe(200);
 
-    // Verify order of events: health check must respond FIRST because predict takes 500ms
+    // Verify order of events: health check must respond FIRST because predict takes 1200ms
     expect(events[0].name).toBe('health');
     expect(events[1].name).toBe('predict');
 
-    // Confirm that the time difference is at least 300ms
+    // Confirm that the time difference is significant
     const diff = events[1].time - events[0].time;
-    expect(diff).toBeGreaterThanOrEqual(300);
+    expect(diff).toBeGreaterThanOrEqual(700);
   });
 });
