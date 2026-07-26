@@ -19,6 +19,6 @@
     "lint": "npm --prefix client run lint && npm --prefix server run lint"
   },
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.4"
   }
 }
